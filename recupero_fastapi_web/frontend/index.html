@@ -1,0 +1,1517 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Recupero materie prime strategiche · Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --canvas:#EEF0EA; --surface:#FFFFFF; --deep:#13272B; --deep2:#1B343A;
+    --green:#1F5A43; --green2:#2E7A5B; --copper:#B5651D; --gold:#C2912C;
+    --ink:#16211D; --mute:#6C7C73; --line:#E2E6DD;
+    --critico:#B5651D; --strategico:#C2912C; --utile:#4E8C72;
+    --red:#B23B2E;
+    --onDark:#EAF1ED; --onDarkMute:#9DB0A8;
+    --r:14px; --shadow:0 6px 20px rgba(15,30,28,.08);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{font-family:Inter,system-ui,sans-serif;background:var(--canvas);color:var(--ink);
+    display:grid;grid-template-rows:auto 1fr;min-height:100%}
+  h1,h2,h3{font-family:Fraunces,Georgia,serif}
+
+  header{background:var(--deep);color:var(--onDark);padding:14px 22px;display:flex;align-items:center;gap:18px;justify-content:space-between;flex-wrap:wrap}
+  .brand{display:flex;align-items:center;gap:13px;min-width:0}
+  .logo{width:38px;height:38px;border-radius:10px;background:var(--green2);display:grid;place-items:center;font-family:Fraunces;font-weight:700;font-size:19px;color:#fff;flex:none}
+  .brand h1{font-size:18px;margin:0;font-weight:600;line-height:1.15}
+  .brand p{margin:2px 0 0;font-size:11.5px;color:var(--onDarkMute)}
+  nav.tabs{display:flex;gap:6px;flex-wrap:wrap}
+  nav.tabs button{background:var(--deep2);border:1px solid transparent;color:var(--onDarkMute);font-family:Inter;font-weight:600;font-size:12px;
+    padding:8px 12px;border-radius:10px;cursor:pointer;transition:.15s}
+  nav.tabs button:hover{color:var(--onDark)}
+  nav.tabs button.active{background:var(--green2);color:#fff}
+  #connStatus{font-size:11px;padding:4px 10px;border-radius:999px;font-weight:600}
+  #connStatus.ok{background:#1F5A43;color:#fff}
+  #connStatus.ko{background:var(--red);color:#fff}
+  .hdrbtn{background:var(--deep2);border:1px solid #2C4A50;color:var(--onDark);font-family:Inter;font-weight:600;font-size:11.5px;padding:7px 11px;border-radius:9px;cursor:pointer}
+  .hdrbtn:hover{background:var(--green2);border-color:var(--green2)}
+
+  .wrap{display:grid;grid-template-columns:270px 1fr;min-height:0}
+  .wrap.nosidebar{grid-template-columns:1fr}
+  aside{background:var(--surface);border-right:1px solid var(--line);padding:20px 18px;overflow:auto}
+  main{padding:22px 24px;overflow:auto}
+  .fgroup{margin-bottom:22px}
+  .fgroup>.h{font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--mute);font-weight:700;margin-bottom:10px}
+  .type{display:flex;flex-direction:column;gap:8px}
+  .type button{display:flex;align-items:center;gap:11px;border:1px solid var(--line);background:#fff;border-radius:11px;padding:11px 12px;cursor:pointer;font-family:Inter;font-size:14px;color:var(--ink);font-weight:600;transition:.15s;text-align:left;width:100%}
+  .type button .ic{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;font-size:15px;flex:none;color:#fff}
+  .type button[aria-pressed="true"]{border-color:var(--green);background:#F1F7F3;box-shadow:0 0 0 1px var(--green) inset}
+  .type button[aria-pressed="false"]{opacity:.6}
+  select,input[type=text],input[type=number]{width:100%;border:1px solid var(--line);border-radius:10px;padding:10px 11px;font-family:Inter;font-size:13.5px;background:#fff;color:var(--ink)}
+  select:disabled,input:disabled{background:#F5F6F2;color:var(--mute)}
+  select:not(:disabled):focus, input:not(:disabled):focus{outline:2px solid var(--green);outline-offset:1px;border-color:var(--green)}
+  .mwrow{display:flex;align-items:center;gap:12px}
+  .mwrow input[type=range]{flex:1;accent-color:var(--green)}
+  .mwval{font-family:Fraunces;font-weight:700;font-size:20px;color:var(--green);min-width:74px;text-align:right}
+  .mwval small{font-family:Inter;font-size:12px;color:var(--mute);font-weight:600}
+  .chip{display:inline-flex;align-items:center;gap:6px;background:#FBF2E7;color:var(--copper);border:1px solid #EBD7BE;border-radius:999px;padding:4px 10px;font-size:11px;font-weight:600;margin-top:8px}
+  .mode-toggle{display:flex;gap:8px;margin-bottom:14px}
+  .mode-btn{flex:1;padding:9px 10px;border:1px solid var(--line);border-radius:10px;background:#fff;cursor:pointer;font-family:Inter;font-size:12px;font-weight:600;color:var(--mute)}
+  .mode-btn.active{border-color:var(--green);background:#F1F7F3;color:var(--green)}
+  .comp-mini-label{display:block;font-size:9.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--mute);font-weight:700;margin-bottom:3px}
+
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+  .kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:15px 16px;box-shadow:var(--shadow)}
+  .kpi .k{font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--mute);font-weight:600}
+  .kpi .v{font-size:22px;font-weight:600;margin-top:5px;color:var(--green);line-height:1}
+  .kpi .v small{font-size:12px;color:var(--ink);font-weight:600;font-family:Inter}
+  .kpi .s{font-size:11.5px;color:var(--mute);margin-top:5px}
+  .kpi.copper .v{color:var(--copper)}
+  .kpi.net .v.pos{color:var(--green)} .kpi.net .v.neg{color:var(--red)}
+
+  .panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px;box-shadow:var(--shadow);margin-bottom:16px}
+  .panel h3{margin:0 0 2px;font-size:16.5px;font-weight:600}
+  .panel .sub{font-size:12px;color:var(--mute);margin:0 0 14px}
+
+  .path{display:flex;align-items:center;flex-wrap:wrap;gap:0;margin-bottom:16px;padding:12px 14px;background:#fff;border:1px solid var(--line);border-radius:11px}
+  .path-step{display:flex;flex-direction:column;gap:2px;padding:4px 12px;min-width:88px}
+  .path-step .lbl{font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--mute)}
+  .path-step .val{font-size:12px;font-weight:700;color:var(--ink)}
+  .path-step .val.empty{color:var(--mute);font-weight:400;font-style:italic}
+  .path-arrow{color:var(--mute);font-size:15px;padding:0 2px}
+
+  /* ---- schema del processo unico ---- */
+  .flow-impianto-label{font-size:11px;font-weight:700;color:var(--mute);margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--line)}
+  .lane{margin-bottom:16px;padding-bottom:16px;border-bottom:1px dashed var(--line)}
+  .lane:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
+  .lane-row{display:flex;align-items:flex-start;gap:6px;flex-wrap:wrap}
+  .lane-arrow{color:var(--mute);font-size:13px;margin-top:24px;flex:none}
+  .lane-node{border:1px solid var(--line);border-radius:9px;background:#F1F7F3;border-color:var(--green);padding:6px 9px;min-width:120px;max-width:170px}
+  .lane-node select{padding:4px 6px;font-size:11px;border:none;background:transparent;font-weight:700;color:var(--ink);margin-bottom:2px}
+  .lane-node-title{font-size:11px;font-weight:700;color:var(--ink);margin-bottom:2px}
+  .lane-node-cost{font-size:9.5px;color:var(--green2);font-weight:600}
+  .lane-node-costo-tot{font-size:10.5px;color:var(--copper);font-weight:700;margin-top:1px}
+  .lane-node-fasi{font-size:9px;color:var(--mute);margin-top:2px;line-height:1.4}
+
+  .lane-card-toggle{display:flex;align-items:flex-start;gap:8px;border:1.5px solid var(--line);background:#fff;border-radius:11px;padding:9px 10px;cursor:pointer;text-align:left;font-family:Inter;min-width:150px;max-width:190px}
+  .lane-card-toggle.active{border-color:var(--green);background:#F1F7F3}
+  .lane-card-toggle .ic{width:26px;height:26px;border-radius:8px;background:var(--line);color:var(--mute);display:grid;place-items:center;font-weight:700;font-size:11px;flex:none;font-family:Fraunces}
+  .lane-card-toggle.active .ic{background:var(--green);color:#fff}
+  .comp-name{font-size:12.5px;font-weight:700;color:var(--ink)}
+  .comp-mass-val{font-family:Fraunces;font-weight:700;font-size:12.5px;color:var(--ink);margin-top:2px}
+
+  .lane-uscite{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-start;position:relative;
+    padding:10px 10px 12px;border:1.5px dashed var(--line);border-radius:11px;background:rgba(241,243,236,.55)}
+  .uscite-label{flex-basis:100%;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;
+    color:var(--mute);margin-bottom:1px}
+  .output-branch{display:flex;align-items:flex-start;gap:6px;flex-wrap:wrap}
+  .output-card{width:126px;border:1.5px solid var(--line);border-radius:10px;padding:8px 9px;background:#fff;position:relative}
+  .output-card.clickable{cursor:pointer;transition:.12s}
+  .output-card.clickable:hover{box-shadow:0 2px 8px rgba(31,90,67,.12)}
+  .output-card.default{border-color:var(--line)}
+  .output-card.custom{border-color:var(--gold);background:#FFFBF2;box-shadow:0 0 0 1px var(--gold) inset}
+  .output-card.scarto{background:#F4F5F1;border-style:dashed;border-color:#C7CDBE}
+  .output-card.scarto .nm{font-style:italic}
+  .output-card .cat{position:absolute;top:7px;right:7px;width:7px;height:7px;border-radius:50%}
+  .output-card .sym{font-family:Fraunces;font-weight:700;font-size:15px;line-height:1;color:var(--ink)}
+  .output-card .nm{font-size:9px;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .output-card .val{font-size:11px;font-weight:700;margin-top:5px}
+  .output-card .vv{font-size:10px;color:var(--green2);font-weight:700;margin-top:1px}
+  .price-tag{font-size:9px;color:var(--mute);margin-top:3px}
+  .custom-badge{font-size:8.5px;font-weight:700;color:var(--gold);margin-top:3px;text-transform:uppercase;letter-spacing:.02em}
+  .intermedio-header{background:#FBF6E9;border-color:var(--gold)}
+  .btn-trasforma{margin-top:6px;width:126px;padding:5px 6px;border:1px solid var(--gold);border-radius:7px;background:#FBF6E9;color:var(--gold);font-family:Inter;font-weight:700;font-size:9.5px;cursor:pointer}
+  .btn-trasforma:hover{background:var(--gold);color:#fff}
+  .trasforma-tag{font-size:8.5px;font-weight:700;color:var(--gold);margin-top:4px;cursor:pointer}
+  .trasforma-tag:hover{text-decoration:underline}
+
+  .tiles{display:flex;flex-wrap:wrap;gap:9px}
+  .tile{width:100px;border:1.5px solid var(--line);border-radius:10px;padding:9px 9px 8px;background:#fff;position:relative}
+  .tile.clickable{cursor:pointer;transition:.12s}
+  .tile.clickable:hover{border-color:var(--green);box-shadow:0 2px 8px rgba(31,90,67,.12)}
+  .tile.default{border-color:var(--line)}
+  .tile.custom{border-color:var(--gold);background:#FFFBF2;box-shadow:0 0 0 1px var(--gold) inset}
+  .tile .sym{font-family:Fraunces;font-weight:700;font-size:22px;line-height:1}
+  .tile .nm{font-size:10px;color:var(--mute);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .tile .val{font-size:12px;font-weight:700;margin-top:6px}
+  .tile .vv{font-size:10.5px;color:var(--mute);font-weight:600;margin-top:1px}
+  .tile .cat{position:absolute;top:8px;right:8px;width:8px;height:8px;border-radius:50%}
+  .legend{display:flex;gap:15px;margin-top:14px;flex-wrap:wrap}
+  .legend span{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--mute)}
+  .legend i{width:10px;height:10px;border-radius:50%}
+  .legend i.sq{border-radius:3px}
+
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  th{text-align:right;font-size:10.5px;text-transform:uppercase;letter-spacing:.03em;color:var(--mute);font-weight:700;padding:8px 9px;border-bottom:1px solid var(--line);white-space:nowrap}
+  th:first-child,td:first-child{text-align:left}
+  td{padding:8px 9px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+  td.name{font-weight:400;color:var(--mute);text-align:left}
+  tbody tr:hover{background:#F8F9F5}
+
+  .empty-state{text-align:center;padding:40px 20px;color:var(--mute);font-size:14px}
+  .footer{font-size:11px;color:var(--mute);margin-top:8px;line-height:1.5}
+  code{background:#F1F3EC;padding:1px 5px;border-radius:4px;font-size:11px}
+  *:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+
+  .toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+  .toolbar .cnt{font-size:11px;color:var(--mute);background:#F1F3EC;padding:4px 10px;border-radius:999px;font-weight:600}
+  .btn{padding:9px 14px;border-radius:10px;border:1px solid var(--line);background:#fff;font-family:Inter;font-weight:600;font-size:12.5px;cursor:pointer;color:var(--ink);white-space:nowrap}
+  .btn:hover{border-color:var(--green)}
+  .btn.primary{background:var(--green);color:#fff;border-color:var(--green)}
+  .btn.primary:hover{background:#194A38}
+  .db-table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
+  table.dbtable{font-size:12.5px;min-width:100%}
+  table.dbtable th{background:#F8F9F5;text-align:left;padding:9px 10px}
+  table.dbtable td{padding:5px 6px;text-align:left;vertical-align:middle}
+  table.dbtable td.actions{text-align:center;width:36px}
+  table.dbtable input,table.dbtable select{padding:6px 7px;font-size:12.5px;border-radius:7px;min-width:70px}
+  table.dbtable input[type=text]{min-width:110px}
+  table.dbtable input.saved{border-color:var(--green)!important;background:#F1F7F3}
+  table.dbtable input.error,table.dbtable select.error{border-color:var(--red)!important;background:#FDF3F1}
+  .rowdel{border:none;background:transparent;color:var(--mute);cursor:pointer;font-size:15px;border-radius:6px;padding:4px 7px}
+  .rowdel:hover{color:var(--red);background:#FDF3F1}
+  .db-note{font-size:12px;color:var(--mute);margin-top:12px;line-height:1.6}
+  .newrow td{background:#FBF6E9}
+
+  .modal-overlay{position:fixed;inset:0;background:rgba(19,39,43,.55);display:flex;align-items:center;justify-content:center;z-index:1000;padding:20px}
+  .modal{background:#fff;border-radius:16px;max-width:620px;width:100%;max-height:80vh;overflow:auto;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+  .modal h3{margin:0 0 14px}
+  .modal-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);font-size:13px}
+  .modal-badge{font-size:11px;font-weight:700;padding:2px 9px;border-radius:999px}
+  .modal-badge.ok{background:#E1F5EE;color:var(--green)}
+  .modal-badge.warn{background:#FDF3F1;color:var(--red)}
+  .modal-errs{font-size:11.5px;color:var(--red);margin:6px 0 0;padding-left:16px}
+  .modal-close{margin-top:16px;display:flex;gap:8px}
+
+  @media (max-width:1080px){.wrap{grid-template-columns:1fr}aside{border-right:0;border-bottom:1px solid var(--line)}.kpis{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <div class="logo">♻</div>
+    <div><h1>Recupero materie prime strategiche</h1>
+    <p>Calcolo economico e gestione database · connesso a Postgres via API</p></div>
+  </div>
+  <div style="display:flex;align-items:center;gap:12px">
+    <span id="connStatus">verifico connessione...</span>
+    <button id="btnExportAll" class="hdrbtn" title="Esporta tutte le tabelle in un unico file Excel">⬇ Esporta Excel</button>
+    <button id="btnImportAll" class="hdrbtn" title="Importa da un file Excel">⬆ Importa Excel</button>
+    <button id="btnWipeAll" class="hdrbtn" style="background:#5A2620;border-color:#7A362D" title="Cancella tutti i record di tutte le tabelle">🗑 Cancella tutto</button>
+    <input type="file" id="fileImport" accept=".xlsx,.xlsm" style="display:none">
+    <nav class="tabs" id="navTabs"></nav>
+  </div>
+</header>
+
+<div class="wrap" id="wrap">
+  <aside id="aside"></aside>
+  <main id="main"></main>
+</div>
+
+<script>
+const API = "/api";
+const ANNO_CORRENTE = 2026;
+const CATCOL={critico:'var(--critico)',strategico:'var(--strategico)',utile:'var(--utile)'};
+
+async function apiGet(path, params){
+  const url = new URL(API+path, window.location.origin);
+  if(params) Object.entries(params).forEach(([k,v])=>{ if(v!==undefined && v!==null && v!=='') url.searchParams.set(k,v); });
+  const r = await fetch(url);
+  if(!r.ok) throw new Error((await r.json().catch(()=>({detail:r.statusText}))).detail || r.statusText);
+  return r.json();
+}
+async function apiSend(method, path, body){
+  const url = new URL(API+path, window.location.origin);
+  const r = await fetch(url, {method, headers:{'Content-Type':'application/json'}, body: body?JSON.stringify(body):undefined});
+  if(!r.ok) throw new Error((await r.json().catch(()=>({detail:r.statusText}))).detail || r.statusText);
+  return r.status===204 ? null : r.json();
+}
+async function checkHealth(){
+  const el = document.getElementById('connStatus');
+  try{
+    const h = await apiGet('/health');
+    if(h.status==='ok'){ el.textContent='● Postgres connesso'; el.className='ok'; }
+    else{ el.textContent='● Database non raggiungibile'; el.className='ko'; }
+  }catch(e){ el.textContent='● API non raggiungibile'; el.className='ko'; }
+}
+
+function showModal(innerHtml){
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `<div class="modal">${innerHtml}</div>`;
+  overlay.addEventListener('click', e=>{ if(e.target===overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
+  return overlay;
+}
+
+// ============================================================
+// TABELLE (config CRUD)
+// ============================================================
+const TABLES = {
+  impianti: { url:'impianti', dbTable:'db_impianti', label:'Impianti', pk:['id_imp'],
+    columns:[
+      {key:'id_imp',label:'ID',type:'text'},
+      {key:'tipologia',label:'Tipologia',type:'select',options:['EOLICO','FOTOVOLTAICO','BESS']},
+      {key:'sotto_tecnologia',label:'Sotto tecnologia',type:'text'},
+      {key:'potenza_mw',label:'Potenza MW',type:'number',step:0.5},
+      {key:'anno_installazione',label:'Anno instal.',type:'number',step:1},
+      {key:'anno_dismissione',label:'Anno dismiss.',type:'number',step:1},
+      {key:'regione',label:'Regione',type:'text'},
+      {key:'provincia',label:'Provincia',type:'text'},
+      {key:'lat',label:'Lat',type:'number',step:0.01},
+      {key:'lon',label:'Lon',type:'number',step:0.01},
+    ],
+    defaults:()=>({id_imp:'',tipologia:'EOLICO',sotto_tecnologia:'',potenza_mw:1,anno_installazione:2026,anno_dismissione:2040,regione:'',provincia:'',lat:0,lon:0}),
+  },
+  prodotti: { url:'prodotti', dbTable:'db_prodotti', label:'Prodotti', pk:['prodotto'],
+    columns:[
+      {key:'prodotto',label:'Codice',type:'text'},
+      {key:'nome',label:'Nome',type:'text'},
+      {key:'categoria',label:'Categoria',type:'select',options:['strategico','critico','utile']},
+      {key:'peso_molare',label:'Peso molare (g/mol)',type:'number',step:0.01},
+      {key:'elemento_confronto',label:'Elemento di confronto',type:'prodotto-select'},
+      {key:'parametro_equivalenza',label:'Parametro equivalenza',type:'number',step:0.5},
+      {key:'prezzo_attuale_eur_kg',label:'Prezzo €/kg',type:'number',step:0.1},
+      {key:'proiezione_prezzo_p1',label:'Crescita P1 %/anno',type:'percent',step:0.1},
+      {key:'proiezione_prezzo_p2',label:'Crescita P2 %/anno',type:'percent',step:0.1},
+    ],
+    defaults:()=>({prodotto:'',nome:'',categoria:'critico',peso_molare:1,elemento_confronto:prodottiCache[0]?.prodotto||'',parametro_equivalenza:1,prezzo_attuale_eur_kg:0,proiezione_prezzo_p1:0.03,proiezione_prezzo_p2:0.05}),
+  },
+  macro: { url:'macro', dbTable:'db_macro', label:'Macro componenti', pk:['id_macro','prodotto'],
+    columns:[
+      {key:'id_macro',label:'ID macro',type:'text'},
+      {key:'tipologia',label:'Tipologia',type:'select',options:['EOLICO','FOTOVOLTAICO','BESS']},
+      {key:'sotto_tecnologia',label:'Sotto tecnologia',type:'text'},
+      {key:'macro_componente',label:'Macrocomponente',type:'text'},
+      {key:'massa_kg_per_mw',label:'Massa kg/MW',type:'number',step:10},
+      {key:'prodotto',label:'Elemento contenuto',type:'prodotto-select'},
+      {key:'pct_contenuto_min',label:'% contenuto min',type:'percent',step:0.1},
+      {key:'pct_contenuto_max',label:'% contenuto max',type:'percent',step:0.1},
+    ],
+    defaults:()=>({id_macro:'',tipologia:'EOLICO',sotto_tecnologia:'',macro_componente:'',massa_kg_per_mw:100,prodotto:prodottiCache[0]?.prodotto||'',pct_contenuto_min:0.05,pct_contenuto_max:0.10}),
+  },
+  intermedi_composizione: { url:'intermedi-composizione', dbTable:'db_intermedi_composizione', label:'Composizione intermedi', pk:['intermedio','prodotto'],
+    columns:[
+      {key:'intermedio',label:'Intermedio',type:'intermedio-select'},
+      {key:'prodotto',label:'Elemento contenuto',type:'prodotto-select'},
+      {key:'pct_contenuto_min',label:'% contenuto min',type:'percent',step:0.1},
+      {key:'pct_contenuto_max',label:'% contenuto max',type:'percent',step:0.1},
+    ],
+    defaults:()=>({intermedio:intermediAllCache[0]?.intermedio||'',prodotto:prodottiCache[0]?.prodotto||'',pct_contenuto_min:0.05,pct_contenuto_max:0.10}),
+  },
+  macro_processi: { url:'macro-processi', dbTable:'db_macro_processi', label:'Macro processi (scomposizione)', pk:['id_processo_macro'],
+    columns:[
+      {key:'id_processo_macro',label:'ID processo',type:'text'},
+      {key:'tipologia',label:'Tipologia',type:'select',options:['EOLICO','FOTOVOLTAICO','BESS']},
+      {key:'sotto_tecnologia',label:'Sotto tecnologia',type:'text'},
+      {key:'macro_componente',label:'Macrocomponente',type:'text'},
+      {key:'tecnica',label:'Tecnica',type:'text'},
+      {key:'capex_eur_ton',label:'Capex €/ton',type:'number',step:5},
+      {key:'opex_eur_ton',label:'Opex €/ton',type:'number',step:5},
+      {key:'prezzo_vendita_eur_kg',label:'Prezzo vendita €/kg',type:'number',step:0.1},
+      {key:'proiezione_prezzo_p1',label:'Crescita P1 %/anno',type:'percent',step:0.1},
+      {key:'proiezione_prezzo_p2',label:'Crescita P2 %/anno',type:'percent',step:0.1},
+      {key:'descrizione_fasi',label:'Fasi',type:'text'},
+    ],
+    defaults:()=>({id_processo_macro:'',tipologia:'EOLICO',sotto_tecnologia:'',macro_componente:'',tecnica:'SMONTAGGIO',capex_eur_ton:30,opex_eur_ton:60,prezzo_vendita_eur_kg:0.5,proiezione_prezzo_p1:0.02,proiezione_prezzo_p2:0.03,descrizione_fasi:''}),
+  },
+  processi: { url:'processi', dbTable:'db_processi', label:'Processi', pk:['id'],
+    columns:[
+      {key:'id',label:'ID',type:'text',auto:true},
+      {key:'id_processo',label:'ID processo',type:'text'},
+      {key:'tipologia',label:'Tipologia',type:'select',options:['EOLICO','FOTOVOLTAICO','BESS']},
+      {key:'sotto_tecnologia',label:'Sotto tecnologia',type:'text'},
+      {key:'macro_componente',label:'Macrocomponente',type:'text'},
+      {key:'tecnica',label:'Tecnica',type:'text'},
+      {key:'capex_eur_ton',label:'Capex €/ton',type:'number',step:10},
+      {key:'opex_eur_ton',label:'Opex €/ton',type:'number',step:10},
+      {key:'tipo_output',label:'Tipo uscita',type:'select',options:['prodotto','intermedio']},
+      {key:'prodotto',label:'Prodotto (se uscita=prodotto)',type:'prodotto-select'},
+      {key:'intermedio_output',label:'Intermedio (se uscita=intermedio)',type:'intermedio-select'},
+      {key:'recupero_pct_min',label:'% resa min',type:'percent',step:0.5},
+      {key:'recupero_pct_max',label:'% resa max',type:'percent',step:0.5},
+      {key:'descrizione_fasi',label:'Fasi',type:'text'},
+    ],
+    defaults:()=>({id_processo:'',tipologia:'EOLICO',sotto_tecnologia:'',macro_componente:'',tecnica:'',capex_eur_ton:100,opex_eur_ton:200,tipo_output:'prodotto',prodotto:'Fe',intermedio_output:null,recupero_pct_min:0.80,recupero_pct_max:0.90,descrizione_fasi:''}),
+  },
+  intermedi: { url:'intermedi', dbTable:'db_intermedi', label:'Intermedi', pk:['intermedio'],
+    columns:[
+      {key:'intermedio',label:'Codice',type:'text'},
+      {key:'nome',label:'Nome',type:'text'},
+      {key:'prezzo_attuale_eur_kg',label:'Prezzo €/kg',type:'number',step:0.1},
+      {key:'proiezione_prezzo_p1',label:'Crescita P1 %/anno',type:'percent',step:0.1},
+      {key:'proiezione_prezzo_p2',label:'Crescita P2 %/anno',type:'percent',step:0.1},
+    ],
+    defaults:()=>({intermedio:'',nome:'',prezzo_attuale_eur_kg:0,proiezione_prezzo_p1:0.03,proiezione_prezzo_p2:0.05}),
+  },
+  sottoprocessi: { url:'sottoprocessi', dbTable:'db_sottoprocessi', label:'Sottoprocessi', pk:['id'],
+    columns:[
+      {key:'id',label:'ID',type:'text',auto:true},
+      {key:'id_sottoprocesso',label:'ID sottoprocesso',type:'text'},
+      {key:'intermedio',label:'Input (intermedio)',type:'intermedio-select'},
+      {key:'tecnica',label:'Tecnica',type:'text'},
+      {key:'capex_eur_ton',label:'Capex €/ton',type:'number',step:10},
+      {key:'opex_eur_ton',label:'Opex €/ton',type:'number',step:10},
+      {key:'tipo_output',label:'Tipo uscita',type:'select',options:['prodotto','intermedio']},
+      {key:'prodotto',label:'Prodotto (se uscita=prodotto)',type:'prodotto-select'},
+      {key:'intermedio_output',label:'Intermedio (se uscita=intermedio)',type:'intermedio-select'},
+      {key:'recupero_pct_min',label:'% resa min',type:'percent',step:0.5},
+      {key:'recupero_pct_max',label:'% resa max',type:'percent',step:0.5},
+      {key:'descrizione_fasi',label:'Fasi',type:'text'},
+    ],
+    defaults:()=>({id_sottoprocesso:'',intermedio:intermediAllCache[0]?.intermedio||'',tecnica:'',capex_eur_ton:1000,opex_eur_ton:10000,tipo_output:'intermedio',prodotto:null,intermedio_output:intermediAllCache[0]?.intermedio||'',recupero_pct_min:0.5,recupero_pct_max:0.6,descrizione_fasi:''}),
+  },
+  indici: { url:'indici-rivalutazione', dbTable:'db_indici_rivalutazione', label:'Indici di rivalutazione costi', pk:['id_indice'],
+    columns:[
+      {key:'id_indice',label:'ID indice',type:'text'},
+      {key:'nome',label:'Nome',type:'text'},
+      {key:'tasso_annuo',label:'Tasso annuo %',type:'percent',step:0.1},
+    ],
+    defaults:()=>({id_indice:'',nome:'',tasso_annuo:0.02}),
+  },
+};
+
+const SECTIONS = [
+  ['calcolo','Calcolo economico'],
+  ['impianti','Impianti'],
+  ['prodotti','Prodotti'],
+  ['macro','Macro componenti'],
+  ['macro_processi','Macro processi'],
+  ['processi','Processi'],
+  ['intermedi','Intermedi'],
+  ['intermedi_composizione','Composizione intermedi'],
+  ['sottoprocessi','Sottoprocessi'],
+  ['indici','Indici rivalutazione'],
+];
+let section = 'calcolo';
+let prodottiCache = [];
+let intermediAllCache = [];
+
+function renderNav(){
+  document.getElementById('navTabs').innerHTML = SECTIONS.map(([k,l]) =>
+    `<button data-s="${k}" class="${section===k?'active':''}">${l}</button>`).join('');
+}
+document.getElementById('navTabs').addEventListener('click', e=>{
+  const b=e.target.closest('button'); if(!b) return;
+  section = b.dataset.s; renderNav(); renderSection();
+});
+
+async function renderSection(){
+  const wrap = document.getElementById('wrap');
+  if(section==='calcolo'){
+    wrap.classList.remove('nosidebar');
+    document.getElementById('aside').style.display='';
+    await renderCalcoloAside();
+    renderCalcoloMain();
+  } else {
+    wrap.classList.add('nosidebar');
+    document.getElementById('aside').style.display='none';
+    await renderDbSection(section);
+  }
+}
+
+// ============================================================
+// SEZIONE CALCOLO ECONOMICO
+// ============================================================
+let calcState = { mode:'impianto', tipologia:'', sotto:'', impianto:'',
+  potenza:1, annoDismissione:2035, indiceCosti:'ISTAT', componenti:{},
+  prezziManuali: { macro:{}, prodotti:{}, intermedi:{} },
+  diretto: initDiretto() };
+let impiantiCache = [], indiciCache = [];
+
+function initDiretto(){
+  return {
+    sottotipo: 'macro', // 'macro' | 'intermedio'
+    tipologia:'', sotto:'', macroComponente:'',
+    processoOptions:[], idProcesso:'',
+    intermedio:'', sottoprocessoOptions:[], idSottoprocesso:'',
+    massaTon: 10, figli:{}, prezzoAcquistoOverride: null,
+  };
+}
+
+async function renderCalcoloAside(){
+  const aside = document.getElementById('aside');
+  if(!impiantiCache.length) impiantiCache = await apiGet('/filtri/impianti');
+  if(!indiciCache.length) indiciCache = await apiGet('/filtri/indici-rivalutazione');
+  if(!prodottiCache.length) prodottiCache = await apiGet('/prodotti');
+  if(!intermediAllCache.length) intermediAllCache = await apiGet('/intermedi');
+
+  const tipologie = (calcState.mode==='manuale' || (calcState.mode==='diretto' && calcState.diretto.sottotipo==='macro'))
+    ? await apiGet('/filtri/tipologie') : [];
+  const icons = {EOLICO:['🜲','#2E8B8B'], FOTOVOLTAICO:['☀','#E0A83E'], BESS:['▥','#6E5AA8']};
+
+  aside.innerHTML = `
+    <div class="fgroup">
+      <div class="h">Punto di partenza</div>
+      <div class="mode-toggle">
+        <button class="mode-btn ${calcState.mode==='impianto'?'active':''}" id="btnModeImp">Da impianto</button>
+        <button class="mode-btn ${calcState.mode==='manuale'?'active':''}" id="btnModeMan">Manuale</button>
+        <button class="mode-btn ${calcState.mode==='diretto'?'active':''}" id="btnModeDiretto">Materiale acquistato</button>
+      </div>
+      ${calcState.mode==='impianto' ? `
+        <select id="selImpianto">
+          <option value="">Seleziona impianto...</option>
+          ${impiantiCache.map(i=>`<option value="${i.id_imp}" ${calcState.impianto===i.id_imp?'selected':''}>${i.id_imp} — ${i.tipologia} ${i.potenza_mw}MW</option>`).join('')}
+        </select>
+      ` : calcState.mode==='manuale' ? `
+        <div class="type" id="typeF">
+          ${tipologie.map(t=>`<button data-t="${t}" aria-pressed="${calcState.tipologia===t}"><span class="ic" style="background:${(icons[t]||['●','#888'])[1]}">${(icons[t]||['●'])[0]}</span>${t.charAt(0)+t.slice(1).toLowerCase()}</button>`).join('')}
+        </div>
+        <div style="margin-top:10px" id="sottoWrap"></div>
+      ` : `
+        <div class="mode-toggle" style="margin-top:2px">
+          <button class="mode-btn ${calcState.diretto.sottotipo==='macro'?'active':''}" id="btnSottotipoMacro">Da macrocomponente</button>
+          <button class="mode-btn ${calcState.diretto.sottotipo==='intermedio'?'active':''}" id="btnSottotipoSotto">Da intermedio</button>
+        </div>
+        <div id="direttoFields" style="margin-top:10px"></div>
+      `}
+    </div>
+    ${calcState.mode!=='diretto' ? `
+    <div class="fgroup">
+      <div class="h">Potenza installata</div>
+      <div class="mwrow">
+        <input type="range" id="mw" min="0.5" max="100" step="0.5" value="${calcState.potenza}">
+        <div class="mwval"><span id="mwv">${calcState.potenza}</span> <small>MW</small></div>
+      </div>
+    </div>
+    ` : `
+    <div class="fgroup">
+      <div class="h">Quantità da trattare</div>
+      <input type="number" id="inpMassaTon" min="0.001" step="1" value="${calcState.diretto.massaTon}">
+      <div class="chip">● tonnellate</div>
+    </div>
+    `}
+    <div class="fgroup">
+      <div class="h">Anno di ${calcState.mode==='diretto'?'riferimento':'dismissione'}</div>
+      <input type="number" id="inpAnno" min="${ANNO_CORRENTE}" max="2100" step="1" value="${calcState.annoDismissione}">
+    </div>
+    <div class="fgroup">
+      <div class="h">Indice rivalutazione costi</div>
+      <select id="selIndice">
+        ${indiciCache.map(i=>`<option value="${i.id_indice}" ${calcState.indiceCosti===i.id_indice?'selected':''}>${i.nome} (${(i.tasso_annuo*100).toFixed(1)}%/anno)</option>`).join('')}
+      </select>
+      <div class="chip">● Anno corrente ${ANNO_CORRENTE}</div>
+    </div>
+  `;
+
+  document.getElementById('btnModeImp').onclick=()=>{calcState.mode='impianto';resetSelection();renderCalcoloAside();renderCalcoloMain();};
+  document.getElementById('btnModeMan').onclick=()=>{calcState.mode='manuale';resetSelection();renderCalcoloAside();renderCalcoloMain();};
+  document.getElementById('btnModeDiretto').onclick=()=>{calcState.mode='diretto';resetSelection();renderCalcoloAside();renderCalcoloMain();};
+
+  if(calcState.mode==='impianto'){
+    document.getElementById('selImpianto').onchange=async e=>{
+      const imp = impiantiCache.find(i=>i.id_imp===e.target.value);
+      calcState.impianto=e.target.value; calcState.componenti={};
+      if(imp){calcState.tipologia=imp.tipologia;calcState.sotto=imp.sotto_tecnologia;calcState.potenza=imp.potenza_mw;calcState.annoDismissione=imp.anno_dismissione;}
+      else{calcState.tipologia='';calcState.sotto='';}
+      await renderCalcoloAside();
+      if(calcState.tipologia && calcState.sotto) await loadComponenti(); else renderCalcoloMain();
+    };
+  } else if(calcState.mode==='manuale') {
+    document.getElementById('typeF').onclick=async e=>{
+      const b=e.target.closest('button'); if(!b)return;
+      calcState.tipologia=b.dataset.t; calcState.sotto=''; calcState.componenti={};
+      await renderCalcoloAside();renderCalcoloMain();
+    };
+    if(calcState.tipologia) await renderSottoSelect();
+  } else {
+    document.getElementById('btnSottotipoMacro').onclick=()=>{calcState.diretto=initDiretto();calcState.diretto.sottotipo='macro';renderCalcoloAside();renderCalcoloMain();};
+    document.getElementById('btnSottotipoSotto').onclick=()=>{calcState.diretto=initDiretto();calcState.diretto.sottotipo='intermedio';renderCalcoloAside();renderCalcoloMain();};
+    await renderDirettoFields();
+    document.getElementById('inpMassaTon').oninput=e=>{calcState.diretto.massaTon=+e.target.value||0;renderCalcoloMain();};
+  }
+
+  if(calcState.mode!=='diretto'){
+    document.getElementById('mw').oninput=e=>{calcState.potenza=+e.target.value;document.getElementById('mwv').textContent=e.target.value;renderCalcoloMain();};
+  }
+  document.getElementById('inpAnno').oninput=e=>{calcState.annoDismissione=+e.target.value||ANNO_CORRENTE;renderCalcoloMain();};
+  document.getElementById('selIndice').onchange=e=>{calcState.indiceCosti=e.target.value;renderCalcoloMain();};
+
+  if(calcState.mode!=='diretto' && calcState.tipologia && calcState.sotto && !Object.keys(calcState.componenti).length) await loadComponenti();
+}
+
+function resetSelection(){
+  calcState.tipologia='';calcState.sotto='';calcState.impianto='';calcState.componenti={};
+  calcState.prezziManuali={macro:{},prodotti:{},intermedi:{}};
+  calcState.diretto=initDiretto();
+}
+
+async function renderSottoSelect(){
+  const wrap = document.getElementById('sottoWrap');
+  const opts = calcState.tipologia ? await apiGet('/filtri/sotto-tecnologie', {tipologia:calcState.tipologia}) : [];
+  wrap.innerHTML = `<select id="selSotto" ${!calcState.tipologia?'disabled':''}>
+    <option value="">Seleziona sotto tecnologia...</option>
+    ${opts.map(s=>`<option value="${s}" ${calcState.sotto===s?'selected':''}>${s}</option>`).join('')}
+  </select>`;
+  document.getElementById('selSotto').onchange=async e=>{
+    calcState.sotto=e.target.value; calcState.componenti={};
+    await renderCalcoloAside();
+    if(calcState.sotto) await loadComponenti(); else renderCalcoloMain();
+  };
+}
+
+async function renderDirettoFields(){
+  const wrap = document.getElementById('direttoFields');
+  const d = calcState.diretto;
+  const icons = {EOLICO:['🜲','#2E8B8B'], FOTOVOLTAICO:['☀','#E0A83E'], BESS:['▥','#6E5AA8']};
+
+  if(d.sottotipo==='macro'){
+    const tipologie = await apiGet('/filtri/tipologie');
+    wrap.innerHTML = `
+      <div class="type" id="typeFDiretto">
+        ${tipologie.map(t=>`<button data-t="${t}" aria-pressed="${d.tipologia===t}"><span class="ic" style="background:${(icons[t]||['●','#888'])[1]}">${(icons[t]||['●'])[0]}</span>${t.charAt(0)+t.slice(1).toLowerCase()}</button>`).join('')}
+      </div>
+      <div style="margin-top:8px" id="sottoWrapDiretto"></div>
+      <div style="margin-top:8px" id="macroWrapDiretto"></div>
+    `;
+    document.getElementById('typeFDiretto').onclick=async e=>{
+      const b=e.target.closest('button'); if(!b)return;
+      d.tipologia=b.dataset.t; d.sotto=''; d.macroComponente=''; d.idProcesso=''; d.figli={};
+      await renderDirettoFields(); renderCalcoloMain();
+    };
+    if(d.tipologia) await renderDirettoSottoSelect();
+  } else {
+    if(!intermediAllCache.length) intermediAllCache = await apiGet('/intermedi');
+    wrap.innerHTML = `
+      <select id="selIntermedioDiretto">
+        <option value="">Seleziona intermedio...</option>
+        ${intermediAllCache.map(s=>`<option value="${s.intermedio}" ${d.intermedio===s.intermedio?'selected':''}>${s.intermedio} — ${s.nome}</option>`).join('')}
+      </select>
+    `;
+    document.getElementById('selIntermedioDiretto').onchange=async e=>{
+      d.intermedio=e.target.value; d.idSottoprocesso=''; d.sottoprocessoOptions=[]; d.figli={};
+      if(d.intermedio) await loadDirettoSottoprocessoOptions();
+      renderCalcoloMain();
+    };
+    if(d.intermedio) await loadDirettoSottoprocessoOptions();
+  }
+}
+
+async function renderDirettoSottoSelect(){
+  const d = calcState.diretto;
+  const wrap = document.getElementById('sottoWrapDiretto');
+  const opts = d.tipologia ? await apiGet('/filtri/sotto-tecnologie', {tipologia:d.tipologia}) : [];
+  wrap.innerHTML = `<select id="selSottoDiretto">
+    <option value="">Seleziona sotto tecnologia...</option>
+    ${opts.map(s=>`<option value="${s}" ${d.sotto===s?'selected':''}>${s}</option>`).join('')}
+  </select>`;
+  document.getElementById('selSottoDiretto').onchange=async e=>{
+    d.sotto=e.target.value; d.macroComponente=''; d.idProcesso=''; d.figli={};
+    await renderDirettoFields(); renderCalcoloMain();
+  };
+  if(d.sotto) await renderDirettoMacroSelect();
+}
+
+async function renderDirettoMacroSelect(){
+  const d = calcState.diretto;
+  const wrap = document.getElementById('macroWrapDiretto');
+  const opts = await apiGet('/filtri/macrocomponenti', {tipologia:d.tipologia, sotto_tecnologia:d.sotto});
+  wrap.innerHTML = `<select id="selMacroDiretto">
+    <option value="">Seleziona macrocomponente...</option>
+    ${opts.map(m=>`<option value="${m}" ${d.macroComponente===m?'selected':''}>${m.replaceAll('_',' ')}</option>`).join('')}
+  </select>`;
+  document.getElementById('selMacroDiretto').onchange=async e=>{
+    d.macroComponente=e.target.value; d.idProcesso=''; d.processoOptions=[]; d.figli={};
+    if(d.macroComponente) await loadDirettoProcessoOptions();
+    renderCalcoloMain();
+  };
+  if(d.macroComponente) await loadDirettoProcessoOptions();
+}
+
+async function loadDirettoProcessoOptions(){
+  // La scelta del processo, quando ce n'e' piu' di uno, si fa direttamente
+  // sulla card nello schema (come nelle altre modalita'), non qui in
+  // sidebar: qui carichiamo solo le opzioni disponibili.
+  const d = calcState.diretto;
+  d.processoOptions = await apiGet('/filtri/processi', {tipologia:d.tipologia, sotto_tecnologia:d.sotto, macro_componente:d.macroComponente});
+  if(!d.idProcesso) d.idProcesso = d.processoOptions[0]?.id_processo || '';
+}
+
+async function loadDirettoSottoprocessoOptions(){
+  const d = calcState.diretto;
+  d.sottoprocessoOptions = await apiGet('/filtri/sottoprocessi', {intermedio:d.intermedio});
+  if(!d.idSottoprocesso) d.idSottoprocesso = d.sottoprocessoOptions[0]?.id_sottoprocesso || '';
+}
+
+async function loadComponenti(){
+  const macroList = await apiGet('/filtri/macrocomponenti', {tipologia:calcState.tipologia, sotto_tecnologia:calcState.sotto});
+  const entries = await Promise.all(macroList.map(async macro=>{
+    const [mps, procs] = await Promise.all([
+      apiGet('/filtri/macro-processi', {tipologia:calcState.tipologia, sotto_tecnologia:calcState.sotto, macro_componente:macro}),
+      apiGet('/filtri/processi', {tipologia:calcState.tipologia, sotto_tecnologia:calcState.sotto, macro_componente:macro}),
+    ]);
+    return [macro, {
+      macroProcessoOptions: mps, idProcessoMacro: mps[0]?.id_processo_macro || null,
+      attivo: false, processoOptions: procs, idProcesso: null, figli: {},
+    }];
+  }));
+  calcState.componenti = Object.fromEntries(entries);
+  renderCalcoloMain();
+}
+
+// ---- albero ricorsivo delle scelte di trasformazione intermedi ----
+function getFiglioState(macro, path, create){
+  let figli = (macro === 'DIRETTO') ? calcState.diretto.figli : calcState.componenti[macro].figli;
+  let node = null;
+  for(let i=0;i<path.length;i++){
+    const code = path[i];
+    if(!figli[code]){
+      if(!create) return null;
+      figli[code] = { processing:false, idSottoprocesso:null, sottoprocessoOptions:null, figli:{} };
+    }
+    node = figli[code];
+    figli = node.figli;
+  }
+  return node;
+}
+function buildFigliPayload(figliDict){
+  const out = {};
+  for(const [code, node] of Object.entries(figliDict||{})){
+    out[code] = node.processing && node.idSottoprocesso
+      ? { id_sottoprocesso: node.idSottoprocesso, figli: buildFigliPayload(node.figli) }
+      : { id_sottoprocesso: null };
+  }
+  return out;
+}
+
+const fmt=(n,d=2)=>n.toLocaleString('it-IT',{minimumFractionDigits:d,maximumFractionDigits:d});
+const fmtInt=n=>Math.round(n).toLocaleString('it-IT');
+function mass(kg){return kg>=1000?[fmt(kg/1000,2),'t']:[fmtInt(kg),'kg'];}
+function eur(v){const a=Math.abs(v);const sign=v<0?'−':'';if(a>=1e6)return[sign+fmt(a/1e6,1),'M €'];if(a>=1e3)return[sign+fmtInt(a/1e3),'k €'];return[sign+fmtInt(a),'€'];}
+function componentIcon(name){ return name.replace(/_/g,' ').split(' ').map(w=>w[0]).slice(0,2).join(''); }
+function fasiCompact(s){ return (s||'').replaceAll('_',' ').split(',').map(x=>x.trim().toLowerCase()).join(' · '); }
+
+let calcRequestId = 0;
+async function renderCalcoloMain(){
+  if(calcState.mode==='diretto') return renderCalcoloMainDiretto();
+  const main = document.getElementById('main');
+  const macros = Object.keys(calcState.componenti);
+  const nAttivi = macros.filter(m=>calcState.componenti[m].attivo).length;
+  const steps=[['Tipologia',calcState.tipologia],['Sotto tecnologia',calcState.sotto],
+    ['Macrocomponenti',macros.length?String(macros.length):''],
+    ['Trattati',macros.length?String(nAttivi):''],
+    ['Anno dismiss.',calcState.tipologia?calcState.annoDismissione:'']];
+  const pathHtml = `<div class="path">${steps.map(([l,v],i)=>`${i>0?'<span class="path-arrow">→</span>':''}<div class="path-step"><span class="lbl">${l}</span><span class="val ${v?'':'empty'}">${v||'—'}</span></div>`).join('')}</div>`;
+
+  if(!calcState.tipologia || !calcState.sotto || !macros.length){
+    main.innerHTML = pathHtml + `<div class="empty-state">Completa la selezione a sinistra per vedere lo schema del processo.</div>`;
+    return;
+  }
+
+  const myId = ++calcRequestId;
+  main.innerHTML = pathHtml + `<div class="empty-state">Calcolo in corso…</div>`;
+
+  const body = {
+    tipologia: calcState.tipologia, sotto_tecnologia: calcState.sotto,
+    potenza_mw: calcState.potenza, anno_dismissione: calcState.annoDismissione,
+    anno_corrente: ANNO_CORRENTE, id_indice_costi: calcState.indiceCosti,
+    componenti: macros.map(m=>{
+      const c = calcState.componenti[m];
+      const entry = { macro_componente: m, id_processo_macro: c.idProcessoMacro, id_processo: c.attivo ? c.idProcesso : null };
+      if(!c.attivo){
+        const p = calcState.prezziManuali.macro[m];
+        if(p!=null) entry.prezzo_macro_override = p;
+      } else {
+        entry.prezzi_prodotti_override = calcState.prezziManuali.prodotti;
+        entry.prezzi_intermedi_override = calcState.prezziManuali.intermedi;
+        entry.figli_processo = buildFigliPayload(c.figli);
+      }
+      return entry;
+    }),
+  };
+
+  let data;
+  try{
+    data = await apiSend('POST', '/calcolo-impianto', body);
+  }catch(e){
+    if(myId!==calcRequestId) return;
+    main.innerHTML = pathHtml + `<div class="empty-state">Errore nel calcolo: ${e.message}</div>`;
+    return;
+  }
+  if(myId!==calcRequestId) return;
+
+  main.innerHTML = pathHtml
+    + renderSchemaProcesso(data)
+    + renderMaterialeRecuperatoPanel(data)
+    + renderEconomicSummary(data);
+  wireSchemaProcesso();
+  wirePriceTiles();
+}
+
+// ============================================================
+// MODALITA' "MATERIALE ACQUISTATO" — parte da un macrocomponente o un
+// intermedio gia' separato, con una quantita' in ingresso data
+// dall'utente invece che derivata da un impianto
+// ============================================================
+async function renderCalcoloMainDiretto(){
+  const main = document.getElementById('main');
+  const d = calcState.diretto;
+  const ready = d.sottotipo==='macro'
+    ? (d.tipologia && d.sotto && d.macroComponente && d.idProcesso && d.massaTon>0)
+    : (d.intermedio && d.idSottoprocesso && d.massaTon>0);
+
+  const steps = d.sottotipo==='macro'
+    ? [['Tipologia',d.tipologia],['Sotto tecnologia',d.sotto],['Macrocomponente',d.macroComponente?d.macroComponente.replaceAll('_',' '):''],['Quantità',d.massaTon?d.massaTon+' t':'']]
+    : [['Sottoprodotto',d.intermedio],['Quantità',d.massaTon?d.massaTon+' t':'']];
+  const pathHtml = `<div class="path">${steps.map(([l,v],i)=>`${i>0?'<span class="path-arrow">→</span>':''}<div class="path-step"><span class="lbl">${l}</span><span class="val ${v?'':'empty'}">${v||'—'}</span></div>`).join('')}</div>`;
+
+  if(!ready){
+    main.innerHTML = pathHtml + `<div class="empty-state">Completa la selezione a sinistra per vedere lo schema del processo.</div>`;
+    return;
+  }
+
+  const myId = ++calcRequestId;
+  main.innerHTML = pathHtml + `<div class="empty-state">Calcolo in corso…</div>`;
+
+  const commonBody = {
+    anno_dismissione: calcState.annoDismissione, anno_corrente: ANNO_CORRENTE, id_indice_costi: calcState.indiceCosti,
+    prezzo_acquisto_override: d.prezzoAcquistoOverride,
+    prezzi_prodotti_override: calcState.prezziManuali.prodotti,
+    prezzi_intermedi_override: calcState.prezziManuali.intermedi,
+  };
+
+  let data;
+  try{
+    if(d.sottotipo==='macro'){
+      data = await apiSend('POST', '/calcolo-da-macrocomponente', {
+        ...commonBody, tipologia:d.tipologia, sotto_tecnologia:d.sotto, macro_componente:d.macroComponente,
+        massa_ton:d.massaTon, id_processo:d.idProcesso, figli_processo: buildFigliPayload(d.figli),
+      });
+    } else {
+      data = await apiSend('POST', '/calcolo-da-intermedio', {
+        ...commonBody, intermedio:d.intermedio, massa_ton:d.massaTon, id_sottoprocesso:d.idSottoprocesso,
+        figli_sottoprocesso: buildFigliPayload(d.figli),
+      });
+    }
+  }catch(e){
+    if(myId!==calcRequestId) return;
+    main.innerHTML = pathHtml + `<div class="empty-state">Errore nel calcolo: ${e.message}</div>`;
+    return;
+  }
+  if(myId!==calcRequestId) return;
+
+  data.massa_totale_kg = data.massa_input_kg; // alias per riusare renderEconomicSummary invariata
+  data.ha_prezzi_personalizzati = data.ha_prezzi_personalizzati || false;
+  const dataMateriale = { componenti: [{ uscite: data.uscite }] };
+
+  main.innerHTML = pathHtml
+    + renderSchemaDiretto(data, d)
+    + renderMaterialeRecuperatoPanel(dataMateriale)
+    + renderEconomicSummary(data);
+  wireSchemaProcesso();
+  wirePriceTiles();
+  wireSchemaDiretto();
+}
+
+function renderSchemaDiretto(data, d){
+  const [mv,mu] = mass(data.massa_input_kg);
+  const acq = data.acquisto;
+  const clsAcq = acq.prezzo_personalizzato ? 'custom' : 'default';
+  const label = d.sottotipo==='macro' ? d.macroComponente.replaceAll('_',' ') : d.intermedio;
+  const stepInfo = d.sottotipo==='macro' ? data.processo : data.sottoprocesso;
+
+  const acquistoCard = `
+    <div class="output-card clickable ${clsAcq}" data-price-acquisto="1">
+      <div class="sym" style="font-size:13px;color:var(--copper)">${label}</div>
+      <div class="nm">acquistato</div>
+      <div class="val">${mv} ${mu}</div>
+      <div class="vv">− ${eur(acq.costo_eur).join(' ')}</div>
+      <div class="price-tag">${fmt(acq.prezzo_eur_kg,2)} €/kg${acq.prezzo_personalizzato?' ✎':''}</div>
+    </div>`;
+
+  const options = d.sottotipo==='macro' ? d.processoOptions : d.sottoprocessoOptions;
+  const idScelto = d.sottotipo==='macro' ? d.idProcesso : d.idSottoprocesso;
+  const optKey = d.sottotipo==='macro' ? 'id_processo' : 'id_sottoprocesso';
+  const selClass = d.sottotipo==='macro' ? 'sel-processo-diretto' : 'sel-sottoprocesso-diretto';
+  const procNode = `
+    <div class="lane-node">
+      ${options.length>1 ? `
+        <select class="${selClass}">
+          ${options.map(p=>`<option value="${p[optKey]}" ${p[optKey]===idScelto?'selected':''}>${p.tecnica.replaceAll('_',' ')}</option>`).join('')}
+        </select>
+      ` : `<div class="lane-node-title">${(stepInfo.tecnica||'').replaceAll('_',' ')}</div>`}
+      <div class="lane-node-cost">Capex ${eur(stepInfo.capex_eur||0).join(' ')} · Opex ${eur(stepInfo.opex_eur||0).join(' ')}</div>
+      <div class="lane-node-costo-tot">Costo: ${eur(stepInfo.costo_eur).join(' ')}</div>
+      <div class="lane-node-fasi">${fasiCompact(stepInfo.descrizione_fasi)}</div>
+    </div>`;
+
+  const uscite = data.uscite.map(u=>renderUscitaCard('DIRETTO', [], u)).join('') + renderElementiNonEstrattiCards(stepInfo.elementi_non_estratti);
+
+  return `<div class="panel">
+    <h3>Schema del processo</h3>
+    <p class="sub">Materiale acquistato e lavorato — nessun impianto coinvolto, si parte direttamente dalla quantità indicata.</p>
+    <div class="lane"><div class="lane-row">
+      ${acquistoCard}
+      <span class="lane-arrow">→</span>
+      ${procNode}
+      <span class="lane-arrow">→</span>
+      <div class="lane-uscite">
+        <span class="uscite-label">uscite di "${(stepInfo.tecnica||'').replaceAll('_',' ')}"</span>
+        ${uscite}
+      </div>
+    </div></div>
+  </div>`;
+}
+
+function wireSchemaDiretto(){
+  document.querySelectorAll('[data-price-acquisto]').forEach(t=>{
+    t.onclick = ()=>openPriceModalAcquisto();
+  });
+  document.querySelectorAll('.sel-processo-diretto').forEach(sel=>{
+    sel.onchange = ()=>{ calcState.diretto.idProcesso=sel.value; calcState.diretto.figli={}; renderCalcoloMain(); };
+  });
+  document.querySelectorAll('.sel-sottoprocesso-diretto').forEach(sel=>{
+    sel.onchange = ()=>{ calcState.diretto.idSottoprocesso=sel.value; calcState.diretto.figli={}; renderCalcoloMain(); };
+  });
+}
+
+function openPriceModalAcquisto(){
+  const d = calcState.diretto;
+  const label = d.sottotipo==='macro' ? d.macroComponente.replaceAll('_',' ') : d.intermedio;
+  // il prezzo di default e' quello gia' mostrato nell'ultimo calcolo: lo rileggiamo dal DOM per semplicita',
+  // altrimenti ripetiamo la stessa fonte usata dal backend (prima riga macro_processi, o prezzo intermedio)
+  const priceTag = document.querySelector('[data-price-acquisto] .price-tag');
+  const startVal = d.prezzoAcquistoOverride ?? (priceTag ? parseFloat(priceTag.textContent) : 0);
+  const overlay = showModal(priceModalHtml(
+    `Prezzo di acquisto — ${label}`,
+    `Prezzo usato per calcolare il costo di acquisto della quantità in ingresso. Modificalo per simulare un prezzo di mercato diverso.`, startVal));
+  document.getElementById('btnCloseModal').onclick=()=>overlay.remove();
+  document.getElementById('btnConfirmPrice').onclick=()=>{
+    const v = parseFloat(document.getElementById('modalPriceInput').value);
+    if(!isNaN(v) && v>=0){ calcState.diretto.prezzoAcquistoOverride=v; overlay.remove(); renderCalcoloMain(); }
+  };
+}
+
+// ============================================================
+// SCHEMA DEL PROCESSO — un unico schema cliccabile e sequenziale
+// ============================================================
+function renderSchemaProcesso(data){
+  const byMacro = {}; data.componenti.forEach(c=>{ byMacro[c.macro_componente] = c; });
+  const macros = Object.keys(calcState.componenti);
+  const massaTotale = mass(data.massa_totale_kg);
+  return `
+  <div class="panel">
+    <h3>Schema del processo</h3>
+    <p class="sub">${calcState.tipologia.charAt(0)+calcState.tipologia.slice(1).toLowerCase()} · ${calcState.sotto} — massa totale scomposta: <b>${massaTotale[0]} ${massaTotale[1]}</b></p>
+    ${macros.map(m=>renderLane(m, byMacro[m])).join('')}
+  </div>`;
+}
+
+function renderLane(macro, cd){
+  const c = calcState.componenti[macro];
+  const mpOpt = c.macroProcessoOptions.find(o=>o.id_processo_macro===c.idProcessoMacro);
+  const massaStr = cd ? mass(cd.massa_componente_kg) : null;
+
+  const nodeMacroProcesso = `
+    <div class="lane-node">
+      ${c.macroProcessoOptions.length>1 ? `
+        <select class="sel-macroprocesso" data-macro="${macro}">
+          ${c.macroProcessoOptions.map(o=>`<option value="${o.id_processo_macro}" ${o.id_processo_macro===c.idProcessoMacro?'selected':''}>${o.tecnica.replaceAll('_',' ')}</option>`).join('')}
+        </select>
+      ` : `<div class="lane-node-title">${(mpOpt?.tecnica||'').replaceAll('_',' ')}</div>`}
+      <div class="lane-node-cost">Capex ${eur(cd?.scomposizione?.capex_eur||0).join(' ')} · Opex ${eur(cd?.scomposizione?.opex_eur||0).join(' ')}</div>
+      ${cd?.scomposizione ? `<div class="lane-node-costo-tot">Costo: ${eur(cd.scomposizione.costo_eur).join(' ')}</div>` : ''}
+      <div class="lane-node-fasi">${fasiCompact(mpOpt?.descrizione_fasi)}</div>
+    </div>`;
+
+  const cardMacro = `
+    <button class="lane-card-toggle ${c.attivo?'active':''}" data-macro="${macro}">
+      <span class="ic">${componentIcon(macro)}</span>
+      <div>
+        <div class="comp-name">${macro.replaceAll('_',' ')}</div>
+        <div class="comp-mass-val">${massaStr?massaStr[0]+' '+massaStr[1]:'…'}</div>
+      </div>
+    </button>`;
+
+  let branchHtml;
+  if(!c.attivo){
+    const vd = cd?.vendita_diretta;
+    const cls = vd?.prezzo_personalizzato ? 'custom' : 'default';
+    branchHtml = `
+      <span class="lane-arrow">→</span>
+      <div class="output-card clickable ${cls}" data-price-macro="${macro}">
+        <div class="sym" style="font-size:13px;color:var(--copper)">${macro.replaceAll('_',' ')}</div>
+        <div class="val">${massaStr?massaStr[0]+' '+massaStr[1]:'…'}</div>
+        ${vd ? `<div class="vv">${eur(vd.ricavo_eur).join(' ')}</div><div class="price-tag">${fmt(vd.prezzo_eur_kg,2)} €/kg${vd.prezzo_personalizzato?' ✎':''}</div>` : ''}
+      </div>`;
+  } else {
+    const procOpt = c.processoOptions.find(p=>p.id_processo===c.idProcesso);
+    const proc = cd?.processo;
+    branchHtml = `
+      <span class="lane-arrow">→</span>
+      <div class="lane-node">
+        ${c.processoOptions.length>1 ? `
+          <select class="sel-processo" data-macro="${macro}">
+            ${c.processoOptions.map(p=>`<option value="${p.id_processo}" ${p.id_processo===c.idProcesso?'selected':''}>${p.tecnica.replaceAll('_',' ')}</option>`).join('')}
+          </select>
+        ` : `<div class="lane-node-title">${(procOpt?.tecnica||'').replaceAll('_',' ')}</div>`}
+        <div class="lane-node-cost">Capex ${eur(proc?.capex_eur||0).join(' ')} · Opex ${eur(proc?.opex_eur||0).join(' ')}</div>
+        ${proc ? `<div class="lane-node-costo-tot">Costo: ${eur(proc.costo_eur).join(' ')}</div>` : ''}
+        <div class="lane-node-fasi">${fasiCompact(proc?.descrizione_fasi)}</div>
+      </div>
+      <span class="lane-arrow">→</span>
+      <div class="lane-uscite">
+        <span class="uscite-label">uscite di "${(proc?.tecnica||procOpt?.tecnica||'').replaceAll('_',' ')}"</span>
+        ${(cd?.uscite||[]).map(u=>renderUscitaCard(macro, [], u)).join('')}${renderElementiNonEstrattiCards(cd?.processo?.elementi_non_estratti)}
+      </div>`;
+  }
+
+  return `<div class="lane"><div class="lane-row">${nodeMacroProcesso}<span class="lane-arrow">→</span>${cardMacro}${branchHtml}</div></div>`;
+}
+
+function renderElementiNonEstrattiCards(elementiNonEstratti){
+  if(!elementiNonEstratti || !elementiNonEstratti.length) return '';
+  return elementiNonEstratti.map(e=>{
+    const midKg = (e.massa_kg_min+e.massa_kg_max)/2;
+    if(midKg <= 0) return '';
+    const [mv,mu] = mass(midKg);
+    return `<div class="output-card scarto" title="Massa di ${e.nome||e.elemento} rimasta nel residuo: contenuta ma non estratta da nessuna uscita elencata">
+      <div class="sym" style="color:var(--mute);font-size:13px">${e.elemento}</div>
+      <div class="nm">non estratto</div>
+      <div class="val">${mv} ${mu}</div>
+      <div class="price-tag">${e.nome||''}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderUscitaCard(macro, path, u){
+  const [mv,mu] = mass((u.massa_kg_min+u.massa_kg_max)/2);
+  if(u.tipo==='prodotto'){
+    const cls = u.prezzo_personalizzato ? 'custom' : 'default';
+    return `<div class="output-card clickable ${cls}" data-price-prodotto="${u.codice}">
+      <span class="cat" style="background:${CATCOL[u.categoria]||'var(--mute)'}"></span>
+      <div class="sym">${u.codice}</div><div class="nm">${u.nome||''}</div>
+      <div class="val">${mv} ${mu}</div>
+      <div class="vv">${eur((u.ricavo_eur_min+u.ricavo_eur_max)/2).join(' ')}</div>
+      <div class="price-tag">${fmt(u.prezzo_eur_kg,2)} €/kg${u.prezzo_personalizzato?' ✎':''}</div>
+    </div>`;
+  }
+  const childPath = [...path, u.codice];
+  if(u.trasformato && u.ramo){
+    const ramo = u.ramo;
+    return `<div class="output-branch">
+      <div class="output-card intermedio-header">
+        <div class="sym" style="color:var(--gold)">${u.codice}</div><div class="nm">${u.nome||''}</div>
+        <div class="val">${mv} ${mu}</div>
+        <div class="trasforma-tag" data-annulla-macro="${macro}" data-path="${childPath.join('>')}">Trasformato ✕</div>
+      </div>
+      <span class="lane-arrow">→</span>
+      <div class="lane-node">
+        ${renderSottoprocessoSelectHtml(macro, childPath)}
+        <div class="lane-node-cost">Capex ${eur(ramo.sottoprocesso?.capex_eur||0).join(' ')} · Opex ${eur(ramo.sottoprocesso?.opex_eur||0).join(' ')}</div>
+        ${ramo.sottoprocesso ? `<div class="lane-node-costo-tot">Costo: ${eur(ramo.sottoprocesso.costo_eur).join(' ')}</div>` : ''}
+        <div class="lane-node-fasi">${fasiCompact(ramo.sottoprocesso?.descrizione_fasi)}</div>
+      </div>
+      <span class="lane-arrow">→</span>
+      <div class="lane-uscite">
+        <span class="uscite-label">uscite di "${(ramo.sottoprocesso?.tecnica||'').replaceAll('_',' ')}"</span>
+        ${ramo.uscite.map(u2=>renderUscitaCard(macro, childPath, u2)).join('')}${renderElementiNonEstrattiCards(ramo.sottoprocesso?.elementi_non_estratti)}
+      </div>
+    </div>`;
+  }
+  const cls = u.prezzo_personalizzato ? 'custom' : 'default';
+  return `<div>
+    <div class="output-card clickable ${cls}" data-price-intermedio="${u.codice}">
+      <div class="sym" style="color:var(--gold)">${u.codice}</div><div class="nm">${u.nome||''}</div>
+      <div class="val">${mv} ${mu}</div>
+      <div class="vv">${eur((u.ricavo_eur_min+u.ricavo_eur_max)/2).join(' ')}</div>
+      <div class="price-tag">${fmt(u.prezzo_eur_kg,2)} €/kg${u.prezzo_personalizzato?' ✎':''}</div>
+    </div>
+    <button class="btn-trasforma" data-trasforma-macro="${macro}" data-path="${childPath.join('>')}">Trasforma ▸</button>
+  </div>`;
+}
+
+function renderSottoprocessoSelectHtml(macro, path){
+  const node = getFiglioState(macro, path, true);
+  const opts = node.sottoprocessoOptions || [];
+  if(opts.length<=1){
+    return `<div class="lane-node-title">${(opts[0]?.tecnica||'').replaceAll('_',' ')}</div>`;
+  }
+  return `<select class="sel-sottoprocesso" data-macro="${macro}" data-path="${path.join('>')}">
+    ${opts.map(o=>`<option value="${o.id_sottoprocesso}" ${o.id_sottoprocesso===node.idSottoprocesso?'selected':''}>${o.tecnica.replaceAll('_',' ')}</option>`).join('')}
+  </select>`;
+}
+
+function wireSchemaProcesso(){
+  document.querySelectorAll('.sel-macroprocesso').forEach(sel=>{
+    sel.onchange = ()=>{ calcState.componenti[sel.dataset.macro].idProcessoMacro = sel.value; renderCalcoloMain(); };
+  });
+  document.querySelectorAll('.lane-card-toggle').forEach(btn=>{
+    btn.onclick = ()=>{
+      const m = btn.dataset.macro, c = calcState.componenti[m];
+      c.attivo = !c.attivo;
+      if(c.attivo && !c.idProcesso) c.idProcesso = c.processoOptions[0]?.id_processo || null;
+      if(!c.attivo){ c.idProcesso = null; c.figli = {}; }
+      renderCalcoloMain();
+    };
+  });
+  document.querySelectorAll('.sel-processo').forEach(sel=>{
+    sel.onchange = ()=>{ const c=calcState.componenti[sel.dataset.macro]; c.idProcesso=sel.value; c.figli={}; renderCalcoloMain(); };
+  });
+  document.querySelectorAll('.btn-trasforma').forEach(btn=>{
+    btn.onclick = async ()=>{
+      const macro = btn.dataset.trasformaMacro, path = btn.dataset.path.split('>');
+      const nodeState = getFiglioState(macro, path, true);
+      nodeState.processing = true;
+      if(!nodeState.sottoprocessoOptions){
+        nodeState.sottoprocessoOptions = await apiGet('/filtri/sottoprocessi', {intermedio: path[path.length-1]});
+      }
+      if(!nodeState.idSottoprocesso) nodeState.idSottoprocesso = nodeState.sottoprocessoOptions[0]?.id_sottoprocesso || null;
+      renderCalcoloMain();
+    };
+  });
+  document.querySelectorAll('[data-annulla-macro]').forEach(t=>{
+    t.onclick = ()=>{
+      const macro = t.dataset.annullaMacro, path = t.dataset.path.split('>');
+      const nodeState = getFiglioState(macro, path, true);
+      nodeState.processing = false; nodeState.idSottoprocesso = null; nodeState.figli = {};
+      renderCalcoloMain();
+    };
+  });
+  document.querySelectorAll('.sel-sottoprocesso').forEach(sel=>{
+    sel.onchange = ()=>{
+      const macro = sel.dataset.macro, path = sel.dataset.path.split('>');
+      const nodeState = getFiglioState(macro, path, true);
+      nodeState.idSottoprocesso = sel.value; nodeState.figli = {};
+      renderCalcoloMain();
+    };
+  });
+}
+
+// ============================================================
+// Modali prezzo (prodotto, intermedio, macrocomponente)
+// ============================================================
+function priceModalHtml(title, sub, startVal){
+  return `
+    <h3>${title}</h3>
+    <p class="sub">${sub}</p>
+    <div class="field">
+      <label class="comp-mini-label">Prezzo (€/kg)</label>
+      <input type="number" id="modalPriceInput" value="${startVal}" step="0.01" min="0"
+        style="width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:8px;font-family:Inter;font-size:14px">
+    </div>
+    <div class="modal-close">
+      <button class="btn primary" id="btnConfirmPrice">Conferma prezzo</button>
+      <button class="btn" id="btnCloseModal">Annulla</button>
+    </div>
+  `;
+}
+function openPriceModalProdotto(codice){
+  const p = prodottiCache.find(x=>x.prodotto===codice);
+  const defaultPrice = p?.prezzo_attuale_eur_kg || 0;
+  const startVal = calcState.prezziManuali.prodotti[codice] ?? defaultPrice;
+  const overlay = showModal(priceModalHtml(
+    `Prezzo — ${codice} (${p?.nome||''})`,
+    `Prezzo corrente da database: <b>${fmt(defaultPrice,2)} €/kg</b>. Modificalo per rivalutarlo.`, startVal));
+  document.getElementById('btnCloseModal').onclick=()=>overlay.remove();
+  document.getElementById('btnConfirmPrice').onclick=()=>{
+    const v = parseFloat(document.getElementById('modalPriceInput').value);
+    if(!isNaN(v) && v>=0){ calcState.prezziManuali.prodotti[codice]=v; overlay.remove(); renderCalcoloMain(); }
+  };
+}
+function openPriceModalIntermedio(codice){
+  const sp = intermediAllCache.find(s=>s.intermedio===codice);
+  const defaultPrice = sp?.prezzo_attuale_eur_kg || 0;
+  const startVal = calcState.prezziManuali.intermedi[codice] ?? defaultPrice;
+  const overlay = showModal(priceModalHtml(
+    `Prezzo — ${codice} (${sp?.nome||''})`,
+    `Prezzo corrente da database: <b>${fmt(defaultPrice,2)} €/kg</b>. Modificalo per rivalutarlo.`, startVal));
+  document.getElementById('btnCloseModal').onclick=()=>overlay.remove();
+  document.getElementById('btnConfirmPrice').onclick=()=>{
+    const v = parseFloat(document.getElementById('modalPriceInput').value);
+    if(!isNaN(v) && v>=0){ calcState.prezziManuali.intermedi[codice]=v; overlay.remove(); renderCalcoloMain(); }
+  };
+}
+function openPriceModalMacro(macro){
+  const c = calcState.componenti[macro];
+  const mpOpt = c.macroProcessoOptions.find(o=>o.id_processo_macro===c.idProcessoMacro);
+  const defaultPrice = mpOpt?.prezzo_vendita_eur_kg || 0;
+  const startVal = calcState.prezziManuali.macro[macro] ?? defaultPrice;
+  const overlay = showModal(priceModalHtml(
+    `Prezzo di vendita diretta — ${macro.replaceAll('_',' ')}`,
+    `Prezzo corrente da database: <b>${fmt(defaultPrice,2)} €/kg</b>. Modificalo per rivalutarlo.`, startVal));
+  document.getElementById('btnCloseModal').onclick=()=>overlay.remove();
+  document.getElementById('btnConfirmPrice').onclick=()=>{
+    const v = parseFloat(document.getElementById('modalPriceInput').value);
+    if(!isNaN(v) && v>=0){ calcState.prezziManuali.macro[macro]=v; overlay.remove(); renderCalcoloMain(); }
+  };
+}
+function wirePriceTiles(){
+  document.querySelectorAll('[data-price-prodotto]').forEach(t=>{ t.onclick = ()=>openPriceModalProdotto(t.dataset.priceProdotto); });
+  document.querySelectorAll('[data-price-intermedio]').forEach(t=>{ t.onclick = ()=>openPriceModalIntermedio(t.dataset.priceIntermedio); });
+  document.querySelectorAll('[data-price-macro]').forEach(t=>{ t.onclick = ()=>openPriceModalMacro(t.dataset.priceMacro); });
+}
+
+// ============================================================
+// Materiale recuperato — raccolta ricorsiva di tutti i PRODOTTI (foglie)
+// ============================================================
+function raccogliProdotti(uscite, out){
+  (uscite||[]).forEach(u=>{
+    if(u.tipo==='prodotto') out.push(u);
+    else if(u.ramo) raccogliProdotti(u.ramo.uscite, out);
+  });
+}
+function renderMaterialeRecuperatoPanel(data){
+  const aggr = {};
+  data.componenti.forEach(c=>{
+    const list = []; raccogliProdotti(c.uscite, list);
+    list.forEach(r=>{
+      if(!aggr[r.codice]) aggr[r.codice] = {codice:r.codice, nome:r.nome, categoria:r.categoria,
+        massa_min:0, massa_max:0, ricavo_min:0, ricavo_max:0, personalizzato:false};
+      aggr[r.codice].massa_min += r.massa_kg_min; aggr[r.codice].massa_max += r.massa_kg_max;
+      aggr[r.codice].ricavo_min += r.ricavo_eur_min; aggr[r.codice].ricavo_max += r.ricavo_eur_max;
+      if(r.prezzo_personalizzato) aggr[r.codice].personalizzato = true;
+    });
+  });
+  const rows = Object.values(aggr).sort((a,b)=>b.massa_max-a.massa_max);
+  if(!rows.length) return '';
+  return `
+  <div class="panel">
+    <h3>Materiale recuperato</h3>
+    <p class="sub">Prezzo corrente di mercato, applicato automaticamente. Clicca su una card per rivalutarlo: dopo aver confermato il nuovo prezzo, l'analisi economica si ricalcola subito.</p>
+    <div class="tiles">
+      ${rows.map(r=>{
+        const [kv,ku]=mass((r.massa_min+r.massa_max)/2);
+        const midVal=(r.ricavo_min+r.ricavo_max)/2;
+        const cls = r.personalizzato?'custom':'default';
+        return `<div class="tile clickable ${cls}" data-price-prodotto="${r.codice}">
+          <span class="cat" style="background:${CATCOL[r.categoria]||'var(--mute)'}"></span>
+          <div class="sym" style="color:${CATCOL[r.categoria]||'var(--ink)'}">${r.codice}</div><div class="nm">${r.nome}</div>
+          <div class="val">${kv} <span style="color:var(--mute);font-weight:600">${ku}</span></div>
+          <div class="vv">${eur(midVal).join(' ')}</div>
+        </div>`;
+      }).join('')}
+    </div>
+    <div class="legend">
+      <span><i style="background:var(--critico)"></i>Critico</span>
+      <span><i style="background:var(--strategico)"></i>Strategico</span>
+      <span><i style="background:var(--utile)"></i>Utile</span>
+      <span><i class="sq" style="background:#fff;border:1.5px solid var(--gold)"></i>Prezzo rivalutato</span>
+    </div>
+  </div>`;
+}
+
+// ============================================================
+// Analisi economica (sempre attiva, nessuna nota sul fattore di rivalutazione)
+// ============================================================
+function renderEconomicSummary(data){
+  const [mv,mu]=mass(data.massa_totale_kg);
+  const [cv,cu]=eur(data.costo_totale_eur);
+  const ricavoMid=(data.ricavo_eur_min+data.ricavo_eur_max)/2, margineMid=(data.margine_eur_min+data.margine_eur_max)/2;
+  const [rv,ru]=eur(ricavoMid), [nv,nu]=eur(margineMid);
+  const pos = margineMid>=0;
+  return `
+  <div class="panel">
+    <h3>Analisi economica</h3>
+    ${data.ha_prezzi_personalizzati ? `<p class="sub">Alcuni prezzi sono stati rivalutati manualmente rispetto al listino (card con bordo dorato).</p>` : ''}
+    <div class="kpis">
+      <div class="kpi"><div class="k">Massa totale scomposta</div><div class="v">${mv} <small>${mu}</small></div></div>
+      <div class="kpi copper"><div class="k">Costo totale rivalutato</div><div class="v">${cv} <small>${cu}</small></div></div>
+      <div class="kpi"><div class="k">Ricavo stimato</div><div class="v">${rv} <small>${ru}</small></div><div class="s">range ${eur(data.ricavo_eur_min).join(' ')} – ${eur(data.ricavo_eur_max).join(' ')}</div></div>
+      <div class="kpi net"><div class="k">Margine (${calcState.annoDismissione})</div><div class="v ${pos?'pos':'neg'}">${nv} <small>${nu}</small></div><div class="s">range ${eur(data.margine_eur_min).join(' ')} – ${eur(data.margine_eur_max).join(' ')}</div></div>
+    </div>
+  </div>`;
+}
+
+// ============================================================
+// SEZIONI DATABASE (CRUD via REST)
+// ============================================================
+function fmtCellValue(col, val){ if(col.type==='percent') return val==null?'':(val*100); return val==null?'':val; }
+function parseCellValue(col, raw){
+  if(col.type==='number') return parseFloat(raw)||0;
+  if(col.type==='percent') return (parseFloat(raw)||0)/100;
+  return raw;
+}
+function rowKey(cfg, rec){ return cfg.pk.map(k=>rec[k]).join('|'); }
+const TEXTISH = c => c.type==='select'||c.type==='prodotto-select'||c.type==='intermedio-select'||c.type==='text';
+
+async function renderDbSection(tableKey){
+  const cfg = TABLES[tableKey];
+  const main = document.getElementById('main');
+  if(!prodottiCache.length) prodottiCache = await apiGet('/prodotti');
+  if(!intermediAllCache.length) intermediAllCache = await apiGet('/intermedi');
+  let rows;
+  try{ rows = await apiGet('/'+cfg.url); }
+  catch(e){ main.innerHTML = `<div class="empty-state">Errore nel caricamento: ${e.message}</div>`; return; }
+
+  main.innerHTML = `
+    <div class="panel">
+      <div class="toolbar">
+        <div><h3 style="margin-bottom:4px">${cfg.label}</h3><span class="cnt">${rows.length} record</span></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button class="btn" id="btnExportThis">⬇ Esporta questa tabella</button>
+        </div>
+      </div>
+      <div class="db-table-wrap">
+        <table class="dbtable">
+          <thead><tr>${cfg.columns.map(c=>`<th>${c.label}</th>`).join('')}<th></th></tr></thead>
+          <tbody id="dbBody"></tbody>
+          <tfoot><tr class="newrow">${cfg.columns.map(c=>`<td></td>`).join('')}<td></td></tr></tfoot>
+        </table>
+      </div>
+      <p class="db-note">Ogni modifica di cella salva subito su Postgres. Il bordo verde conferma il salvataggio,
+      quello rosso segnala un errore (passa il mouse per il dettaglio). Riga in fondo evidenziata per aggiungere un record.
+      ${tableKey==='prodotti'||tableKey==='intermedi' ? 'Un prodotto/intermedio ancora usato altrove non può essere eliminato: il database lo impedisce.':''}</p>
+    </div>
+  `;
+  renderDbBody(tableKey, rows);
+  renderNewRowForm(tableKey);
+  document.getElementById('btnExportThis').onclick = ()=>exportTables([cfg.dbTable]);
+}
+
+function cellInput(col, rec, extraAttrs=''){
+  if(col.type==='select'){
+    return `<select data-k="${col.key}" ${extraAttrs}>${col.options.map(o=>`<option value="${o}" ${rec[col.key]===o?'selected':''}>${o}</option>`).join('')}</select>`;
+  }
+  if(col.type==='prodotto-select'){
+    return `<select data-k="${col.key}" ${extraAttrs}><option value="">—</option>${prodottiCache.map(e=>`<option value="${e.prodotto}" ${rec[col.key]===e.prodotto?'selected':''}>${e.prodotto} — ${e.nome}</option>`).join('')}</select>`;
+  }
+  if(col.type==='intermedio-select'){
+    return `<select data-k="${col.key}" ${extraAttrs}><option value="">—</option>${intermediAllCache.map(s=>`<option value="${s.intermedio}" ${rec[col.key]===s.intermedio?'selected':''}>${s.intermedio} — ${s.nome}</option>`).join('')}</select>`;
+  }
+  if(col.type==='number'){
+    return `<input type="number" step="${col.step||1}" data-k="${col.key}" value="${rec[col.key]??0}" ${extraAttrs}>`;
+  }
+  if(col.type==='percent'){
+    return `<input type="number" step="${col.step||0.1}" data-k="${col.key}" value="${fmtCellValue(col,rec[col.key])}" ${extraAttrs}>`;
+  }
+  return `<input type="text" data-k="${col.key}" value="${rec[col.key]??''}" ${extraAttrs}>`;
+}
+
+function renderDbBody(tableKey, rows){
+  const cfg = TABLES[tableKey];
+  const body = document.getElementById('dbBody');
+  body.innerHTML = rows.map(rec => `
+    <tr data-key="${rowKey(cfg,rec)}">
+      ${cfg.columns.map(col=>`<td>${cellInput(col, rec, (cfg.pk.includes(col.key)||col.auto) ? 'disabled title="Chiave non modificabile: elimina e ricrea il record"' : '')}</td>`).join('')}
+      <td class="actions"><button class="rowdel" title="Elimina record">✕</button></td>
+    </tr>
+  `).join('');
+
+  body.querySelectorAll('tr').forEach(tr=>{
+    const pkValues = tr.dataset.key.split('|');
+    tr.querySelectorAll('input,select').forEach(el=>{
+      if(el.disabled) return;
+      el.addEventListener('change', async e=>{
+        const key = e.target.dataset.k;
+        const current = {}; cfg.columns.forEach(c=>{
+          if(c.auto) return;
+          const inp = tr.querySelector(`[data-k="${c.key}"]`);
+          let val = TEXTISH(c) ? inp.value : parseCellValue(c, inp.value);
+          if((c.type==='prodotto-select'||c.type==='intermedio-select') && val==='') val = null;
+          current[c.key] = val;
+        });
+        cfg.pk.forEach((pk,i)=>{ current[pk] = pkValues[i]; });
+        e.target.classList.remove('saved','error');
+        try{
+          const path = '/'+cfg.url+'/'+pkValues.map(encodeURIComponent).join('/');
+          await apiSend('PUT', path, current);
+          e.target.classList.add('saved');
+          setTimeout(()=>e.target.classList.remove('saved'), 1200);
+          if(tableKey==='prodotti' && key==='prodotto'){ prodottiCache = await apiGet('/prodotti'); }
+          if(tableKey==='intermedi' && key==='intermedio'){ intermediAllCache = await apiGet('/intermedi'); }
+        }catch(err){
+          e.target.classList.add('error'); e.target.title = err.message;
+        }
+      });
+    });
+  });
+  body.querySelectorAll('.rowdel').forEach(btn=>{
+    btn.addEventListener('click', async e=>{
+      const tr = e.target.closest('tr');
+      const pkValues = tr.dataset.key.split('|');
+      if(!confirm('Eliminare questo record?')) return;
+      try{
+        const path = '/'+cfg.url+'/'+pkValues.map(encodeURIComponent).join('/');
+        await apiSend('DELETE', path);
+        renderDbSection(tableKey);
+      }catch(err){
+        alert('Impossibile eliminare: '+err.message);
+      }
+    });
+  });
+}
+
+function renderNewRowForm(tableKey){
+  const cfg = TABLES[tableKey];
+  const tr = document.querySelector('#main tfoot tr');
+  const draft = cfg.defaults();
+  tr.innerHTML = cfg.columns.map(col=>`<td>${cellInput(col, draft, col.auto ? 'disabled placeholder="auto"' : '')}</td>`).join('') +
+    `<td class="actions"><button class="btn primary" id="btnAddRow" style="padding:5px 9px;font-size:11px">+ Agg.</button></td>`;
+  document.getElementById('btnAddRow').onclick = async ()=>{
+    const rec = {};
+    cfg.columns.forEach(c=>{
+      if(c.auto) return;
+      const inp = tr.querySelector(`[data-k="${c.key}"]`);
+      let val = TEXTISH(c) ? inp.value : parseCellValue(c, inp.value);
+      if((c.type==='prodotto-select'||c.type==='intermedio-select') && val==='') val = null;
+      rec[c.key] = val;
+    });
+    const missingPk = cfg.pk.filter(k=>{
+      const col = cfg.columns.find(c=>c.key===k);
+      return !col?.auto && !String(rec[k]||'').trim();
+    });
+    if(missingPk.length){ alert('Compila la chiave: '+missingPk.join(', ')); return; }
+    try{
+      await apiSend('POST', '/'+cfg.url, rec);
+      await renderDbSection(tableKey);
+    }catch(err){ alert('Errore creazione: '+err.message); }
+  };
+}
+
+// ============================================================
+// EXPORT / IMPORT EXCEL
+// ============================================================
+const TABLE_LABELS = {
+  db_impianti:'Impianti', db_prodotti:'Prodotti', db_macro:'Macro componenti',
+  db_intermedi_composizione:'Composizione intermedi',
+  db_macro_processi:'Macro processi', db_processi:'Processi',
+  db_intermedi:'Intermedi', db_sottoprocessi:'Sottoprocessi',
+  db_indici_rivalutazione:'Indici rivalutazione',
+};
+
+async function exportTables(tables){
+  const qs = tables ? '?tables='+tables.join(',') : '';
+  const r = await fetch(API+'/export/excel'+qs);
+  if(!r.ok){ alert('Errore export: '+r.statusText); return; }
+  const blob = await r.blob();
+  const cd = r.headers.get('Content-Disposition')||'';
+  const match = cd.match(/filename="(.+)"/);
+  const filename = match ? match[1] : 'export.xlsx';
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(a.href);
+}
+
+function chooseImportModeHtml(){
+  return `
+    <h3>Come vuoi importare questo file?</h3>
+    <p class="sub">Scegli la modalità prima di vedere l'anteprima — in entrambi i casi ti verrà mostrata un'anteprima prima di scrivere davvero.</p>
+    <div style="display:flex;flex-direction:column;gap:10px;margin:14px 0">
+      <button class="btn primary" id="btnModeAppend" style="text-align:left;padding:13px 15px;white-space:normal">
+        <div style="font-weight:700">Aggiungi / Aggiorna</div>
+        <div style="font-weight:400;font-size:11.5px;color:rgba(255,255,255,.85);margin-top:3px">Le righe con la stessa chiave vengono aggiornate, le altre vengono aggiunte in coda. Non cancella nulla di esistente.</div>
+      </button>
+      <button class="btn" id="btnModeReplace" style="text-align:left;padding:13px 15px;white-space:normal;border-color:var(--red);color:var(--red)">
+        <div style="font-weight:700">Sostituisci tutto</div>
+        <div style="font-weight:400;font-size:11.5px;color:var(--mute);margin-top:3px">Cancella PRIMA tutte le righe di tutte le tabelle, poi importa il file da zero. Irreversibile.</div>
+      </button>
+    </div>
+    <div class="modal-close"><button class="btn" id="btnCloseModal">Annulla</button></div>
+  `;
+}
+
+function renderImportReport(payload, committed, replace){
+  const rows = Object.entries(payload.report).filter(([k])=>!k.startsWith('_'));
+  const totErr = rows.reduce((s,[,v])=>s+v.errori.length,0);
+  const wiped = payload.report._cancellati;
+  const html = `
+    <h3>${committed ? (replace?'Sostituzione completata':'Import completato') : (replace?'Anteprima sostituzione — nessuna cancellazione ancora':'Anteprima import — nessuna scrittura')}</h3>
+    ${replace && !committed ? `<p class="sub" style="color:var(--red);font-weight:600">⚠ Confermando, TUTTE le righe di TUTTE le tabelle verranno cancellate prima di importare questo file.</p>` : ''}
+    ${wiped ? `<p class="footer">Cancellati prima dell'import: ${Object.entries(wiped).map(([t,n])=>`${TABLE_LABELS[t]||t} (${n})`).join(', ')}.</p>` : ''}
+    ${rows.map(([table,v])=>`
+      <div class="modal-row">
+        <span>${TABLE_LABELS[table]||table} <span style="color:var(--mute)">(${v.totale_foglio} righe nel foglio)</span></span>
+        <span>
+          <span class="modal-badge ok">${v.creati} creati</span>
+          <span class="modal-badge ok">${v.aggiornati} aggiornati</span>
+          ${v.errori.length?`<span class="modal-badge warn">${v.errori.length} errori</span>`:''}
+        </span>
+      </div>
+      ${v.errori.length?`<ul class="modal-errs">${v.errori.slice(0,8).map(e=>`<li>${e}</li>`).join('')}${v.errori.length>8?`<li>… e altri ${v.errori.length-8}</li>`:''}</ul>`:''}
+    `).join('')}
+    ${totErr>0?`<p class="footer" style="margin-top:12px">Le righe con errori sono state ignorate; le altre sono state ${committed?'salvate':'validate'} regolarmente.</p>`:''}
+    <div class="modal-close">
+      ${!committed?`<button class="btn ${replace?'':'primary'}" id="btnConfirmImport" style="${replace?'background:var(--red);color:#fff;border-color:var(--red)':''}">${replace?'Conferma: cancella tutto e importa':'Conferma e importa davvero'}</button>`:''}
+      <button class="btn" id="btnCloseModal">Chiudi</button>
+    </div>
+  `;
+  const overlay = showModal(html);
+  document.getElementById('btnCloseModal').onclick = ()=>overlay.remove();
+  const confirmBtn = document.getElementById('btnConfirmImport');
+  if(confirmBtn) confirmBtn.onclick = async ()=>{ overlay.remove(); await doImport(window._pendingImportFile, false, replace); };
+}
+
+async function doImport(file, dryRun, replace){
+  const fd = new FormData();
+  fd.append('file', file);
+  const url = new URL(API+'/import/excel', window.location.origin);
+  url.searchParams.set('dry_run', dryRun);
+  url.searchParams.set('replace', replace);
+  let r;
+  try{ r = await fetch(url, {method:'POST', body: fd}); }
+  catch(e){ alert('Errore di rete durante l\u2019import: '+e.message); return; }
+  if(!r.ok){
+    const err = await r.json().catch(()=>({detail:r.statusText}));
+    alert('Errore import: '+(err.detail||r.statusText));
+    return;
+  }
+  const payload = await r.json();
+  window._pendingImportFile = dryRun ? file : null;
+  renderImportReport(payload, !dryRun, replace);
+  if(!dryRun){
+    prodottiCache = []; intermediAllCache = [];
+    if(section!=='calcolo') await renderDbSection(section);
+    else await renderSection();
+  }
+}
+
+function wipeConfirmHtml(){
+  return `
+    <h3 style="color:var(--red)">⚠ Cancella tutti i record</h3>
+    <p class="sub">Questa operazione cancella <b>irreversibilmente</b> tutte le righe di tutte le 8 tabelle
+    (impianti, prodotti, macro componenti, macro processi, processi, intermedi, sottoprocessi, indici).
+    Lo schema del database resta intatto, ma ogni dato andrà perso.</p>
+    <p class="sub">Digita <b>CANCELLA</b> per confermare:</p>
+    <input type="text" id="wipeConfirmInput" autocomplete="off"
+      style="width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:8px;font-family:Inter;font-size:14px" placeholder="CANCELLA">
+    <div class="modal-close">
+      <button class="btn" id="btnConfirmWipe" style="background:var(--red);color:#fff;border-color:var(--red);opacity:.5" disabled>Cancella tutto</button>
+      <button class="btn" id="btnCloseModal">Annulla</button>
+    </div>
+  `;
+}
+
+document.getElementById('btnExportAll').addEventListener('click', ()=>exportTables(null));
+document.getElementById('btnImportAll').addEventListener('click', ()=>document.getElementById('fileImport').click());
+document.getElementById('fileImport').addEventListener('change', async e=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const overlay = showModal(chooseImportModeHtml());
+  const reset = ()=>{ e.target.value=''; };
+  document.getElementById('btnCloseModal').onclick = ()=>{ overlay.remove(); reset(); };
+  document.getElementById('btnModeAppend').onclick = async ()=>{ overlay.remove(); await doImport(file, true, false); reset(); };
+  document.getElementById('btnModeReplace').onclick = async ()=>{ overlay.remove(); await doImport(file, true, true); reset(); };
+});
+document.getElementById('btnWipeAll').addEventListener('click', ()=>{
+  const overlay = showModal(wipeConfirmHtml());
+  document.getElementById('btnCloseModal').onclick = ()=>overlay.remove();
+  const input = document.getElementById('wipeConfirmInput');
+  const btn = document.getElementById('btnConfirmWipe');
+  input.addEventListener('input', ()=>{
+    const ok = input.value.trim().toUpperCase()==='CANCELLA';
+    btn.disabled = !ok; btn.style.opacity = ok ? '1' : '.5';
+  });
+  btn.onclick = async ()=>{
+    overlay.remove();
+    try{
+      const r = await apiSend('POST', '/database/wipe?confirm=true');
+      prodottiCache = []; intermediAllCache = []; impiantiCache = []; indiciCache = [];
+      calcState.componenti = {};
+      alert('Cancellati '+r.totale+' record in totale su tutte le tabelle.');
+      if(section!=='calcolo') await renderDbSection(section);
+      else await renderSection();
+    }catch(err){ alert('Errore: '+err.message); }
+  };
+});
+
+renderNav();
+checkHealth();
+renderSection();
+</script>
+</body>
+</html>

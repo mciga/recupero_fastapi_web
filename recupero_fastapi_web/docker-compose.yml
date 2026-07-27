@@ -1,0 +1,41 @@
+services:
+  db:
+    image: postgres:16
+    container_name: recupero_materie_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: recupero_materie
+      POSTGRES_USER: recupero_user
+      POSTGRES_PASSWORD: recupero_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # eseguiti automaticamente, in ordine alfabetico, SOLO alla primissima
+      # creazione del volume (immagine ufficiale Postgres)
+      - ./db/01_schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
+      - ./db/02_seed_data.sql:/docker-entrypoint-initdb.d/02_seed_data.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U recupero_user -d recupero_materie"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build: .
+    container_name: recupero_materie_api
+    restart: unless-stopped
+    environment:
+      PGHOST: db
+      PGPORT: 5432
+      PGDATABASE: recupero_materie
+      PGUSER: recupero_user
+      PGPASSWORD: recupero_pass
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:
