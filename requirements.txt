@@ -5,3 +5,4 @@ psycopg2-binary
 pydantic
 openpyxl
 python-dotenv
+python-multipart
