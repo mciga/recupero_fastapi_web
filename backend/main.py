@@ -1,6 +1,39 @@
+"""Entry point dell'applicazione FastAPI."""
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from sqlalchemy import text
-from fastapi import HTTPException
-from db import SCHEMA
+
+from routers import tables, calcolo, excel
+from db import ENGINE, SCHEMA
+
+app = FastAPI(title="Recupero materie prime strategiche - API", version="1.0")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.include_router(tables.router)
+app.include_router(calcolo.router)
+app.include_router(excel.router)
+
+
+@app.get("/api/health")
+def health():
+    try:
+        with ENGINE.connect() as conn:
+            conn.exec_driver_sql("SELECT 1")
+        return {"status": "ok", "database": "connesso"}
+    except Exception as e:
+        return {"status": "errore", "database": str(e)}
 
 
 def _run_sql_file(rel_path: str):
@@ -36,3 +69,12 @@ def setup_database():
         return {"status": "ok", "schema": r1, "seed": r2}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend"
+if FRONTEND_DIR.exists():
+    app.mount("/assets", StaticFiles(directory=FRONTEND_DIR), name="assets")
+
+    @app.get("/")
+    def index():
+        return FileResponse(FRONTEND_DIR / "index.html")
