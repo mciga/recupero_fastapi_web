@@ -238,7 +238,12 @@
   .dd-panel{display:none;position:fixed;z-index:60;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.18);padding:8px;flex-direction:column}
   .dd.open .dd-panel{display:flex}
   .dd-panel .chk-list{max-height:none;flex:1 1 auto;min-height:0;border:1px solid var(--line)}
-  .chk-tools{display:flex;gap:6px;margin-bottom:6px}
+  .dd-cerca{width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:8px;padding:7px 9px;font-family:Inter;font-size:12.5px;margin-bottom:6px}
+  .dd-cerca:focus{outline:none;border-color:var(--green)}
+  .chk-list .ass-row.nascosto{display:none}
+  .dd-vuoto{display:none;padding:10px;font-size:12px;color:var(--mute)}
+  .chk-tools{display:flex;gap:6px;margin-bottom:6px;align-items:center}
+  .chk-tools .dd-conta{margin-left:auto;font-size:11px;color:var(--mute)}
   .chk-tools button{font-size:11px;padding:3px 8px;border:1px solid var(--line);border-radius:999px;background:#fff;cursor:pointer;color:var(--ink)}
   .chk-tools button:hover{background:#F8F9F5}
   .anno-row{display:flex;align-items:center;gap:8px;font-size:12px;margin-bottom:8px;cursor:pointer}
@@ -635,10 +640,12 @@ async function renderCalcoloAside(){
       <div class="dd ${ddAperto==='imp'?'open':''}" data-dd="imp">
         <button type="button" class="dd-btn">${ddLabel(s.impianti, impiantiSotto.length, nomeImp1, 'Seleziona impianti...', 'impianti')}<span class="dd-car">▼</span></button>
         <div class="dd-panel">
-          <div class="chk-tools"><button data-tutti="imp">Tutti</button><button data-nessuno="imp">Nessuno</button></div>
+          ${impiantiSotto.length > 8 ? `<input type="search" class="dd-cerca" data-cerca="imp" placeholder="Cerca impianto..." autocomplete="off">` : ''}
+          <div class="chk-tools"><button data-tutti="imp">Tutti</button><button data-nessuno="imp">Nessuno</button><span class="dd-conta">${s.impianti.length} di ${impiantiSotto.length} scelti</span></div>
           <div class="chk-list" id="lstImpianti">${impiantiSotto.map(i=>`
             <label class="ass-row"><input type="checkbox" value="${escAttr(i.id_imp)}" ${selImp.has(i.id_imp)?'checked':''}>
               <span class="ass-nome">${i.nome}</span><span class="ass-m">${i.anno_dismissione}</span></label>`).join('')}
+            <div class="dd-vuoto">Nessun impianto trovato</div>
           </div>
         </div>
       </div>`}
@@ -650,10 +657,12 @@ async function renderCalcoloAside(){
       <div class="dd ${ddAperto==='mac'?'open':''}" data-dd="mac">
         <button type="button" class="dd-btn">${ddLabel(s.macroSel, macroOpts.length, s.macroSel[0]||'', 'Seleziona macrocomponenti...', 'macrocomp.')}<span class="dd-car">▼</span></button>
         <div class="dd-panel">
-          <div class="chk-tools"><button data-tutti="mac">Tutti</button><button data-nessuno="mac">Nessuno</button></div>
+          ${macroOpts.length > 8 ? `<input type="search" class="dd-cerca" data-cerca="mac" placeholder="Cerca macrocomponente..." autocomplete="off">` : ''}
+          <div class="chk-tools"><button data-tutti="mac">Tutti</button><button data-nessuno="mac">Nessuno</button><span class="dd-conta">${s.macroSel.length} di ${macroOpts.length} scelti</span></div>
           <div class="chk-list" id="lstMacro">${macroOpts.map(m=>`
             <label class="ass-row" title="${escAttr(m.impianti.map(x=>`${x.nome}: ${massStr(x.massa_kg)}`).join('\n'))}"><input type="checkbox" value="${escAttr(m.macro_componente)}" ${selMac.has(m.macro_componente)?'checked':''}>
               <span class="ass-nome">${m.macro_componente}</span><span class="ass-m">${massStr(m.massa_kg)}${s.impianti.length>1?` · ${m.impianti.length}/${s.impianti.length} imp.`:''}</span></label>`).join('')}
+            <div class="dd-vuoto">Nessun macrocomponente trovato</div>
           </div>
         </div>
       </div>`}
@@ -724,10 +733,21 @@ async function renderCalcoloAside(){
     if(lstI) lstI.onchange=()=>cambiaImpianti([...lstI.querySelectorAll('input:checked')].map(x=>x.value));
     const lstM = document.getElementById('lstMacro');
     if(lstM) lstM.onchange=()=>cambiaMacro([...lstM.querySelectorAll('input:checked')].map(x=>x.value));
+    // Tutti / Nessuno: con una ricerca attiva agiscono solo sulle righe trovate
     aside.querySelectorAll('[data-tutti],[data-nessuno]').forEach(b=>b.onclick=()=>{
       const tutti = 'tutti' in b.dataset, cosa = b.dataset.tutti || b.dataset.nessuno;
-      if(cosa==='imp') cambiaImpianti(tutti ? impiantiVisibili : []);
-      else cambiaMacro(tutti ? macroOpts.map(m=>m.macro_componente) : []);
+      const lst = document.getElementById(cosa==='imp' ? 'lstImpianti' : 'lstMacro');
+      const trovati = [...lst.querySelectorAll('.ass-row:not(.nascosto) input')].map(x=>x.value);
+      const attuali = cosa==='imp' ? s.impianti : s.macroSel;
+      const nuovi = tutti ? [...new Set([...attuali, ...trovati])] : attuali.filter(v=>!trovati.includes(v));
+      if(cosa==='imp') cambiaImpianti(nuovi); else cambiaMacro(nuovi);
+    });
+    // ricerca nella tendina: il testo resta anche quando la barra si ridisegna dopo una spunta
+    aside.querySelectorAll('.dd-cerca').forEach(inp=>{
+      inp.value = ddCerca[inp.dataset.cerca] || '';
+      applicaRicerca(inp);
+      inp.oninput = ()=>{ ddCerca[inp.dataset.cerca] = inp.value; applicaRicerca(inp); };
+      inp.onkeydown = e=>{ if(e.key==='Escape' && inp.value){ e.stopPropagation(); inp.value=''; inp.oninput(); } };
     });
     document.getElementById('chkAnnoImp').onchange=e=>{
       s.annoOverride = e.target.checked ? null : (+document.getElementById('inpAnno').value || ANNO_CORRENTE);
@@ -739,6 +759,7 @@ async function renderCalcoloAside(){
         ddAperto = ddAperto===dd.dataset.dd ? null : dd.dataset.dd;
         aside.querySelectorAll('.dd').forEach(x=>x.classList.toggle('open', x.dataset.dd===ddAperto));
         posizionaTendina();
+        if(ddAperto) dd.querySelector('.dd-cerca')?.focus();
       };
     });
     posizionaTendina();
@@ -764,12 +785,35 @@ async function renderCalcoloAside(){
 }
 
 // ---- menu a tendina della barra laterale (impianti, macrocomponenti) ----
-// il pannello e' in posizione fissa sotto il pulsante, cosi' non viene tagliato dallo scorrimento della barra
+// il pannello e' in posizione fissa, cosi' non viene tagliato dallo scorrimento della barra.
+// Si apre DI FIANCO alla barra laterale (allineato al pulsante), cosi' non copre le scelte
+// sottostanti: scegliendo gli impianti si vedono aggiornarsi i macrocomponenti.
 let ddAperto = null;   // 'imp' | 'mac' | null
+const ddCerca = {};    // testo cercato in ogni tendina
+function applicaRicerca(inp){
+  const q = inp.value.trim().toLowerCase();
+  const lst = inp.closest('.dd-panel').querySelector('.chk-list');
+  let n = 0;
+  lst.querySelectorAll('.ass-row').forEach(r=>{
+    const ok = !q || r.textContent.toLowerCase().includes(q);
+    r.classList.toggle('nascosto', !ok); n += ok;
+  });
+  lst.querySelector('.dd-vuoto').style.display = n ? 'none' : 'block';
+}
 function posizionaTendina(){
   const dd = ddAperto && document.querySelector(`#aside .dd[data-dd="${ddAperto}"]`);
   if(!dd){ ddAperto = null; return; }
   const r = dd.querySelector('.dd-btn').getBoundingClientRect(), p = dd.querySelector('.dd-panel');
+  const barra = document.getElementById('aside').getBoundingClientRect();
+  const larg = 340, spazioDestra = window.innerWidth - barra.right - 24;
+  if(spazioDestra >= larg){
+    // di fianco alla barra: in alto allineato al pulsante, alzato se non c'e' spazio sotto
+    const h = Math.min(window.innerHeight - 24, Math.max(320, window.innerHeight * 0.7));
+    const top = Math.max(12, Math.min(r.top - 8, window.innerHeight - h - 12));
+    Object.assign(p.style, { left:(barra.right+12)+'px', width:larg+'px', maxHeight:h+'px', top:top+'px', bottom:'auto' });
+    return;
+  }
+  // schermo stretto: sotto (o sopra) il pulsante come prima
   const w = Math.min(Math.max(r.width, 320), window.innerWidth - r.left - 12);
   const sotto = window.innerHeight - r.bottom - 12, sopra = r.top - 12;
   const giu = sotto >= 220 || sotto >= sopra;
