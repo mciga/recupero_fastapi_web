@@ -5,7 +5,8 @@ dalla dismissione degli impianti (eolico, fotovoltaico, BESS).
 
 ## Online
 
-- **Render** esegue il backend e serve la dashboard (`render.yaml`).
+- **Vercel** esegue il backend e serve la dashboard (`vercel.json` + `api/index.py`);
+  in alternativa **Render** (`render.yaml`).
 - **Neon** ospita il database PostgreSQL (schema `recupero_novembre`).
 - I dati **non** sono in questo repository: si caricano su Neon da una copia del database locale.
 
