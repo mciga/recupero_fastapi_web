@@ -162,69 +162,155 @@ def import_workbook(file_bytes: bytes, dry_run: bool = False, replace: bool = Fa
         # i reagenti usati come reagente_sale (es. H2SO4) vanno creati prima di chi li cita
         sheets_by_table["db_reagenti"].sort(key=lambda r: bool(r.get("reagente_sale")))
 
-    if replace and not dry_run:
-        report["_cancellati"] = crud.wipe_all_tables()
+    # Tutto l'import usa una sola connessione e una sola transazione e scrive a blocchi:
+    # con il database in rete (Neon) ogni scambio costa decine di millisecondi, e la
+    # vecchia scrittura riga per riga (3-4 scambi a riga) superava il tempo massimo.
+    from db import ENGINE
+    with ENGINE.begin() as conn:
+        cur = conn.connection.cursor()
+        if replace and not dry_run:
+            report["_cancellati"] = _svuota_tabelle(cur)
 
-    for table in IMPORT_ORDER:
-        if table not in sheets_by_table:
-            continue
-        cfg = crud.TABLES[table]
-        model = MODELS[table]
-        created = updated = 0
-        errors = []
-        for i, raw in enumerate(sheets_by_table[table], start=2):
-            try:
-                raw = {crud.ALIAS_COLONNE.get(k, k) if crud.ALIAS_COLONNE.get(k, k) not in raw else k: v
-                       for k, v in raw.items()}
-                clean = {k: v for k, v in raw.items() if k in cfg["columns"]}
-                validated = model(**clean)
-                data = validated.model_dump()
-                if table in ("db_processi", "db_sottoprocessi") and not dry_run:
-                    data = crud.normalizza_scarto(data)
-                # chiave auto-generata (es. "id" seriale) lasciata vuota nel
-                # foglio: nessuna riga esistente da cercare, si crea sempre.
-                # In modalita' "sostituisci tutto" ogni riga e' comunque una
-                # creazione (la cancellazione avviene prima, o e' simulata
-                # in anteprima): non ha senso cercare righe esistenti.
-                if replace or any(data.get(k) is None for k in cfg["pk"]):
-                    existing = None
-                else:
-                    pk_values = [str(data[k]) for k in cfg["pk"]]
-                    existing = crud.get_row(table, pk_values)
-                if dry_run:
-                    if existing:
-                        updated += 1
-                    else:
-                        created += 1
+        for table in IMPORT_ORDER:
+            if table not in sheets_by_table:
+                continue
+            cfg = crud.TABLES[table]
+            model = MODELS[table]
+            errors = []
+            validi = []   # (numero riga Excel, dati validati)
+            for i, raw in enumerate(sheets_by_table[table], start=2):
+                try:
+                    raw = {crud.ALIAS_COLONNE.get(k, k) if crud.ALIAS_COLONNE.get(k, k) not in raw else k: v
+                           for k, v in raw.items()}
+                    clean = {k: v for k, v in raw.items() if k in cfg["columns"]}
+                    validi.append((i, model(**clean).model_dump()))
+                except Exception as e:  # noqa: BLE001
+                    errors.append(f"riga {i}: {e}")
+            if table in ("db_processi", "db_sottoprocessi") and not dry_run:
+                validi = _normalizza_scarti(cur, validi)
+
+            # chiave auto-generata (es. "id" seriale) lasciata vuota nel foglio: si crea sempre.
+            # In modalita' "sostituisci tutto" ogni riga e' una creazione (la cancellazione
+            # avviene prima, o e' simulata in anteprima).
+            esistenti = set() if replace else _chiavi_esistenti(cur, table)
+            visti = set()
+            esito = {}   # numero riga -> "c" (creata) / "u" (aggiornata)
+            for i, data in validi:
+                if any(data.get(k) is None for k in cfg["pk"]):
+                    esito[i] = "c"
                     continue
-                if existing:
-                    crud.update_row(table, pk_values, data)
-                    updated += 1
-                else:
-                    crud.create_row(table, data)
-                    created += 1
-            except Exception as e:  # noqa: BLE001
-                errors.append(f"riga {i}: {e}")
-        report[table] = {"creati": created, "aggiornati": updated, "errori": errors,
-                          "totale_foglio": len(sheets_by_table[table])}
+                chiave = tuple(str(data[k]) for k in cfg["pk"])
+                esito[i] = "u" if (chiave in esistenti or chiave in visti) else "c"
+                visti.add(chiave)
+            if not dry_run:
+                falliti, errori_db = _scrivi(cur, table, validi)
+                errors += errori_db
+                for i in falliti:
+                    esito.pop(i, None)
+            created = sum(1 for v in esito.values() if v == "c")
+            updated = len(esito) - created
+            report[table] = {"creati": created, "aggiornati": updated, "errori": errors,
+                             "totale_foglio": len(sheets_by_table[table])}
 
-    if not dry_run:
-        _riallinea_sequenze()
+        if not dry_run:
+            _riallinea_sequenze(cur)
     return report
 
 
-def _riallinea_sequenze():
+def _svuota_tabelle(cur) -> dict[str, int]:
+    from db import SCHEMA
+    counts = {}
+    for table in crud.WIPE_ORDER:
+        cur.execute(f"DELETE FROM {SCHEMA}.{table}")
+        counts[table] = cur.rowcount
+    return counts
+
+
+def _chiavi_esistenti(cur, table: str) -> set:
+    from db import SCHEMA
+    pk = crud.TABLES[table]["pk"]
+    cur.execute(f"SELECT {','.join(pk)} FROM {SCHEMA}.{table}")
+    return {tuple(str(v) for v in r) for r in cur.fetchall()}
+
+
+def _normalizza_scarti(cur, validi: list) -> list:
+    """Come crud.normalizza_scarto, ma per tutte le righe insieme: lo scarto citato si aggancia
+    (maiuscole/minuscole indifferenti) a quello esistente, altrimenti si crea con costo 0."""
+    from db import SCHEMA
+    cur.execute(f"SELECT scarto FROM {SCHEMA}.db_scarti")
+    noti = {r[0].lower(): r[0] for r in cur.fetchall()}
+    nuovi = []
+    out = []
+    for i, data in validi:
+        nome = (data.get("scarto") or "").strip()
+        if nome:
+            if nome.lower() not in noti:
+                noti[nome.lower()] = nome[0].upper() + nome[1:]
+                nuovi.append(noti[nome.lower()])
+            data = {**data, "scarto": noti[nome.lower()]}
+        out.append((i, data))
+    for nome in nuovi:
+        cur.execute(f"INSERT INTO {SCHEMA}.db_scarti (scarto, costo_smaltimento_eur_ton) VALUES (%s, 0)", (nome,))
+    return out
+
+
+def _scrivi(cur, table: str, validi: list, blocco: int = 1000) -> tuple[list[int], list[str]]:
+    """Inserisce o aggiorna (upsert sulla chiave primaria) a blocchi. Se il database rifiuta
+    un blocco, quel blocco viene ripreso riga per riga per indicare le righe con errore."""
+    from psycopg2.extras import execute_values
+    from db import SCHEMA
+    cfg = crud.TABLES[table]
+    pk = cfg["pk"]
+    errori, falliti = [], []
+    # righe con chiave: l'ultima occorrenza di una chiave ripetuta vince (come gli aggiornamenti in sequenza)
+    con_chiave, senza_chiave = {}, []
+    for i, data in validi:
+        if any(data.get(k) is None for k in pk):
+            senza_chiave.append((i, data))
+        else:
+            con_chiave[tuple(str(data[k]) for k in pk)] = (i, data)
+
+    gruppi = []
+    altre = [c for c in cfg["columns"] if c not in pk]
+    set_sql = ", ".join(f"{c}=EXCLUDED.{c}" for c in altre)
+    gruppi.append((list(con_chiave.values()), cfg["columns"],
+                   f" ON CONFLICT ({','.join(pk)}) DO " + (f"UPDATE SET {set_sql}" if altre else "NOTHING")))
+    gruppi.append((senza_chiave, [c for c in cfg["columns"] if c not in pk], ""))
+
+    for righe, colonne, coda in gruppi:
+        sql = f"INSERT INTO {SCHEMA}.{table} ({','.join(colonne)}) VALUES %s{coda}"
+        for s in range(0, len(righe), blocco):
+            parte = righe[s:s + blocco]
+            valori = [tuple(d.get(c) for c in colonne) for _, d in parte]
+            cur.execute("SAVEPOINT blocco")
+            try:
+                execute_values(cur, sql, valori, page_size=blocco)
+                cur.execute("RELEASE SAVEPOINT blocco")
+                continue
+            except Exception:  # noqa: BLE001
+                cur.execute("ROLLBACK TO SAVEPOINT blocco")
+            for (i, _), v in zip(parte, valori):
+                cur.execute("SAVEPOINT riga")
+                try:
+                    execute_values(cur, sql, [v])
+                    cur.execute("RELEASE SAVEPOINT riga")
+                except Exception as e:  # noqa: BLE001
+                    cur.execute("ROLLBACK TO SAVEPOINT riga")
+                    falliti.append(i)
+                    errori.append(f"riga {i}: " + " ".join(str(e).strip().splitlines()[:2]))
+    return falliti, errori
+
+
+def _riallinea_sequenze(cur):
     """Dopo un import con id espliciti (colonna "id" seriale compilata), le
     sequenze Postgres vanno riallineate al massimo id presente, altrimenti
     il prossimo inserimento senza id collide con una riga esistente."""
-    from sqlalchemy import text
-    from db import ENGINE, SCHEMA
-    with ENGINE.begin() as conn:
-        for table, cfg in crud.TABLES.items():
-            if cfg["pk"] == ["id"]:
-                conn.execute(text(
-                    f"SELECT setval(pg_get_serial_sequence('{SCHEMA}.{table}', 'id'), "
-                    f"COALESCE((SELECT MAX(id) FROM {SCHEMA}.{table}), 0) + 1, false)"))
+    from db import SCHEMA
+    for table, cfg in crud.TABLES.items():
+        if cfg["pk"] == ["id"]:
+            cur.execute(
+                f"SELECT setval(pg_get_serial_sequence('{SCHEMA}.{table}', 'id'), "
+                f"COALESCE((SELECT MAX(id) FROM {SCHEMA}.{table}), 0) + 1, false)")
 
 
 def export_filename() -> str:
