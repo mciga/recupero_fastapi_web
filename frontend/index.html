@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Recupero materie prime strategiche · Dashboard</title>
+<title>MACTEE · Recupero materie prime strategiche</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -13,7 +13,7 @@
     --green:#1F5A43; --green2:#2E7A5B; --copper:#B5651D; --gold:#C2912C;
     --ink:#16211D; --mute:#6C7C73; --line:#E2E6DD;
     --critico:#B5651D; --strategico:#C2912C; --utile:#4E8C72;
-    --red:#B23B2E;
+    --red:#B23B2E; --orange:#E07B00;
     --onDark:#EAF1ED; --onDarkMute:#9DB0A8;
     --r:14px; --shadow:0 6px 20px rgba(15,30,28,.08);
   }
@@ -41,13 +41,13 @@
 
   .wrap{display:grid;grid-template-columns:270px 1fr;min-height:0}
   .wrap.nosidebar{grid-template-columns:1fr}
-  aside{background:var(--surface);border-right:1px solid var(--line);padding:20px 18px;overflow:auto}
+  aside{background:var(--surface);border-right:1px solid var(--line);padding:14px 16px;overflow:auto}
   main{padding:22px 24px;overflow:auto}
-  .fgroup{margin-bottom:22px}
+  .fgroup{margin-bottom:16px}
   .fgroup>.h{font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--mute);font-weight:700;margin-bottom:10px}
-  .type{display:flex;flex-direction:column;gap:8px}
-  .type button{display:flex;align-items:center;gap:11px;border:1px solid var(--line);background:#fff;border-radius:11px;padding:11px 12px;cursor:pointer;font-family:Inter;font-size:14px;color:var(--ink);font-weight:600;transition:.15s;text-align:left;width:100%}
-  .type button .ic{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;font-size:15px;flex:none;color:#fff}
+  .type{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+  .type button{display:flex;flex-direction:column;align-items:center;gap:5px;border:1px solid var(--line);background:#fff;border-radius:11px;padding:8px 2px 7px;cursor:pointer;font-family:Inter;font-size:11.5px;color:var(--ink);font-weight:600;transition:.15s;text-align:center;width:100%;min-width:0}
+  .type button .ic{width:26px;height:26px;border-radius:7px;display:grid;place-items:center;font-size:14px;flex:none;color:#fff}
   .type button[aria-pressed="true"]{border-color:var(--green);background:#F1F7F3;box-shadow:0 0 0 1px var(--green) inset}
   .type button[aria-pressed="false"]{opacity:.6}
   select,input[type=text],input[type=number]{width:100%;border:1px solid var(--line);border-radius:10px;padding:10px 11px;font-family:Inter;font-size:13.5px;background:#fff;color:var(--ink)}
@@ -89,12 +89,31 @@
   .lane:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
   .lane-row{display:flex;align-items:flex-start;gap:6px;flex-wrap:wrap}
   .lane-arrow{color:var(--mute);font-size:13px;margin-top:24px;flex:none}
-  .lane-node{border:1px solid var(--line);border-radius:9px;background:#F1F7F3;border-color:var(--green);padding:6px 9px;min-width:120px;max-width:170px}
-  .lane-node select{padding:4px 6px;font-size:11px;border:none;background:transparent;font-weight:700;color:var(--ink);margin-bottom:2px}
+  .lane-node{border:1px solid var(--line);border-radius:9px;background:#F1F7F3;border-color:var(--green);padding:9px 12px;min-width:300px;max-width:380px}
+  .lane-node select{padding:4px 6px;font-size:12px;border:none;background:transparent;font-weight:700;color:var(--ink);margin-bottom:2px;width:100%}
+  .lane-node .lane-node-cost,.lane-node .lane-node-costo-tot{font-size:12px}
+  .lane-node .lane-node-fasi{font-size:10.5px}
+  /* taglia dell'impianto e capex (v9.1) */
+  .taglia-box{margin:6px 0;padding:7px 9px;border-radius:8px;background:#fff;border:1px solid #CFE3D7}
+  .taglia-row{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;color:var(--ink)}
+  .taglia-row input{width:110px;padding:4px 6px;font-size:12px;border:1px solid var(--line);border-radius:6px;text-align:right}
+  .taglia-kv{display:grid;grid-template-columns:auto 1fr;gap:1px 10px;font-size:11.5px;margin-top:5px;color:var(--mute)}
+  .taglia-kv b{color:var(--ink);font-weight:600;text-align:right}
+  .taglia-nota{font-size:10.5px;color:var(--mute);margin-top:4px}
   .lane-node-title{font-size:11px;font-weight:700;color:var(--ink);margin-bottom:2px}
   .lane-node-cost{font-size:9.5px;color:var(--green2);font-weight:600}
   .lane-node-costo-tot{font-size:10.5px;color:var(--copper);font-weight:700;margin-top:1px}
   .lane-node-fasi{font-size:9px;color:var(--mute);margin-top:2px;line-height:1.4}
+  /* reagenti e bilancio di massa (v9) */
+  .reag-box{margin:6px 0 4px;padding:6px 8px;border-radius:8px;background:#FBF2E7;border:1px solid #EBD7BE}
+  .reag-h{font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--copper);font-weight:700;margin-bottom:3px}
+  .reag-row{display:flex;justify-content:space-between;gap:10px;font-size:11px;font-weight:600;color:var(--ink)}
+  .reag-row.nonspec{color:var(--copper);font-style:italic;font-weight:500}
+  .bil-strip{margin:8px 0 2px;padding:7px 12px;border-radius:9px;font-size:12px;display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center}
+  .bil-strip.ok{background:#EAF3EE;border:1px solid #CFE3D7;color:#1F4D3E}
+  .bil-strip.ko{background:#FBECEA;border:1px solid #EBC4BF;color:#8E2B22}
+  .bil-esito{font-weight:700}
+  .bil-nota{font-size:11px;color:var(--copper)}
 
   .lane-card-toggle{display:flex;align-items:flex-start;gap:8px;border:1.5px solid var(--line);background:#fff;border-radius:11px;padding:9px 10px;cursor:pointer;text-align:left;font-family:Inter;min-width:150px;max-width:190px}
   .lane-card-toggle.active{border-color:var(--green);background:#F1F7F3}
@@ -186,6 +205,87 @@
   .modal-errs{font-size:11.5px;color:var(--red);margin:6px 0 0;padding-left:16px}
   .modal-close{margin-top:16px;display:flex;gap:8px}
 
+  .modal.wide{max-width:820px}
+  .output-card .sym,.tile .sym{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:10px}
+  .output-card .sym.sym-long{font-size:11.5px;line-height:1.3}
+  .tile .sym.sym-long{font-size:14px;line-height:1.6}
+  .comp-col{display:flex;flex-direction:column;gap:5px}
+  .btn-assiemi{font-family:Inter;font-size:9.5px;font-weight:700;color:var(--green);background:#F1F7F3;border:1px solid var(--green);border-radius:7px;padding:4px 7px;cursor:pointer;max-width:220px}
+  .btn-assiemi:hover{background:var(--green);color:#fff}
+  .assieme-tag{font-size:9.5px;color:var(--copper);font-weight:700;margin-top:1px;line-height:1.3}
+  .lane.lane-sep{background:#FBF8F1;border-radius:11px;padding:10px;border:1px dashed #E6D8BC}
+  .ass-list{max-height:45vh;overflow:auto;border:1px solid var(--line);border-radius:10px}
+  .ass-row{display:flex;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid var(--line);font-size:12px;cursor:pointer}
+  .ass-row:hover{background:#F8F9F5}
+  .ass-row input{width:auto}
+  .ass-nome{flex:1}
+  .ass-m{color:var(--mute);font-size:11px;white-space:nowrap}
+  /* liste a caselle nel pannello laterale (impianti, macrocomponenti) */
+  .chk-list{max-height:260px;overflow:auto;border:1px solid var(--line);border-radius:10px;background:#fff}
+  .chk-list .ass-row{padding:6px 8px;font-size:12px;line-height:1.3;flex-wrap:wrap;row-gap:1px}
+  .chk-list .ass-nome{flex:1 1 0;min-width:0}
+  .chk-list .ass-m{flex-basis:100%;padding-left:21px;white-space:normal}
+  .chk-list .ass-row:last-child{border-bottom:none}
+  .chk-list .ass-row.off{color:var(--mute)}
+  /* menu a tendina con caselle (impianti, macrocomponenti): la barra resta compatta */
+  .dd{position:relative}
+  .dd-btn{width:100%;display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:10px;padding:10px 11px;font-family:Inter;font-size:13.5px;background:#fff;color:var(--ink);cursor:pointer;text-align:left}
+  .dd-btn .dd-lbl{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .dd-btn .dd-lbl.vuoto{color:var(--mute)}
+  .dd-car{color:var(--mute);font-size:11px;transition:transform .15s}
+  .dd.open .dd-btn{border-color:var(--green);box-shadow:0 0 0 1px var(--green) inset}
+  .dd.open .dd-car{transform:rotate(180deg)}
+  .dd-panel{display:none;position:fixed;z-index:60;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.18);padding:8px;flex-direction:column}
+  .dd.open .dd-panel{display:flex}
+  .dd-panel .chk-list{max-height:none;flex:1 1 auto;min-height:0;border:1px solid var(--line)}
+  .chk-tools{display:flex;gap:6px;margin-bottom:6px}
+  .chk-tools button{font-size:11px;padding:3px 8px;border:1px solid var(--line);border-radius:999px;background:#fff;cursor:pointer;color:var(--ink)}
+  .chk-tools button:hover{background:#F8F9F5}
+  .anno-row{display:flex;align-items:center;gap:8px;font-size:12px;margin-bottom:8px;cursor:pointer}
+  .anno-row input{width:auto}
+  .output-card.spec-non_allocato{border-color:var(--red);background:#FFF8F6}
+  .output-card.spec-non_attribuito{border-color:#D9A79F;background:#FFFBFA}
+  .modal h4.mh{font-family:Inter;font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--mute);margin:18px 0 6px}
+  .el-tag{font-size:9px;color:var(--mute);margin-top:3px;line-height:1.35;white-space:normal}
+  .warn-tag{font-size:9px;font-weight:700;color:var(--red);margin-top:3px;cursor:help;line-height:1.3}
+  .nv-tag{font-size:9px;color:var(--mute);margin-top:3px;cursor:help}
+  .output-card.warn{border-color:var(--red);box-shadow:0 0 0 1px var(--red) inset}
+  .warn-panel{border-color:#E9C2BC;background:#FFF8F6}
+  .warn-panel h3{color:var(--red)}
+  .eltab tr.clickable-row{cursor:pointer}
+  .el-summary{display:flex;gap:14px;flex-wrap:wrap;border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;background:#fff;cursor:pointer;transition:.12s}
+  .el-summary:hover{border-color:var(--green);box-shadow:0 2px 10px rgba(31,90,67,.12)}
+  .el-sum-main{min-width:150px;padding-right:14px;border-right:1px solid var(--line)}
+  .el-sum-top{flex:1;min-width:220px}
+  .el-summary .k{font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--mute);font-weight:600}
+  .el-summary .v{font-size:22px;font-weight:600;margin-top:5px;color:var(--copper);line-height:1}
+  .el-summary .t{font-size:14px;font-weight:600;margin-top:6px;color:var(--ink)}
+  .el-summary .s{font-size:11.5px;color:var(--mute);margin-top:5px}
+  .eltab td,.eltab th{text-align:right}
+  .eltab td:first-child,.eltab th:first-child{text-align:left}
+  .modal table td.name{white-space:normal}
+  .imp-tag{font-size:10px;font-weight:700;color:var(--orange);margin-top:2px;cursor:help}
+  .pure-tag{font-size:10px;font-weight:700;color:var(--green);margin-top:2px;cursor:help}
+  .comp-mass-row{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-top:2px;min-width:150px}
+  .comp-mass-row .comp-mass-val{white-space:nowrap}
+  .comp-mass-row .lbl{font-size:9.5px;color:var(--mute);text-transform:uppercase;letter-spacing:.03em}
+  .comp-mass-row.tratt .comp-mass-val{color:var(--green)}
+  .comp-mass-row.tratt .lbl{color:var(--green)}
+  .charts{position:relative;margin:4px 0 16px}
+  .chart-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .chart-card{border:1px solid var(--line);border-radius:11px;padding:10px 12px 4px;margin-bottom:10px;background:#fff}
+  .chart-title{font-size:12px;font-weight:700;color:var(--ink)}
+  .chart-title span{font-weight:500;color:var(--mute);font-size:11px}
+  .chart-last{font-size:11px;color:var(--mute);margin:2px 0 4px}
+  .charts svg .ax{font-size:10px;fill:var(--mute);font-family:Inter}
+  .charts svg .hit{cursor:crosshair}
+  .chart-tip{position:absolute;transform:translateY(-100%);background:var(--deep);color:#fff;font-size:11.5px;padding:5px 9px;border-radius:7px;pointer-events:none;white-space:nowrap;z-index:5}
+  .chart-note{font-size:11px;color:var(--mute);margin:0 0 6px}
+  .chart-warn{font-size:11.5px;color:var(--copper);background:#FBF2E7;border:1px solid #EBD7BE;border-radius:8px;padding:6px 10px;margin-bottom:10px;font-weight:600}
+  .chart-empty{font-size:11px;color:var(--mute);padding:30px 0;text-align:center}
+  .lane-card-toggle{max-width:220px}
+  .output-card .nm{white-space:nowrap}
+  @media (max-width:700px){.chart-row{grid-template-columns:1fr}}
   @media (max-width:1080px){.wrap{grid-template-columns:1fr}aside{border-right:0;border-bottom:1px solid var(--line)}.kpis{grid-template-columns:repeat(2,1fr)}}
 </style>
 </head>
@@ -193,8 +293,8 @@
 <header>
   <div class="brand">
     <div class="logo">♻</div>
-    <div><h1>Recupero materie prime strategiche</h1>
-    <p>Calcolo economico e gestione database · connesso a Postgres via API</p></div>
+    <div><h1>MACTEE</h1>
+    <p>Recupero materie prime strategiche · calcolo economico e gestione database</p></div>
   </div>
   <div style="display:flex;align-items:center;gap:12px">
     <span id="connStatus">verifico connessione...</span>
@@ -250,92 +350,124 @@ function showModal(innerHtml){
 // ============================================================
 // TABELLE (config CRUD)
 // ============================================================
+const TIPOLOGIE_DB = ['BESS','EOLICO','FOTOVOLTAICO'];
+const RECUPERO_COLS = [
+  {key:'tipo_output',label:'Tipo uscita',type:'select',options:['prodotto','impurita','scarto','intermedio'],labels:{impurita:'impurità'}},
+  {key:'prodotto',label:'Prodotto (o prodotto che riceve l\'impurità)',type:'prodotto-select'},
+  {key:'intermedio_output',label:'Intermedio',type:'intermedio-select'},
+  {key:'scarto',label:'Scarto (se uscita=scarto)',type:'scarto-select'},
+  {key:'recupero_pct_min',label:'% recupero scen. min',type:'percent',step:0.1},
+  {key:'recupero_pct',label:'% recupero scen. centrale',type:'percent',step:0.1},
+  {key:'recupero_pct_max',label:'% recupero scen. max',type:'percent',step:0.1},
+  {key:'descrizione_fasi',label:'Fasi',type:'text',nullable:true},
+];
 const TABLES = {
   impianti: { url:'impianti', dbTable:'db_impianti', label:'Impianti', pk:['id_imp'],
     columns:[
       {key:'id_imp',label:'ID',type:'text'},
-      {key:'tipologia',label:'Tipologia',type:'select',options:['EOLICO','FOTOVOLTAICO','BESS']},
-      {key:'sotto_tecnologia',label:'Sotto tecnologia',type:'text'},
-      {key:'potenza_mw',label:'Potenza MW',type:'number',step:0.5},
-      {key:'anno_installazione',label:'Anno instal.',type:'number',step:1},
+      {key:'nome',label:'Nome',type:'text'},
+      {key:'tipologia',label:'Tipologia',type:'select',options:TIPOLOGIE_DB},
+      {key:'sotto_tecnologia',label:'Sotto tecnologia',type:'text',nullable:true},
+      {key:'potenza_mw',label:'Potenza MW',type:'number',step:0.5,nullable:true},
+      {key:'anno_installazione',label:'Anno instal.',type:'number',step:1,nullable:true},
       {key:'anno_dismissione',label:'Anno dismiss.',type:'number',step:1},
-      {key:'regione',label:'Regione',type:'text'},
-      {key:'provincia',label:'Provincia',type:'text'},
-      {key:'lat',label:'Lat',type:'number',step:0.01},
-      {key:'lon',label:'Lon',type:'number',step:0.01},
+      {key:'regione',label:'Regione',type:'text',nullable:true},
+      {key:'provincia',label:'Provincia',type:'text',nullable:true},
+      {key:'lat',label:'Lat',type:'number',step:0.01,nullable:true},
+      {key:'lon',label:'Lon',type:'number',step:0.01,nullable:true},
     ],
-    defaults:()=>({id_imp:'',tipologia:'EOLICO',sotto_tecnologia:'',potenza_mw:1,anno_installazione:2026,anno_dismissione:2040,regione:'',provincia:'',lat:0,lon:0}),
+    defaults:()=>({id_imp:'',nome:'',tipologia:'EOLICO',sotto_tecnologia:null,potenza_mw:null,anno_installazione:null,anno_dismissione:2040,regione:null,provincia:null,lat:null,lon:null}),
   },
   prodotti: { url:'prodotti', dbTable:'db_prodotti', label:'Prodotti', pk:['prodotto'],
     columns:[
       {key:'prodotto',label:'Codice',type:'text'},
       {key:'nome',label:'Nome',type:'text'},
       {key:'categoria',label:'Categoria',type:'select',options:['strategico','critico','utile']},
-      {key:'peso_molare',label:'Peso molare (g/mol)',type:'number',step:0.01},
-      {key:'elemento_confronto',label:'Elemento di confronto',type:'prodotto-select'},
-      {key:'parametro_equivalenza',label:'Parametro equivalenza',type:'number',step:0.5},
+      {key:'formula_chimica',label:'Formula chimica (vuota = rottame/materiale secondario)',type:'text',nullable:true},
+      {key:'peso_molare',label:'Peso molare (calcolato dalla formula)',type:'number',step:0.01,nullable:true},
+      {key:'elemento_confronto',label:'Elemento da controllare (vuoto = dai reagenti)',type:'prodotto-select'},
+      {key:'parametro_equivalenza',label:'Parametro equivalenza (info)',type:'number',step:0.5,nullable:true},
       {key:'prezzo_attuale_eur_kg',label:'Prezzo €/kg',type:'number',step:0.1},
       {key:'proiezione_prezzo_p1',label:'Crescita P1 %/anno',type:'percent',step:0.1},
       {key:'proiezione_prezzo_p2',label:'Crescita P2 %/anno',type:'percent',step:0.1},
     ],
-    defaults:()=>({prodotto:'',nome:'',categoria:'critico',peso_molare:1,elemento_confronto:prodottiCache[0]?.prodotto||'',parametro_equivalenza:1,prezzo_attuale_eur_kg:0,proiezione_prezzo_p1:0.03,proiezione_prezzo_p2:0.05}),
+    defaults:()=>({prodotto:'',nome:'',categoria:'critico',formula_chimica:null,peso_molare:null,elemento_confronto:null,parametro_equivalenza:null,prezzo_attuale_eur_kg:0,proiezione_prezzo_p1:0.03,proiezione_prezzo_p2:0.05}),
   },
-  macro: { url:'macro', dbTable:'db_macro', label:'Macro componenti', pk:['id_macro','prodotto'],
+  storico: { url:'prodotti-storico', dbTable:'db_prodotti_storico', label:'Storico prezzi e mercato (grafici)', pk:['prodotto','anno'],
     columns:[
-      {key:'id_macro',label:'ID macro',type:'text'},
-      {key:'tipologia',label:'Tipologia',type:'select',options:['EOLICO','FOTOVOLTAICO','BESS']},
-      {key:'sotto_tecnologia',label:'Sotto tecnologia',type:'text'},
+      {key:'prodotto',label:'Prodotto',type:'prodotto-select'},
+      {key:'anno',label:'Anno',type:'number',step:1},
+      {key:'prezzo_usd_t',label:'Prezzo LME $/t',type:'number',step:10,nullable:true},
+      {key:'produzione_eu_kt',label:'Produzione EU27 (migliaia t)',type:'number',step:0.01,nullable:true},
+      {key:'consumo_mondiale_mt',label:'Consumo mondiale (milioni t)',type:'number',step:0.01,nullable:true},
+      {key:'fonte',label:'Fonte',type:'text',nullable:true},
+    ],
+    defaults:()=>({prodotto:prodottiCache[0]?.prodotto||'',anno:2025,prezzo_usd_t:null,produzione_eu_kt:null,consumo_mondiale_mt:null,fonte:''}),
+  },
+  macro: { url:'macro', dbTable:'db_macro', label:'Macro componenti (materiali per impianto)', pk:['id'],
+    columns:[
+      {key:'id',label:'ID',type:'text',auto:true},
+      {key:'impianto',label:'Impianto',type:'text'},
+      {key:'id_macro',label:'ID impianto',type:'text'},
+      {key:'tipologia',label:'Tipologia',type:'select',options:TIPOLOGIE_DB},
+      {key:'sotto_tecnologia',label:'Sotto tecnologia',type:'text',nullable:true},
       {key:'macro_componente',label:'Macrocomponente',type:'text'},
-      {key:'massa_kg_per_mw',label:'Massa kg/MW',type:'number',step:10},
-      {key:'prodotto',label:'Elemento contenuto',type:'prodotto-select'},
-      {key:'pct_contenuto_min',label:'% contenuto min',type:'percent',step:0.1},
-      {key:'pct_contenuto_max',label:'% contenuto max',type:'percent',step:0.1},
+      {key:'assieme_dettaglio',label:'Assieme (dettaglio)',type:'text',nullable:true},
+      {key:'material',label:'Materiale',type:'text'},
+      {key:'material_id',label:'Material ID',type:'text'},
+      {key:'massa_kg',label:'Massa kg',type:'number',step:1},
     ],
-    defaults:()=>({id_macro:'',tipologia:'EOLICO',sotto_tecnologia:'',macro_componente:'',massa_kg_per_mw:100,prodotto:prodottiCache[0]?.prodotto||'',pct_contenuto_min:0.05,pct_contenuto_max:0.10}),
+    defaults:()=>({impianto:'',id_macro:'',tipologia:'EOLICO',sotto_tecnologia:null,macro_componente:'',assieme_dettaglio:null,material:'',material_id:'',massa_kg:0}),
   },
-  intermedi_composizione: { url:'intermedi-composizione', dbTable:'db_intermedi_composizione', label:'Composizione intermedi', pk:['intermedio','prodotto'],
+  materiali: { url:'materiali', dbTable:'db_materiali', label:'Materiali e composizione', pk:['material_id','elemento'],
     columns:[
-      {key:'intermedio',label:'Intermedio',type:'intermedio-select'},
-      {key:'prodotto',label:'Elemento contenuto',type:'prodotto-select'},
-      {key:'pct_contenuto_min',label:'% contenuto min',type:'percent',step:0.1},
-      {key:'pct_contenuto_max',label:'% contenuto max',type:'percent',step:0.1},
+      {key:'material_id',label:'Material ID',type:'text'},
+      {key:'material',label:'Materiale',type:'text'},
+      {key:'elemento',label:'Elemento',type:'text'},
+      {key:'frazione_pct',label:'Frazione % in massa',type:'number',step:0.01,nullable:true},
     ],
-    defaults:()=>({intermedio:intermediAllCache[0]?.intermedio||'',prodotto:prodottiCache[0]?.prodotto||'',pct_contenuto_min:0.05,pct_contenuto_max:0.10}),
+    defaults:()=>({material_id:'',material:'',elemento:'(composizione non disponibile)',frazione_pct:null}),
   },
-  macro_processi: { url:'macro-processi', dbTable:'db_macro_processi', label:'Macro processi (scomposizione)', pk:['id_processo_macro'],
+  scarti: { url:'scarti', dbTable:'db_scarti', label:'Scarti', pk:['scarto'],
     columns:[
-      {key:'id_processo_macro',label:'ID processo',type:'text'},
-      {key:'tipologia',label:'Tipologia',type:'select',options:['EOLICO','FOTOVOLTAICO','BESS']},
-      {key:'sotto_tecnologia',label:'Sotto tecnologia',type:'text'},
-      {key:'macro_componente',label:'Macrocomponente',type:'text'},
-      {key:'tecnica',label:'Tecnica',type:'text'},
-      {key:'capex_eur_ton',label:'Capex €/ton',type:'number',step:5},
-      {key:'opex_eur_ton',label:'Opex €/ton',type:'number',step:5},
-      {key:'prezzo_vendita_eur_kg',label:'Prezzo vendita €/kg',type:'number',step:0.1},
-      {key:'proiezione_prezzo_p1',label:'Crescita P1 %/anno',type:'percent',step:0.1},
-      {key:'proiezione_prezzo_p2',label:'Crescita P2 %/anno',type:'percent',step:0.1},
-      {key:'descrizione_fasi',label:'Fasi',type:'text'},
+      {key:'scarto',label:'Scarto',type:'text'},
+      {key:'descrizione',label:'Descrizione',type:'text',nullable:true},
+      {key:'costo_smaltimento_eur_ton',label:'Costo smaltimento €/t',type:'number',step:5},
     ],
-    defaults:()=>({id_processo_macro:'',tipologia:'EOLICO',sotto_tecnologia:'',macro_componente:'',tecnica:'SMONTAGGIO',capex_eur_ton:30,opex_eur_ton:60,prezzo_vendita_eur_kg:0.5,proiezione_prezzo_p1:0.02,proiezione_prezzo_p2:0.03,descrizione_fasi:''}),
+    defaults:()=>({scarto:'',descrizione:null,costo_smaltimento_eur_ton:0}),
   },
-  processi: { url:'processi', dbTable:'db_processi', label:'Processi', pk:['id'],
+  reagenti: { url:'reagenti', dbTable:'db_reagenti', label:'Reagenti (solo composizione: i costi sono negli opex)', pk:['reagente'],
+    columns:[
+      {key:'reagente',label:'Codice',type:'text'},
+      {key:'nome',label:'Nome',type:'text'},
+      {key:'formula_chimica',label:'Formula chimica',type:'text'},
+      {key:'peso_molare',label:'Peso molare (calcolato)',type:'number',step:0.001,nullable:true},
+      {key:'sale_residuo',label:'Elementi in eccesso → sale (prodotto)',type:'text',nullable:true},
+      {key:'reagente_sale',label:'Reagente che completa il sale',type:'text',nullable:true},
+      {key:'scarto_residuo',label:'Residuo restante → scarto',type:'text',nullable:true},
+      {key:'descrizione',label:'Descrizione',type:'text',nullable:true},
+    ],
+    defaults:()=>({reagente:'',nome:'',formula_chimica:'',peso_molare:null,sale_residuo:null,reagente_sale:null,scarto_residuo:null,descrizione:null}),
+  },
+  processi: { url:'processi', dbTable:'db_processi', label:'Processi (materiale → uscita)', pk:['id'],
     columns:[
       {key:'id',label:'ID',type:'text',auto:true},
       {key:'id_processo',label:'ID processo',type:'text'},
-      {key:'tipologia',label:'Tipologia',type:'select',options:['EOLICO','FOTOVOLTAICO','BESS']},
-      {key:'sotto_tecnologia',label:'Sotto tecnologia',type:'text'},
+      {key:'tipologia',label:'Tipologia',type:'select',options:TIPOLOGIE_DB},
+      {key:'sotto_tecnologia',label:'Sotto tecnologia (vuoto = tutte; più valori separati da ;)',type:'text',nullable:true},
       {key:'macro_componente',label:'Macrocomponente',type:'text'},
       {key:'tecnica',label:'Tecnica',type:'text'},
-      {key:'capex_eur_ton',label:'Capex €/ton',type:'number',step:10},
-      {key:'opex_eur_ton',label:'Opex €/ton',type:'number',step:10},
-      {key:'tipo_output',label:'Tipo uscita',type:'select',options:['prodotto','intermedio']},
-      {key:'prodotto',label:'Prodotto (se uscita=prodotto)',type:'prodotto-select'},
-      {key:'intermedio_output',label:'Intermedio (se uscita=intermedio)',type:'intermedio-select'},
-      {key:'recupero_pct_min',label:'% resa min',type:'percent',step:0.5},
-      {key:'recupero_pct_max',label:'% resa max',type:'percent',step:0.5},
-      {key:'descrizione_fasi',label:'Fasi',type:'text'},
+      {key:'capex_eur_ton',label:'Capex € per t/anno di capacità',type:'number',step:10},
+      {key:'opex_eur_ton',label:'Opex €/t trattata',type:'number',step:10},
+      {key:'material_id',label:'Materiale in ingresso (ID)',type:'text'},
+      {key:'assieme_dettaglio',label:'Solo assieme (vuoto = tutti)',type:'text',nullable:true},
+      ...RECUPERO_COLS,
+      {key:'reagente',label:'Reagente (solo prodotti)',type:'text',nullable:true},
+      {key:'taglia_riferimento_t_anno',label:'Taglia di riferimento t/anno (vuota = capex lineare)',type:'number',step:100,nullable:true},
+      {key:'esponente_scala',label:'Esponente di scala capex',type:'number',step:0.05},
+      {key:'vita_utile_anni',label:'Vita utile impianto (anni)',type:'number',step:1},
     ],
-    defaults:()=>({id_processo:'',tipologia:'EOLICO',sotto_tecnologia:'',macro_componente:'',tecnica:'',capex_eur_ton:100,opex_eur_ton:200,tipo_output:'prodotto',prodotto:'Fe',intermedio_output:null,recupero_pct_min:0.80,recupero_pct_max:0.90,descrizione_fasi:''}),
+    defaults:()=>({id_processo:'',tipologia:'EOLICO',sotto_tecnologia:null,macro_componente:'',tecnica:'',capex_eur_ton:100,opex_eur_ton:200,material_id:'',assieme_dettaglio:null,tipo_output:'prodotto',prodotto:'Fe',intermedio_output:null,scarto:null,recupero_pct_min:0.9,recupero_pct:0.9,recupero_pct_max:0.9,descrizione_fasi:'',reagente:null,taglia_riferimento_t_anno:null,esponente_scala:0.6,vita_utile_anni:15}),
   },
   intermedi: { url:'intermedi', dbTable:'db_intermedi', label:'Intermedi', pk:['intermedio'],
     columns:[
@@ -347,22 +479,21 @@ const TABLES = {
     ],
     defaults:()=>({intermedio:'',nome:'',prezzo_attuale_eur_kg:0,proiezione_prezzo_p1:0.03,proiezione_prezzo_p2:0.05}),
   },
-  sottoprocessi: { url:'sottoprocessi', dbTable:'db_sottoprocessi', label:'Sottoprocessi', pk:['id'],
+  sottoprocessi: { url:'sottoprocessi', dbTable:'db_sottoprocessi', label:'Sottoprocessi (intermedio → uscita)', pk:['id'],
     columns:[
       {key:'id',label:'ID',type:'text',auto:true},
       {key:'id_sottoprocesso',label:'ID sottoprocesso',type:'text'},
       {key:'intermedio',label:'Input (intermedio)',type:'intermedio-select'},
       {key:'tecnica',label:'Tecnica',type:'text'},
-      {key:'capex_eur_ton',label:'Capex €/ton',type:'number',step:10},
-      {key:'opex_eur_ton',label:'Opex €/ton',type:'number',step:10},
-      {key:'tipo_output',label:'Tipo uscita',type:'select',options:['prodotto','intermedio']},
-      {key:'prodotto',label:'Prodotto (se uscita=prodotto)',type:'prodotto-select'},
-      {key:'intermedio_output',label:'Intermedio (se uscita=intermedio)',type:'intermedio-select'},
-      {key:'recupero_pct_min',label:'% resa min',type:'percent',step:0.5},
-      {key:'recupero_pct_max',label:'% resa max',type:'percent',step:0.5},
-      {key:'descrizione_fasi',label:'Fasi',type:'text'},
+      {key:'capex_eur_ton',label:'Capex € per t/anno di capacità',type:'number',step:10},
+      {key:'opex_eur_ton',label:'Opex €/t',type:'number',step:10},
+      ...RECUPERO_COLS,
+      {key:'reagente',label:'Reagente (solo prodotti)',type:'text',nullable:true},
+      {key:'taglia_riferimento_t_anno',label:'Taglia di riferimento t/anno (vuota = capex lineare)',type:'number',step:100,nullable:true},
+      {key:'esponente_scala',label:'Esponente di scala capex',type:'number',step:0.05},
+      {key:'vita_utile_anni',label:'Vita utile impianto (anni)',type:'number',step:1},
     ],
-    defaults:()=>({id_sottoprocesso:'',intermedio:intermediAllCache[0]?.intermedio||'',tecnica:'',capex_eur_ton:1000,opex_eur_ton:10000,tipo_output:'intermedio',prodotto:null,intermedio_output:intermediAllCache[0]?.intermedio||'',recupero_pct_min:0.5,recupero_pct_max:0.6,descrizione_fasi:''}),
+    defaults:()=>({id_sottoprocesso:'',intermedio:intermediAllCache[0]?.intermedio||'',tecnica:'',capex_eur_ton:1000,opex_eur_ton:1000,tipo_output:'prodotto',prodotto:'Fe',intermedio_output:null,scarto:null,recupero_pct_min:0.3,recupero_pct:0.35,recupero_pct_max:0.4,descrizione_fasi:'',reagente:null,taglia_riferimento_t_anno:null,esponente_scala:0.6,vita_utile_anni:15}),
   },
   indici: { url:'indici-rivalutazione', dbTable:'db_indici_rivalutazione', label:'Indici di rivalutazione costi', pk:['id_indice'],
     columns:[
@@ -377,18 +508,21 @@ const TABLES = {
 const SECTIONS = [
   ['calcolo','Calcolo economico'],
   ['impianti','Impianti'],
-  ['prodotti','Prodotti'],
   ['macro','Macro componenti'],
-  ['macro_processi','Macro processi'],
+  ['materiali','Materiali'],
   ['processi','Processi'],
+  ['scarti','Scarti'],
+  ['reagenti','Reagenti'],
+  ['prodotti','Prodotti'],
+  ['storico','Storico prezzi'],
   ['intermedi','Intermedi'],
-  ['intermedi_composizione','Composizione intermedi'],
   ['sottoprocessi','Sottoprocessi'],
   ['indici','Indici rivalutazione'],
 ];
 let section = 'calcolo';
 let prodottiCache = [];
 let intermediAllCache = [];
+let scartiCache = [];
 
 function renderNav(){
   document.getElementById('navTabs').innerHTML = SECTIONS.map(([k,l]) =>
@@ -415,21 +549,42 @@ async function renderSection(){
 
 // ============================================================
 // SEZIONE CALCOLO ECONOMICO
+//   Da impianto: tipologia -> impianto -> macrocomponente (uno o tutti)
+//   Intermedio acquistato: intermedio -> quantita' -> sottoprocesso
 // ============================================================
-let calcState = { mode:'impianto', tipologia:'', sotto:'', impianto:'',
-  potenza:1, annoDismissione:2035, indiceCosti:'ISTAT', componenti:{},
-  prezziManuali: { macro:{}, prodotti:{}, intermedi:{} },
+const TIPO_ICONS = {BESS:['▥','#6E5AA8','BESS'], EOLICO:['🜲','#2E8B8B','Eolico'], FOTOVOLTAICO:['☀','#E0A83E','Fotovoltaico']};
+// sotto-tecnologie: gruppi di impianti trattabili con lo stesso processo (codici in db_impianti.sotto_tecnologia)
+const SOTTO_TECNOLOGIE = {
+  LFP:'LFP — litio ferro fosfato',
+  DD_EESG:'Presa diretta, eccitazione elettrica (senza magneti)',
+  DD_PMG:'Presa diretta, magneti permanenti',
+  MS_PMG:'Velocità media, moltiplicatore + magneti permanenti',
+  HS_DFIG:'Moltiplicatore + generatore asincrono (senza magneti)',
+  CSI_VV:'Silicio cristallino, modulo vetro-vetro',
+  CSI_VB:'Silicio cristallino, modulo vetro-backsheet',
+};
+const sottoLabel = c => c ? (SOTTO_TECNOLOGIE[c] ? `${c} · ${SOTTO_TECNOLOGIE[c]}` : c) : 'Senza sotto-tecnologia';
+const SENZA_SOTTO = '__NESSUNA__';   // valore del menu per gli impianti senza sotto-tecnologia
+const sottoDi = i => i.sotto_tecnologia || SENZA_SOTTO;
+const TUTTI = '__TUTTI__';
+
+// Da impianto: tipologia -> sotto-tecnologia -> impianti (uno o piu') -> macrocomponenti (uno o piu').
+// Le masse dei materiali di ogni macrocomponente sono SOMMATE sugli impianti scelti e il processo
+// e' applicato al totale; i costi di ogni impianto sono rivalutati al suo anno di dismissione.
+let calcState = { mode:'impianto', tipologia:'', sotto:'', impianti:[], macroSel:[],
+  annoOverride:null,      // null = anno di dismissione di ogni impianto; numero = stesso anno per tutti
+  annoDismissione:2035,   // anno di riferimento della modalita' "intermedio acquistato"
+  indiceCosti:'ISTAT',
+  macroDisponibili:[],   // [{macro_componente, massa_kg, n_materiali, processi:[...], assiemi:[...], impianti:[...]}]
+  separati:{},           // macro -> [assiemi trattati in una corsia separata]
+  componenti:{},         // macro -> {processoOptions, idProcesso, figli}
+  prezziManuali: { prodotti:{}, intermedi:{} },
   diretto: initDiretto() };
 let impiantiCache = [], indiciCache = [];
+let lastCalc = null;      // ultimo risultato (per i dettagli nei popup)
 
 function initDiretto(){
-  return {
-    sottotipo: 'macro', // 'macro' | 'intermedio'
-    tipologia:'', sotto:'', macroComponente:'',
-    processoOptions:[], idProcesso:'',
-    intermedio:'', sottoprocessoOptions:[], idSottoprocesso:'',
-    massaTon: 10, figli:{}, prezzoAcquistoOverride: null,
-  };
+  return { intermedio:'', sottoprocessoOptions:[], idSottoprocesso:'', massaTon:10, figli:{}, prezzoAcquistoOverride:null };
 }
 
 async function renderCalcoloAside(){
@@ -438,218 +593,236 @@ async function renderCalcoloAside(){
   if(!indiciCache.length) indiciCache = await apiGet('/filtri/indici-rivalutazione');
   if(!prodottiCache.length) prodottiCache = await apiGet('/prodotti');
   if(!intermediAllCache.length) intermediAllCache = await apiGet('/intermedi');
+  const tipologie = await apiGet('/filtri/tipologie');
+  const s = calcState;
 
-  const tipologie = (calcState.mode==='manuale' || (calcState.mode==='diretto' && calcState.diretto.sottotipo==='macro'))
-    ? await apiGet('/filtri/tipologie') : [];
-  const icons = {EOLICO:['🜲','#2E8B8B'], FOTOVOLTAICO:['☀','#E0A83E'], BESS:['▥','#6E5AA8']};
-
+  const impiantiTip = impiantiCache.filter(i=>i.tipologia===s.tipologia);
+  const sottoTip = [...new Set(impiantiTip.map(sottoDi))].sort((a,b)=>(a===SENZA_SOTTO)-(b===SENZA_SOTTO) || a.localeCompare(b));
+  const impiantiSotto = s.sotto ? impiantiTip.filter(i=>sottoDi(i)===s.sotto) : [];
+  const selImp = new Set(s.impianti), selMac = new Set(s.macroSel);
+  const macroOpts = s.macroDisponibili;
+  const anniSel = impiantiSotto.filter(i=>selImp.has(i.id_imp)).map(i=>i.anno_dismissione);
+  const anniTxt = !anniSel.length ? '—' : Math.min(...anniSel)===Math.max(...anniSel) ? Math.min(...anniSel) : `${Math.min(...anniSel)}–${Math.max(...anniSel)}`;
+  const scrollPrima = Object.fromEntries([...aside.querySelectorAll('.chk-list')].map(l=>[l.id, l.scrollTop]));
+  const ddLabel = (sel, tot, nome1, vuoto, plur) =>
+    !sel.length ? `<span class="dd-lbl vuoto">${vuoto}</span>`
+      : `<span class="dd-lbl">${sel.length===1 ? escAttr(nome1) : sel.length===tot ? `Tutti (${tot} ${plur})` : `${sel.length} di ${tot} ${plur}`}</span>`;
+  const nomeImp1 = (impiantiSotto.find(i=>selImp.has(i.id_imp))||{}).nome || '';
   aside.innerHTML = `
     <div class="fgroup">
-      <div class="h">Punto di partenza</div>
       <div class="mode-toggle">
-        <button class="mode-btn ${calcState.mode==='impianto'?'active':''}" id="btnModeImp">Da impianto</button>
-        <button class="mode-btn ${calcState.mode==='manuale'?'active':''}" id="btnModeMan">Manuale</button>
-        <button class="mode-btn ${calcState.mode==='diretto'?'active':''}" id="btnModeDiretto">Materiale acquistato</button>
+        <button class="mode-btn ${s.mode==='impianto'?'active':''}" id="btnModeImp">Da impianto</button>
+        <button class="mode-btn ${s.mode==='intermedio'?'active':''}" id="btnModeInt">Intermedio acquistato</button>
       </div>
-      ${calcState.mode==='impianto' ? `
-        <select id="selImpianto">
-          <option value="">Seleziona impianto...</option>
-          ${impiantiCache.map(i=>`<option value="${i.id_imp}" ${calcState.impianto===i.id_imp?'selected':''}>${i.id_imp} — ${i.tipologia} ${i.potenza_mw}MW</option>`).join('')}
-        </select>
-      ` : calcState.mode==='manuale' ? `
-        <div class="type" id="typeF">
-          ${tipologie.map(t=>`<button data-t="${t}" aria-pressed="${calcState.tipologia===t}"><span class="ic" style="background:${(icons[t]||['●','#888'])[1]}">${(icons[t]||['●'])[0]}</span>${t.charAt(0)+t.slice(1).toLowerCase()}</button>`).join('')}
-        </div>
-        <div style="margin-top:10px" id="sottoWrap"></div>
-      ` : `
-        <div class="mode-toggle" style="margin-top:2px">
-          <button class="mode-btn ${calcState.diretto.sottotipo==='macro'?'active':''}" id="btnSottotipoMacro">Da macrocomponente</button>
-          <button class="mode-btn ${calcState.diretto.sottotipo==='intermedio'?'active':''}" id="btnSottotipoSotto">Da intermedio</button>
-        </div>
-        <div id="direttoFields" style="margin-top:10px"></div>
-      `}
     </div>
-    ${calcState.mode!=='diretto' ? `
+    ${s.mode==='impianto' ? `
     <div class="fgroup">
-      <div class="h">Potenza installata</div>
-      <div class="mwrow">
-        <input type="range" id="mw" min="0.5" max="100" step="0.5" value="${calcState.potenza}">
-        <div class="mwval"><span id="mwv">${calcState.potenza}</span> <small>MW</small></div>
+      <div class="h">Tipologia impianto</div>
+      <div class="type" id="typeF">
+        ${tipologie.map(t=>{const ic=TIPO_ICONS[t]||['●','#888',t];return `<button data-t="${t}" aria-pressed="${s.tipologia===t}"><span class="ic" style="background:${ic[1]}">${ic[0]}</span>${ic[2]}</button>`;}).join('')}
       </div>
+    </div>
+    <div class="fgroup">
+      <div class="h">Sotto-tecnologia</div>
+      <select id="selSotto" ${!s.tipologia?'disabled':''}>
+        <option value="">${s.tipologia?'Seleziona sotto-tecnologia...':'Scegli prima la tipologia'}</option>
+        ${sottoTip.map(k=>`<option value="${escAttr(k)}" ${s.sotto===k?'selected':''}>${escAttr(sottoLabel(k===SENZA_SOTTO?'':k))} (${impiantiTip.filter(i=>sottoDi(i)===k).length})</option>`).join('')}
+      </select>
+    </div>
+    <div class="fgroup">
+      <div class="h">Impianti</div>
+      ${!s.sotto ? `<div class="chip">● scegli prima la sotto-tecnologia</div>` : `
+      <div class="dd ${ddAperto==='imp'?'open':''}" data-dd="imp">
+        <button type="button" class="dd-btn">${ddLabel(s.impianti, impiantiSotto.length, nomeImp1, 'Seleziona impianti...', 'impianti')}<span class="dd-car">▼</span></button>
+        <div class="dd-panel">
+          <div class="chk-tools"><button data-tutti="imp">Tutti</button><button data-nessuno="imp">Nessuno</button></div>
+          <div class="chk-list" id="lstImpianti">${impiantiSotto.map(i=>`
+            <label class="ass-row"><input type="checkbox" value="${escAttr(i.id_imp)}" ${selImp.has(i.id_imp)?'checked':''}>
+              <span class="ass-nome">${i.nome}</span><span class="ass-m">${i.anno_dismissione}</span></label>`).join('')}
+          </div>
+        </div>
+      </div>`}
+    </div>
+    <div class="fgroup">
+      <div class="h">Macrocomponenti</div>
+      ${!s.impianti.length ? `<div class="chip">● scegli almeno un impianto</div>`
+        : !macroOpts.length ? `<div class="chip">● nessun macrocomponente con materiali e processo</div>` : `
+      <div class="dd ${ddAperto==='mac'?'open':''}" data-dd="mac">
+        <button type="button" class="dd-btn">${ddLabel(s.macroSel, macroOpts.length, s.macroSel[0]||'', 'Seleziona macrocomponenti...', 'macrocomp.')}<span class="dd-car">▼</span></button>
+        <div class="dd-panel">
+          <div class="chk-tools"><button data-tutti="mac">Tutti</button><button data-nessuno="mac">Nessuno</button></div>
+          <div class="chk-list" id="lstMacro">${macroOpts.map(m=>`
+            <label class="ass-row" title="${escAttr(m.impianti.map(x=>`${x.nome}: ${massStr(x.massa_kg)}`).join('\n'))}"><input type="checkbox" value="${escAttr(m.macro_componente)}" ${selMac.has(m.macro_componente)?'checked':''}>
+              <span class="ass-nome">${m.macro_componente}</span><span class="ass-m">${massStr(m.massa_kg)}${s.impianti.length>1?` · ${m.impianti.length}/${s.impianti.length} imp.`:''}</span></label>`).join('')}
+          </div>
+        </div>
+      </div>`}
     </div>
     ` : `
     <div class="fgroup">
+      <div class="h">Intermedio acquistato</div>
+      <select id="selIntermedioDiretto">
+        <option value="">Seleziona intermedio...</option>
+        ${intermediAllCache.map(x=>`<option value="${x.intermedio}" ${s.diretto.intermedio===x.intermedio?'selected':''}>${x.intermedio} — ${x.nome}</option>`).join('')}
+      </select>
+    </div>
+    <div class="fgroup">
       <div class="h">Quantità da trattare</div>
-      <input type="number" id="inpMassaTon" min="0.001" step="1" value="${calcState.diretto.massaTon}">
+      <input type="number" id="inpMassaTon" min="0.001" step="1" value="${s.diretto.massaTon}">
       <div class="chip">● tonnellate</div>
     </div>
     `}
+    ${s.mode==='impianto' ? `
     <div class="fgroup">
-      <div class="h">Anno di ${calcState.mode==='diretto'?'riferimento':'dismissione'}</div>
-      <input type="number" id="inpAnno" min="${ANNO_CORRENTE}" max="2100" step="1" value="${calcState.annoDismissione}">
-    </div>
+      <div class="h">Anno di dismissione</div>
+      <label class="anno-row"><input type="checkbox" id="chkAnnoImp" ${s.annoOverride==null?'checked':''}> quello di ogni impianto (da database)</label>
+      <input type="number" id="inpAnno" min="${ANNO_CORRENTE}" max="2100" step="1" ${s.annoOverride==null?'disabled':''}
+        value="${s.annoOverride ?? (anniSel.length ? Math.max(...anniSel) : ANNO_CORRENTE)}">
+      <div class="chip">● ${s.annoOverride==null ? `da database: ${anniTxt}` : `stesso anno per tutti (database: ${anniTxt})`}</div>
+    </div>` : `
+    <div class="fgroup">
+      <div class="h">Anno di riferimento</div>
+      <input type="number" id="inpAnno" min="${ANNO_CORRENTE}" max="2100" step="1" value="${s.annoDismissione}">
+    </div>`}
     <div class="fgroup">
       <div class="h">Indice rivalutazione costi</div>
       <select id="selIndice">
-        ${indiciCache.map(i=>`<option value="${i.id_indice}" ${calcState.indiceCosti===i.id_indice?'selected':''}>${i.nome} (${(i.tasso_annuo*100).toFixed(1)}%/anno)</option>`).join('')}
+        ${indiciCache.map(i=>`<option value="${i.id_indice}" ${s.indiceCosti===i.id_indice?'selected':''}>${i.nome} (${(i.tasso_annuo*100).toFixed(1)}%/anno)</option>`).join('')}
       </select>
       <div class="chip">● Anno corrente ${ANNO_CORRENTE}</div>
     </div>
   `;
 
-  document.getElementById('btnModeImp').onclick=()=>{calcState.mode='impianto';resetSelection();renderCalcoloAside();renderCalcoloMain();};
-  document.getElementById('btnModeMan').onclick=()=>{calcState.mode='manuale';resetSelection();renderCalcoloAside();renderCalcoloMain();};
-  document.getElementById('btnModeDiretto').onclick=()=>{calcState.mode='diretto';resetSelection();renderCalcoloAside();renderCalcoloMain();};
+  document.getElementById('btnModeImp').onclick=()=>{ if(s.mode!=='impianto'){s.mode='impianto';resetSelection();renderCalcoloAside();renderCalcoloMain();} };
+  document.getElementById('btnModeInt').onclick=()=>{ if(s.mode!=='intermedio'){s.mode='intermedio';resetSelection();renderCalcoloAside();renderCalcoloMain();} };
 
-  if(calcState.mode==='impianto'){
-    document.getElementById('selImpianto').onchange=async e=>{
-      const imp = impiantiCache.find(i=>i.id_imp===e.target.value);
-      calcState.impianto=e.target.value; calcState.componenti={};
-      if(imp){calcState.tipologia=imp.tipologia;calcState.sotto=imp.sotto_tecnologia;calcState.potenza=imp.potenza_mw;calcState.annoDismissione=imp.anno_dismissione;}
-      else{calcState.tipologia='';calcState.sotto='';}
-      await renderCalcoloAside();
-      if(calcState.tipologia && calcState.sotto) await loadComponenti(); else renderCalcoloMain();
-    };
-  } else if(calcState.mode==='manuale') {
+  if(s.mode==='impianto'){
     document.getElementById('typeF').onclick=async e=>{
-      const b=e.target.closest('button'); if(!b)return;
-      calcState.tipologia=b.dataset.t; calcState.sotto=''; calcState.componenti={};
-      await renderCalcoloAside();renderCalcoloMain();
+      const b=e.target.closest('button'); if(!b) return;
+      if(s.tipologia===b.dataset.t) return;
+      resetSelection(); s.tipologia=b.dataset.t;
+      await renderCalcoloAside(); renderCalcoloMain();
     };
-    if(calcState.tipologia) await renderSottoSelect();
+    document.getElementById('selSotto').onchange=async e=>{
+      const t = s.tipologia; resetSelection(); s.tipologia = t; s.sotto = e.target.value;
+      // un solo impianto in questa sotto-tecnologia: selezionato subito
+      const imps = impiantiCache.filter(i=>i.tipologia===t && sottoDi(i)===s.sotto);
+      if(imps.length===1){ s.impianti = [imps[0].id_imp]; await aggiornaMacroDisponibili(); }
+      await renderCalcoloAside(); renderCalcoloMain();
+    };
+    const impiantiVisibili = impiantiSotto.map(i=>i.id_imp);
+    const cambiaImpianti = async ids=>{
+      s.impianti = impiantiVisibili.filter(i=>ids.includes(i));   // ordine della lista
+      await aggiornaMacroDisponibili();
+      await renderCalcoloAside(); renderCalcoloMain();
+    };
+    const cambiaMacro = async nomi=>{
+      s.macroSel = macroOpts.map(m=>m.macro_componente).filter(m=>nomi.includes(m));
+      rebuildLanes(); await renderCalcoloAside(); renderCalcoloMain();
+    };
+    const lstI = document.getElementById('lstImpianti');
+    if(lstI) lstI.onchange=()=>cambiaImpianti([...lstI.querySelectorAll('input:checked')].map(x=>x.value));
+    const lstM = document.getElementById('lstMacro');
+    if(lstM) lstM.onchange=()=>cambiaMacro([...lstM.querySelectorAll('input:checked')].map(x=>x.value));
+    aside.querySelectorAll('[data-tutti],[data-nessuno]').forEach(b=>b.onclick=()=>{
+      const tutti = 'tutti' in b.dataset, cosa = b.dataset.tutti || b.dataset.nessuno;
+      if(cosa==='imp') cambiaImpianti(tutti ? impiantiVisibili : []);
+      else cambiaMacro(tutti ? macroOpts.map(m=>m.macro_componente) : []);
+    });
+    document.getElementById('chkAnnoImp').onchange=e=>{
+      s.annoOverride = e.target.checked ? null : (+document.getElementById('inpAnno').value || ANNO_CORRENTE);
+      renderCalcoloAside(); renderCalcoloMain();
+    };
+    // menu a tendina: apri/chiudi; resta aperto mentre si spuntano le caselle
+    aside.querySelectorAll('.dd').forEach(dd=>{
+      dd.querySelector('.dd-btn').onclick=()=>{
+        ddAperto = ddAperto===dd.dataset.dd ? null : dd.dataset.dd;
+        aside.querySelectorAll('.dd').forEach(x=>x.classList.toggle('open', x.dataset.dd===ddAperto));
+        posizionaTendina();
+      };
+    });
+    posizionaTendina();
+    // la lista non torna in cima a ogni clic
+    aside.querySelectorAll('.chk-list').forEach(l=>{ l.scrollTop = scrollPrima[l.id] || 0; });
   } else {
-    document.getElementById('btnSottotipoMacro').onclick=()=>{calcState.diretto=initDiretto();calcState.diretto.sottotipo='macro';renderCalcoloAside();renderCalcoloMain();};
-    document.getElementById('btnSottotipoSotto').onclick=()=>{calcState.diretto=initDiretto();calcState.diretto.sottotipo='intermedio';renderCalcoloAside();renderCalcoloMain();};
-    await renderDirettoFields();
-    document.getElementById('inpMassaTon').oninput=e=>{calcState.diretto.massaTon=+e.target.value||0;renderCalcoloMain();};
+    document.getElementById('selIntermedioDiretto').onchange=async e=>{
+      const d=s.diretto; d.intermedio=e.target.value; d.idSottoprocesso=''; d.sottoprocessoOptions=[]; d.figli={}; d.prezzoAcquistoOverride=null;
+      if(d.intermedio){
+        d.sottoprocessoOptions = await apiGet('/filtri/sottoprocessi', {intermedio:d.intermedio});
+        d.idSottoprocesso = d.sottoprocessoOptions[0]?.id_sottoprocesso || '';
+      }
+      renderCalcoloMain();
+    };
+    document.getElementById('inpMassaTon').oninput=e=>{s.diretto.massaTon=+e.target.value||0;renderCalcoloMain();};
   }
+  document.getElementById('inpAnno').onchange=e=>{
+    const v = +e.target.value || ANNO_CORRENTE;
+    if(s.mode==='impianto') s.annoOverride = v; else s.annoDismissione = v;
+    renderCalcoloAside(); renderCalcoloMain();
+  };
+  document.getElementById('selIndice').onchange=e=>{s.indiceCosti=e.target.value;renderCalcoloMain();};
+}
 
-  if(calcState.mode!=='diretto'){
-    document.getElementById('mw').oninput=e=>{calcState.potenza=+e.target.value;document.getElementById('mwv').textContent=e.target.value;renderCalcoloMain();};
-  }
-  document.getElementById('inpAnno').oninput=e=>{calcState.annoDismissione=+e.target.value||ANNO_CORRENTE;renderCalcoloMain();};
-  document.getElementById('selIndice').onchange=e=>{calcState.indiceCosti=e.target.value;renderCalcoloMain();};
+// ---- menu a tendina della barra laterale (impianti, macrocomponenti) ----
+// il pannello e' in posizione fissa sotto il pulsante, cosi' non viene tagliato dallo scorrimento della barra
+let ddAperto = null;   // 'imp' | 'mac' | null
+function posizionaTendina(){
+  const dd = ddAperto && document.querySelector(`#aside .dd[data-dd="${ddAperto}"]`);
+  if(!dd){ ddAperto = null; return; }
+  const r = dd.querySelector('.dd-btn').getBoundingClientRect(), p = dd.querySelector('.dd-panel');
+  const w = Math.min(Math.max(r.width, 320), window.innerWidth - r.left - 12);
+  const sotto = window.innerHeight - r.bottom - 12, sopra = r.top - 12;
+  const giu = sotto >= 220 || sotto >= sopra;
+  const h = Math.min(giu ? sotto : sopra, window.innerHeight * 0.65);
+  Object.assign(p.style, { left:r.left+'px', width:w+'px', maxHeight:h+'px',
+    top: giu ? (r.bottom+4)+'px' : 'auto', bottom: giu ? 'auto' : (window.innerHeight - r.top + 4)+'px' });
+}
+function chiudiTendina(){
+  if(!ddAperto) return;
+  ddAperto = null;
+  document.querySelectorAll('#aside .dd.open').forEach(d=>d.classList.remove('open'));
+}
+document.addEventListener('mousedown', e=>{ if(ddAperto && !e.target.closest('.dd')) chiudiTendina(); });
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') chiudiTendina(); });
+window.addEventListener('resize', posizionaTendina);
+document.addEventListener('scroll', e=>{ if(ddAperto && !e.target.closest?.('.dd-panel')) posizionaTendina(); }, true);
 
-  if(calcState.mode!=='diretto' && calcState.tipologia && calcState.sotto && !Object.keys(calcState.componenti).length) await loadComponenti();
+// macrocomponenti trattabili per gli impianti scelti (masse sommate); tiene le scelte ancora valide
+async function aggiornaMacroDisponibili(){
+  const s = calcState;
+  s.macroDisponibili = s.impianti.length ? await apiGet('/filtri/macrocomponenti', {id_imps:s.impianti.join(',')}) : [];
+  const nomi = s.macroDisponibili.map(m=>m.macro_componente);
+  s.macroSel = s.macroSel.filter(m=>nomi.includes(m));
+  if(!s.macroSel.length && nomi.length===1) s.macroSel = [...nomi];
+  Object.keys(s.separati).forEach(m=>{ if(!nomi.includes(m)) delete s.separati[m]; });
+  rebuildLanes();
+}
+
+// corsie dello schema: una per macrocomponente scelto (resto) + una per ogni assieme separato
+const laneKey = (macro, assieme) => assieme ? macro+'##'+assieme : macro;
+function rebuildLanes(){
+  const s = calcState;
+  const scelti = s.macroDisponibili.filter(m=>s.macroSel.includes(m.macro_componente));
+  const nuovi = {};
+  const corsia = (k, m, assieme)=>{
+    const vecchia = s.componenti[k];
+    // i processi disponibili dipendono dagli impianti scelti: si tiene quello scelto se ancora valido
+    const valido = vecchia && m.processi.some(p=>p.id_processo===vecchia.idProcesso);
+    nuovi[k] = valido ? {...vecchia, processoOptions:m.processi}
+      : { macro:m.macro_componente, assieme, processoOptions:m.processi, idProcesso:m.processi[0]?.id_processo||null, figli:{} };
+  };
+  scelti.forEach(m=>{
+    corsia(laneKey(m.macro_componente, null), m, null);
+    (s.separati[m.macro_componente]||[]).forEach(a=>corsia(laneKey(m.macro_componente, a), m, a));
+  });
+  s.componenti = nuovi;
 }
 
 function resetSelection(){
-  calcState.tipologia='';calcState.sotto='';calcState.impianto='';calcState.componenti={};
-  calcState.prezziManuali={macro:{},prodotti:{},intermedi:{}};
-  calcState.diretto=initDiretto();
-}
-
-async function renderSottoSelect(){
-  const wrap = document.getElementById('sottoWrap');
-  const opts = calcState.tipologia ? await apiGet('/filtri/sotto-tecnologie', {tipologia:calcState.tipologia}) : [];
-  wrap.innerHTML = `<select id="selSotto" ${!calcState.tipologia?'disabled':''}>
-    <option value="">Seleziona sotto tecnologia...</option>
-    ${opts.map(s=>`<option value="${s}" ${calcState.sotto===s?'selected':''}>${s}</option>`).join('')}
-  </select>`;
-  document.getElementById('selSotto').onchange=async e=>{
-    calcState.sotto=e.target.value; calcState.componenti={};
-    await renderCalcoloAside();
-    if(calcState.sotto) await loadComponenti(); else renderCalcoloMain();
-  };
-}
-
-async function renderDirettoFields(){
-  const wrap = document.getElementById('direttoFields');
-  const d = calcState.diretto;
-  const icons = {EOLICO:['🜲','#2E8B8B'], FOTOVOLTAICO:['☀','#E0A83E'], BESS:['▥','#6E5AA8']};
-
-  if(d.sottotipo==='macro'){
-    const tipologie = await apiGet('/filtri/tipologie');
-    wrap.innerHTML = `
-      <div class="type" id="typeFDiretto">
-        ${tipologie.map(t=>`<button data-t="${t}" aria-pressed="${d.tipologia===t}"><span class="ic" style="background:${(icons[t]||['●','#888'])[1]}">${(icons[t]||['●'])[0]}</span>${t.charAt(0)+t.slice(1).toLowerCase()}</button>`).join('')}
-      </div>
-      <div style="margin-top:8px" id="sottoWrapDiretto"></div>
-      <div style="margin-top:8px" id="macroWrapDiretto"></div>
-    `;
-    document.getElementById('typeFDiretto').onclick=async e=>{
-      const b=e.target.closest('button'); if(!b)return;
-      d.tipologia=b.dataset.t; d.sotto=''; d.macroComponente=''; d.idProcesso=''; d.figli={};
-      await renderDirettoFields(); renderCalcoloMain();
-    };
-    if(d.tipologia) await renderDirettoSottoSelect();
-  } else {
-    if(!intermediAllCache.length) intermediAllCache = await apiGet('/intermedi');
-    wrap.innerHTML = `
-      <select id="selIntermedioDiretto">
-        <option value="">Seleziona intermedio...</option>
-        ${intermediAllCache.map(s=>`<option value="${s.intermedio}" ${d.intermedio===s.intermedio?'selected':''}>${s.intermedio} — ${s.nome}</option>`).join('')}
-      </select>
-    `;
-    document.getElementById('selIntermedioDiretto').onchange=async e=>{
-      d.intermedio=e.target.value; d.idSottoprocesso=''; d.sottoprocessoOptions=[]; d.figli={};
-      if(d.intermedio) await loadDirettoSottoprocessoOptions();
-      renderCalcoloMain();
-    };
-    if(d.intermedio) await loadDirettoSottoprocessoOptions();
-  }
-}
-
-async function renderDirettoSottoSelect(){
-  const d = calcState.diretto;
-  const wrap = document.getElementById('sottoWrapDiretto');
-  const opts = d.tipologia ? await apiGet('/filtri/sotto-tecnologie', {tipologia:d.tipologia}) : [];
-  wrap.innerHTML = `<select id="selSottoDiretto">
-    <option value="">Seleziona sotto tecnologia...</option>
-    ${opts.map(s=>`<option value="${s}" ${d.sotto===s?'selected':''}>${s}</option>`).join('')}
-  </select>`;
-  document.getElementById('selSottoDiretto').onchange=async e=>{
-    d.sotto=e.target.value; d.macroComponente=''; d.idProcesso=''; d.figli={};
-    await renderDirettoFields(); renderCalcoloMain();
-  };
-  if(d.sotto) await renderDirettoMacroSelect();
-}
-
-async function renderDirettoMacroSelect(){
-  const d = calcState.diretto;
-  const wrap = document.getElementById('macroWrapDiretto');
-  const opts = await apiGet('/filtri/macrocomponenti', {tipologia:d.tipologia, sotto_tecnologia:d.sotto});
-  wrap.innerHTML = `<select id="selMacroDiretto">
-    <option value="">Seleziona macrocomponente...</option>
-    ${opts.map(m=>`<option value="${m}" ${d.macroComponente===m?'selected':''}>${m.replaceAll('_',' ')}</option>`).join('')}
-  </select>`;
-  document.getElementById('selMacroDiretto').onchange=async e=>{
-    d.macroComponente=e.target.value; d.idProcesso=''; d.processoOptions=[]; d.figli={};
-    if(d.macroComponente) await loadDirettoProcessoOptions();
-    renderCalcoloMain();
-  };
-  if(d.macroComponente) await loadDirettoProcessoOptions();
-}
-
-async function loadDirettoProcessoOptions(){
-  // La scelta del processo, quando ce n'e' piu' di uno, si fa direttamente
-  // sulla card nello schema (come nelle altre modalita'), non qui in
-  // sidebar: qui carichiamo solo le opzioni disponibili.
-  const d = calcState.diretto;
-  d.processoOptions = await apiGet('/filtri/processi', {tipologia:d.tipologia, sotto_tecnologia:d.sotto, macro_componente:d.macroComponente});
-  if(!d.idProcesso) d.idProcesso = d.processoOptions[0]?.id_processo || '';
-}
-
-async function loadDirettoSottoprocessoOptions(){
-  const d = calcState.diretto;
-  d.sottoprocessoOptions = await apiGet('/filtri/sottoprocessi', {intermedio:d.intermedio});
-  if(!d.idSottoprocesso) d.idSottoprocesso = d.sottoprocessoOptions[0]?.id_sottoprocesso || '';
-}
-
-async function loadComponenti(){
-  const macroList = await apiGet('/filtri/macrocomponenti', {tipologia:calcState.tipologia, sotto_tecnologia:calcState.sotto});
-  const entries = await Promise.all(macroList.map(async macro=>{
-    const [mps, procs] = await Promise.all([
-      apiGet('/filtri/macro-processi', {tipologia:calcState.tipologia, sotto_tecnologia:calcState.sotto, macro_componente:macro}),
-      apiGet('/filtri/processi', {tipologia:calcState.tipologia, sotto_tecnologia:calcState.sotto, macro_componente:macro}),
-    ]);
-    return [macro, {
-      macroProcessoOptions: mps, idProcessoMacro: mps[0]?.id_processo_macro || null,
-      attivo: false, processoOptions: procs, idProcesso: null, figli: {},
-    }];
-  }));
-  calcState.componenti = Object.fromEntries(entries);
-  renderCalcoloMain();
+  const s = calcState;
+  s.tipologia=''; s.sotto=''; s.impianti=[]; s.macroSel=[]; s.macroDisponibili=[]; s.componenti={}; s.separati={};
+  s.prezziManuali={prodotti:{},intermedi:{}};
+  s.diretto=initDiretto();
 }
 
 // ---- albero ricorsivo delle scelte di trasformazione intermedi ----
@@ -677,417 +850,694 @@ function buildFigliPayload(figliDict){
   return out;
 }
 
-const fmt=(n,d=2)=>n.toLocaleString('it-IT',{minimumFractionDigits:d,maximumFractionDigits:d});
+const fmt=(n,d=2)=>(+n).toLocaleString('it-IT',{minimumFractionDigits:d,maximumFractionDigits:d});
 const fmtInt=n=>Math.round(n).toLocaleString('it-IT');
-function mass(kg){return kg>=1000?[fmt(kg/1000,2),'t']:[fmtInt(kg),'kg'];}
+const pct=v=>fmt(v*100,v*100%1?1:0)+'%';
+function mass(kg){return kg>=1000?[fmt(kg/1000,2),'t']:[fmt(kg,kg<10?2:0),'kg'];}
+const massStr = kg => mass(kg).join(' ');
 function eur(v){const a=Math.abs(v);const sign=v<0?'−':'';if(a>=1e6)return[sign+fmt(a/1e6,1),'M €'];if(a>=1e3)return[sign+fmtInt(a/1e3),'k €'];return[sign+fmtInt(a),'€'];}
-function componentIcon(name){ return name.replace(/_/g,' ').split(' ').map(w=>w[0]).slice(0,2).join(''); }
+function componentIcon(name){ return name.replace(/[_/]/g,' ').split(' ').filter(Boolean).map(w=>w[0]).slice(0,2).join('').toUpperCase(); }
 function fasiCompact(s){ return (s||'').replaceAll('_',' ').split(',').map(x=>x.trim().toLowerCase()).join(' · '); }
+function escAttr(s){ return String(s??'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+const nice = s => (s||'').replaceAll('_',' ');
+
+function pathBar(steps){
+  return `<div class="path">${steps.map(([l,v],i)=>`${i>0?'<span class="path-arrow">→</span>':''}<div class="path-step"><span class="lbl">${l}</span><span class="val ${v?'':'empty'}">${v||'—'}</span></div>`).join('')}</div>`;
+}
 
 let calcRequestId = 0;
 async function renderCalcoloMain(){
-  if(calcState.mode==='diretto') return renderCalcoloMainDiretto();
+  if(calcState.mode==='intermedio') return renderCalcoloMainDiretto();
+  const s = calcState;
   const main = document.getElementById('main');
-  const macros = Object.keys(calcState.componenti);
-  const nAttivi = macros.filter(m=>calcState.componenti[m].attivo).length;
-  const steps=[['Tipologia',calcState.tipologia],['Sotto tecnologia',calcState.sotto],
-    ['Macrocomponenti',macros.length?String(macros.length):''],
-    ['Trattati',macros.length?String(nAttivi):''],
-    ['Anno dismiss.',calcState.tipologia?calcState.annoDismissione:'']];
-  const pathHtml = `<div class="path">${steps.map(([l,v],i)=>`${i>0?'<span class="path-arrow">→</span>':''}<div class="path-step"><span class="lbl">${l}</span><span class="val ${v?'':'empty'}">${v||'—'}</span></div>`).join('')}</div>`;
+  const imps = s.impianti.map(id=>impiantiCache.find(i=>i.id_imp===id)).filter(Boolean);
+  const macros = Object.keys(s.componenti);
+  const nMacro = new Set(Object.values(s.componenti).map(c=>c.macro)).size;
+  const nSep = macros.length - nMacro;
+  const anni = imps.map(i=>i.anno_dismissione);
+  const pathHtml = pathBar([
+    ['Tipologia', TIPO_ICONS[s.tipologia]?.[2]||''],
+    ['Sotto-tecnologia', s.sotto ? (s.sotto===SENZA_SOTTO ? 'nessuna' : s.sotto) : ''],
+    ['Impianti', imps.length===1 ? imps[0].nome : imps.length ? `${imps.length} impianti` : ''],
+    ['Macrocomponenti', !nMacro ? '' : (nMacro===1 ? Object.values(s.componenti)[0].macro : `${nMacro} macrocomponenti`)
+      + (nSep ? ` + ${nSep} assiem${nSep>1?'i':'e'} separat${nSep>1?'i':'o'}` : '')],
+    ['Anno dismiss.', !imps.length ? '' : s.annoOverride!=null ? s.annoOverride
+      : Math.min(...anni)===Math.max(...anni) ? anni[0] : `${Math.min(...anni)}–${Math.max(...anni)}`]]);
 
-  if(!calcState.tipologia || !calcState.sotto || !macros.length){
-    main.innerHTML = pathHtml + `<div class="empty-state">Completa la selezione a sinistra per vedere lo schema del processo.</div>`;
+  if(!imps.length || !macros.length){
+    const msg = !s.tipologia ? 'Scegli la tipologia di impianto a sinistra.'
+      : !s.sotto ? 'Scegli la sotto-tecnologia: raggruppa gli impianti trattabili con lo stesso processo.'
+      : !imps.length ? 'Scegli uno o più impianti: le masse dei materiali vengono sommate e il processo è applicato al totale.'
+      : !s.macroDisponibili.length ? 'Gli impianti scelti non hanno macrocomponenti con materiali e un processo di trattamento.'
+      : 'Scegli uno o più macrocomponenti da trattare.';
+    main.innerHTML = pathHtml + `<div class="empty-state">${msg}</div>`;
     return;
   }
 
   const myId = ++calcRequestId;
   main.innerHTML = pathHtml + `<div class="empty-state">Calcolo in corso…</div>`;
-
   const body = {
-    tipologia: calcState.tipologia, sotto_tecnologia: calcState.sotto,
-    potenza_mw: calcState.potenza, anno_dismissione: calcState.annoDismissione,
-    anno_corrente: ANNO_CORRENTE, id_indice_costi: calcState.indiceCosti,
-    componenti: macros.map(m=>{
-      const c = calcState.componenti[m];
-      const entry = { macro_componente: m, id_processo_macro: c.idProcessoMacro, id_processo: c.attivo ? c.idProcesso : null };
-      if(!c.attivo){
-        const p = calcState.prezziManuali.macro[m];
-        if(p!=null) entry.prezzo_macro_override = p;
-      } else {
-        entry.prezzi_prodotti_override = calcState.prezziManuali.prodotti;
-        entry.prezzi_intermedi_override = calcState.prezziManuali.intermedi;
-        entry.figli_processo = buildFigliPayload(c.figli);
-      }
-      return entry;
+    id_imps: s.impianti, anno_dismissione: s.annoOverride,
+    anno_corrente: ANNO_CORRENTE, id_indice_costi: s.indiceCosti,
+    componenti: macros.map(k=>{
+      const c = s.componenti[k];
+      return {
+        macro_componente: c.macro, id_processo: c.idProcesso,
+        assieme: c.assieme, escludi_assiemi: c.assieme ? null : (s.separati[c.macro]||[]),
+        prezzi_prodotti_override: s.prezziManuali.prodotti,
+        prezzi_intermedi_override: s.prezziManuali.intermedi,
+        figli_processo: buildFigliPayload(c.figli),
+        taglia_t_anno: c.taglia || null,
+        anno_costruzione: c.annoCostr || null,
+      };
     }),
   };
-
   let data;
-  try{
-    data = await apiSend('POST', '/calcolo-impianto', body);
-  }catch(e){
+  try{ data = await apiSend('POST', '/calcolo-impianto', body); }
+  catch(e){
     if(myId!==calcRequestId) return;
     main.innerHTML = pathHtml + `<div class="empty-state">Errore nel calcolo: ${e.message}</div>`;
     return;
   }
   if(myId!==calcRequestId) return;
-
-  main.innerHTML = pathHtml
-    + renderSchemaProcesso(data)
-    + renderMaterialeRecuperatoPanel(data)
-    + renderEconomicSummary(data);
-  wireSchemaProcesso();
-  wirePriceTiles();
-}
-
-// ============================================================
-// MODALITA' "MATERIALE ACQUISTATO" — parte da un macrocomponente o un
-// intermedio gia' separato, con una quantita' in ingresso data
-// dall'utente invece che derivata da un impianto
-// ============================================================
-async function renderCalcoloMainDiretto(){
-  const main = document.getElementById('main');
-  const d = calcState.diretto;
-  const ready = d.sottotipo==='macro'
-    ? (d.tipologia && d.sotto && d.macroComponente && d.idProcesso && d.massaTon>0)
-    : (d.intermedio && d.idSottoprocesso && d.massaTon>0);
-
-  const steps = d.sottotipo==='macro'
-    ? [['Tipologia',d.tipologia],['Sotto tecnologia',d.sotto],['Macrocomponente',d.macroComponente?d.macroComponente.replaceAll('_',' '):''],['Quantità',d.massaTon?d.massaTon+' t':'']]
-    : [['Sottoprodotto',d.intermedio],['Quantità',d.massaTon?d.massaTon+' t':'']];
-  const pathHtml = `<div class="path">${steps.map(([l,v],i)=>`${i>0?'<span class="path-arrow">→</span>':''}<div class="path-step"><span class="lbl">${l}</span><span class="val ${v?'':'empty'}">${v||'—'}</span></div>`).join('')}</div>`;
-
-  if(!ready){
-    main.innerHTML = pathHtml + `<div class="empty-state">Completa la selezione a sinistra per vedere lo schema del processo.</div>`;
-    return;
-  }
-
-  const myId = ++calcRequestId;
-  main.innerHTML = pathHtml + `<div class="empty-state">Calcolo in corso…</div>`;
-
-  const commonBody = {
-    anno_dismissione: calcState.annoDismissione, anno_corrente: ANNO_CORRENTE, id_indice_costi: calcState.indiceCosti,
-    prezzo_acquisto_override: d.prezzoAcquistoOverride,
-    prezzi_prodotti_override: calcState.prezziManuali.prodotti,
-    prezzi_intermedi_override: calcState.prezziManuali.intermedi,
-  };
-
-  let data;
-  try{
-    if(d.sottotipo==='macro'){
-      data = await apiSend('POST', '/calcolo-da-macrocomponente', {
-        ...commonBody, tipologia:d.tipologia, sotto_tecnologia:d.sotto, macro_componente:d.macroComponente,
-        massa_ton:d.massaTon, id_processo:d.idProcesso, figli_processo: buildFigliPayload(d.figli),
-      });
-    } else {
-      data = await apiSend('POST', '/calcolo-da-intermedio', {
-        ...commonBody, intermedio:d.intermedio, massa_ton:d.massaTon, id_sottoprocesso:d.idSottoprocesso,
-        figli_sottoprocesso: buildFigliPayload(d.figli),
-      });
+  lastCalc = data;
+  lastCalcBody = body;   // riusato dall'export del bilancio di massa
+  // taglia non scritta: la prima proposta (tratta la massa in 1 anno) resta fissa per la corsia,
+  // cosi' aggiungendo o togliendo impianti cambia il tempo di trattamento, non l'impianto
+  (data.componenti||[]).forEach(cd=>{
+    const c = s.componenti[cdKey(cd)];
+    if(c && c.taglia == null && cd.processo && cd.processo.taglia_t_anno){
+      c.taglia = cd.processo.taglia_t_anno; c.tagliaProposta = true;
     }
-  }catch(e){
-    if(myId!==calcRequestId) return;
-    main.innerHTML = pathHtml + `<div class="empty-state">Errore nel calcolo: ${e.message}</div>`;
-    return;
-  }
-  if(myId!==calcRequestId) return;
-
-  data.massa_totale_kg = data.massa_input_kg; // alias per riusare renderEconomicSummary invariata
-  data.ha_prezzi_personalizzati = data.ha_prezzi_personalizzati || false;
-  const dataMateriale = { componenti: [{ uscite: data.uscite }] };
-
+  });
   main.innerHTML = pathHtml
-    + renderSchemaDiretto(data, d)
-    + renderMaterialeRecuperatoPanel(dataMateriale)
-    + renderEconomicSummary(data);
+    + renderAvvisiPanel(data.componenti)
+    + renderSchemaProcesso(data)
+    + renderMaterialeRecuperatoPanel(data.componenti)
+    + renderElementiPersiPanel(data.componenti)
+    + renderEconomicSummary(data, 'Massa macrocomponenti', data.massa_totale_kg, `di cui trattata ${massStr(data.massa_trattata_kg)}`);
   wireSchemaProcesso();
+  wireElementiPersi();
   wirePriceTiles();
-  wireSchemaDiretto();
-}
-
-function renderSchemaDiretto(data, d){
-  const [mv,mu] = mass(data.massa_input_kg);
-  const acq = data.acquisto;
-  const clsAcq = acq.prezzo_personalizzato ? 'custom' : 'default';
-  const label = d.sottotipo==='macro' ? d.macroComponente.replaceAll('_',' ') : d.intermedio;
-  const stepInfo = d.sottotipo==='macro' ? data.processo : data.sottoprocesso;
-
-  const acquistoCard = `
-    <div class="output-card clickable ${clsAcq}" data-price-acquisto="1">
-      <div class="sym" style="font-size:13px;color:var(--copper)">${label}</div>
-      <div class="nm">acquistato</div>
-      <div class="val">${mv} ${mu}</div>
-      <div class="vv">− ${eur(acq.costo_eur).join(' ')}</div>
-      <div class="price-tag">${fmt(acq.prezzo_eur_kg,2)} €/kg${acq.prezzo_personalizzato?' ✎':''}</div>
-    </div>`;
-
-  const options = d.sottotipo==='macro' ? d.processoOptions : d.sottoprocessoOptions;
-  const idScelto = d.sottotipo==='macro' ? d.idProcesso : d.idSottoprocesso;
-  const optKey = d.sottotipo==='macro' ? 'id_processo' : 'id_sottoprocesso';
-  const selClass = d.sottotipo==='macro' ? 'sel-processo-diretto' : 'sel-sottoprocesso-diretto';
-  const procNode = `
-    <div class="lane-node">
-      ${options.length>1 ? `
-        <select class="${selClass}">
-          ${options.map(p=>`<option value="${p[optKey]}" ${p[optKey]===idScelto?'selected':''}>${p.tecnica.replaceAll('_',' ')}</option>`).join('')}
-        </select>
-      ` : `<div class="lane-node-title">${(stepInfo.tecnica||'').replaceAll('_',' ')}</div>`}
-      <div class="lane-node-cost">Capex ${eur(stepInfo.capex_eur||0).join(' ')} · Opex ${eur(stepInfo.opex_eur||0).join(' ')}</div>
-      <div class="lane-node-costo-tot">Costo: ${eur(stepInfo.costo_eur).join(' ')}</div>
-      <div class="lane-node-fasi">${fasiCompact(stepInfo.descrizione_fasi)}</div>
-    </div>`;
-
-  const uscite = data.uscite.map(u=>renderUscitaCard('DIRETTO', [], u)).join('') + renderElementiNonEstrattiCards(stepInfo.elementi_non_estratti);
-
-  return `<div class="panel">
-    <h3>Schema del processo</h3>
-    <p class="sub">Materiale acquistato e lavorato — nessun impianto coinvolto, si parte direttamente dalla quantità indicata.</p>
-    <div class="lane"><div class="lane-row">
-      ${acquistoCard}
-      <span class="lane-arrow">→</span>
-      ${procNode}
-      <span class="lane-arrow">→</span>
-      <div class="lane-uscite">
-        <span class="uscite-label">uscite di "${(stepInfo.tecnica||'').replaceAll('_',' ')}"</span>
-        ${uscite}
-      </div>
-    </div></div>
-  </div>`;
-}
-
-function wireSchemaDiretto(){
-  document.querySelectorAll('[data-price-acquisto]').forEach(t=>{
-    t.onclick = ()=>openPriceModalAcquisto();
-  });
-  document.querySelectorAll('.sel-processo-diretto').forEach(sel=>{
-    sel.onchange = ()=>{ calcState.diretto.idProcesso=sel.value; calcState.diretto.figli={}; renderCalcoloMain(); };
-  });
-  document.querySelectorAll('.sel-sottoprocesso-diretto').forEach(sel=>{
-    sel.onchange = ()=>{ calcState.diretto.idSottoprocesso=sel.value; calcState.diretto.figli={}; renderCalcoloMain(); };
-  });
-}
-
-function openPriceModalAcquisto(){
-  const d = calcState.diretto;
-  const label = d.sottotipo==='macro' ? d.macroComponente.replaceAll('_',' ') : d.intermedio;
-  // il prezzo di default e' quello gia' mostrato nell'ultimo calcolo: lo rileggiamo dal DOM per semplicita',
-  // altrimenti ripetiamo la stessa fonte usata dal backend (prima riga macro_processi, o prezzo intermedio)
-  const priceTag = document.querySelector('[data-price-acquisto] .price-tag');
-  const startVal = d.prezzoAcquistoOverride ?? (priceTag ? parseFloat(priceTag.textContent) : 0);
-  const overlay = showModal(priceModalHtml(
-    `Prezzo di acquisto — ${label}`,
-    `Prezzo usato per calcolare il costo di acquisto della quantità in ingresso. Modificalo per simulare un prezzo di mercato diverso.`, startVal));
-  document.getElementById('btnCloseModal').onclick=()=>overlay.remove();
-  document.getElementById('btnConfirmPrice').onclick=()=>{
-    const v = parseFloat(document.getElementById('modalPriceInput').value);
-    if(!isNaN(v) && v>=0){ calcState.diretto.prezzoAcquistoOverride=v; overlay.remove(); renderCalcoloMain(); }
-  };
 }
 
 // ============================================================
-// SCHEMA DEL PROCESSO — un unico schema cliccabile e sequenziale
+// SCHEMA DEL PROCESSO (da impianto)
 // ============================================================
 function renderSchemaProcesso(data){
-  const byMacro = {}; data.componenti.forEach(c=>{ byMacro[c.macro_componente] = c; });
-  const macros = Object.keys(calcState.componenti);
-  const massaTotale = mass(data.massa_totale_kg);
+  const imps = data.impianti || [];
+  const chi = imps.length===1 ? imps[0].nome
+    : `${imps.length} impianti (masse dei materiali sommate)`;
   return `
   <div class="panel">
+    <button class="btn" style="float:right" onclick="exportBilancio(this)" title="Report Excel del calcolo corrente: per ogni materiale in ingresso, quanto va a ogni prodotto (parte pura), alle impurità e agli scarti, con resa, prezzo e ricavo">⬇ Esporta bilancio di massa</button>
     <h3>Schema del processo</h3>
-    <p class="sub">${calcState.tipologia.charAt(0)+calcState.tipologia.slice(1).toLowerCase()} · ${calcState.sotto} — massa totale scomposta: <b>${massaTotale[0]} ${massaTotale[1]}</b></p>
-    ${macros.map(m=>renderLane(m, byMacro[m])).join('')}
+    <p class="sub">${TIPO_ICONS[data.tipologia]?.[2]||data.tipologia} · ${chi} — ${data.componenti.length} corsi${data.componenti.length>1?"e":"a"}, massa totale <b>${massStr(data.massa_totale_kg)}</b>. Clicca sul macrocomponente per vedere i suoi materiali${imps.length>1?' e il contributo di ogni impianto':''}.</p>
+    ${imps.length>1 ? `<p class="sub">${imps.map(i=>`${i.nome} <span style="color:var(--mute)">(${i.anno_dismissione_calcolo}, ×${fmt(i.fattore_rivalutazione,3)})</span>`).join(' · ')}</p>` : ''}
+    ${data.componenti.map(c=>renderLane(c)).join('')}
   </div>`;
 }
 
-function renderLane(macro, cd){
-  const c = calcState.componenti[macro];
-  const mpOpt = c.macroProcessoOptions.find(o=>o.id_processo_macro===c.idProcessoMacro);
-  const massaStr = cd ? mass(cd.massa_componente_kg) : null;
-
-  const nodeMacroProcesso = `
-    <div class="lane-node">
-      ${c.macroProcessoOptions.length>1 ? `
-        <select class="sel-macroprocesso" data-macro="${macro}">
-          ${c.macroProcessoOptions.map(o=>`<option value="${o.id_processo_macro}" ${o.id_processo_macro===c.idProcessoMacro?'selected':''}>${o.tecnica.replaceAll('_',' ')}</option>`).join('')}
-        </select>
-      ` : `<div class="lane-node-title">${(mpOpt?.tecnica||'').replaceAll('_',' ')}</div>`}
-      <div class="lane-node-cost">Capex ${eur(cd?.scomposizione?.capex_eur||0).join(' ')} · Opex ${eur(cd?.scomposizione?.opex_eur||0).join(' ')}</div>
-      ${cd?.scomposizione ? `<div class="lane-node-costo-tot">Costo: ${eur(cd.scomposizione.costo_eur).join(' ')}</div>` : ''}
-      <div class="lane-node-fasi">${fasiCompact(mpOpt?.descrizione_fasi)}</div>
-    </div>`;
-
+const cdKey = cd => laneKey(cd.macro_componente, cd.assieme);
+function renderLane(cd){
+  const lane = cdKey(cd);
+  const c = calcState.componenti[lane];
+  const proc = cd.processo;
+  const info = calcState.macroDisponibili.find(m=>m.macro_componente===cd.macro_componente);
+  const nAss = info?.assiemi?.length || 0;
+  const nSep = (calcState.separati[cd.macro_componente]||[]).length;
   const cardMacro = `
-    <button class="lane-card-toggle ${c.attivo?'active':''}" data-macro="${macro}">
-      <span class="ic">${componentIcon(macro)}</span>
+    <div class="comp-col">
+    <button class="lane-card-toggle active" data-materiali-macro="${escAttr(lane)}" title="Vedi i materiali${cd.assieme?' di questo assieme':' del macrocomponente'}">
+      <span class="ic">${componentIcon(cd.macro_componente)}</span>
       <div>
-        <div class="comp-name">${macro.replaceAll('_',' ')}</div>
-        <div class="comp-mass-val">${massaStr?massaStr[0]+' '+massaStr[1]:'…'}</div>
+        <div class="comp-name">${cd.macro_componente}</div>
+        ${cd.assieme ? `<div class="assieme-tag">assieme: ${cd.assieme}</div>` : (nSep ? `<div class="assieme-tag">esclusi ${nSep} assiemi separati</div>` : '')}
+        <div class="comp-mass-row"><span class="lbl">totale</span><span class="comp-mass-val">${massStr(cd.massa_componente_kg)}</span></div>
+        <div class="comp-mass-row tratt"><span class="lbl" title="Somma dei materiali che il processo selezionato tratta (in verde nella tabella dei materiali)">trattata</span><span class="comp-mass-val">${massStr(cd.massa_trattata_kg)}</span></div>
+        <div class="price-tag">${cd.n_materiali} materiali · ${cd.massa_componente_kg ? fmt(cd.massa_trattata_kg/cd.massa_componente_kg*100,1) : '0'}% trattato dal processo</div>
+        ${(cd.impianti||[]).length>1 ? `<div class="price-tag">da ${cd.impianti.length} impianti</div>` : ''}
       </div>
-    </button>`;
-
-  let branchHtml;
-  if(!c.attivo){
-    const vd = cd?.vendita_diretta;
-    const cls = vd?.prezzo_personalizzato ? 'custom' : 'default';
-    branchHtml = `
-      <span class="lane-arrow">→</span>
-      <div class="output-card clickable ${cls}" data-price-macro="${macro}">
-        <div class="sym" style="font-size:13px;color:var(--copper)">${macro.replaceAll('_',' ')}</div>
-        <div class="val">${massaStr?massaStr[0]+' '+massaStr[1]:'…'}</div>
-        ${vd ? `<div class="vv">${eur(vd.ricavo_eur).join(' ')}</div><div class="price-tag">${fmt(vd.prezzo_eur_kg,2)} €/kg${vd.prezzo_personalizzato?' ✎':''}</div>` : ''}
-      </div>`;
-  } else {
-    const procOpt = c.processoOptions.find(p=>p.id_processo===c.idProcesso);
-    const proc = cd?.processo;
-    branchHtml = `
-      <span class="lane-arrow">→</span>
-      <div class="lane-node">
-        ${c.processoOptions.length>1 ? `
-          <select class="sel-processo" data-macro="${macro}">
-            ${c.processoOptions.map(p=>`<option value="${p.id_processo}" ${p.id_processo===c.idProcesso?'selected':''}>${p.tecnica.replaceAll('_',' ')}</option>`).join('')}
-          </select>
-        ` : `<div class="lane-node-title">${(procOpt?.tecnica||'').replaceAll('_',' ')}</div>`}
-        <div class="lane-node-cost">Capex ${eur(proc?.capex_eur||0).join(' ')} · Opex ${eur(proc?.opex_eur||0).join(' ')}</div>
-        ${proc ? `<div class="lane-node-costo-tot">Costo: ${eur(proc.costo_eur).join(' ')}</div>` : ''}
-        <div class="lane-node-fasi">${fasiCompact(proc?.descrizione_fasi)}</div>
-      </div>
-      <span class="lane-arrow">→</span>
-      <div class="lane-uscite">
-        <span class="uscite-label">uscite di "${(proc?.tecnica||procOpt?.tecnica||'').replaceAll('_',' ')}"</span>
-        ${(cd?.uscite||[]).map(u=>renderUscitaCard(macro, [], u)).join('')}${renderElementiNonEstrattiCards(cd?.processo?.elementi_non_estratti)}
-      </div>`;
-  }
-
-  return `<div class="lane"><div class="lane-row">${nodeMacroProcesso}<span class="lane-arrow">→</span>${cardMacro}${branchHtml}</div></div>`;
+    </button>
+    ${cd.assieme ? `<button class="btn-assiemi" data-riunisci="${escAttr(lane)}">✕ riunisci al macrocomponente</button>`
+      : nAss>1 ? `<button class="btn-assiemi" data-separa="${escAttr(cd.macro_componente)}">Separa assiemi (${nAss}) ▸</button>` : ''}
+    </div>`;
+  const procNode = `
+    <div class="lane-node">
+      ${c.processoOptions.length>1 ? `
+        <select class="sel-processo" data-macro="${escAttr(lane)}">
+          ${c.processoOptions.map(p=>`<option value="${p.id_processo}" ${p.id_processo===c.idProcesso?'selected':''}>${nice(p.tecnica)}</option>`).join('')}
+        </select>` : `<div class="lane-node-title">${nice(proc.tecnica)}</div>`}
+      ${tagliaHtml(lane, proc, true)}
+      <div class="lane-node-cost">Capex attribuito ${eur(proc.capex_eur).join(' ')} · Opex ${eur(proc.opex_eur).join(' ')}</div>
+      ${proc.smaltimento_eur>0 ? `<div class="lane-node-cost">Smaltimento scarti ${eur(proc.smaltimento_eur).join(' ')}</div>` : ''}
+      <div class="lane-node-costo-tot">Costo: ${eur(proc.costo_eur).join(' ')}</div>
+      ${proc.sotto_tecnologia ? `<div class="lane-node-fasi">sotto-tecnologia ${proc.sotto_tecnologia}</div>` : ''}
+      ${reagentiNodeHtml(cd.reagenti)}
+      <div class="lane-node-fasi">${fasiCompact(proc.descrizione_fasi)}</div>
+    </div>`;
+  return `<div class="lane ${cd.assieme?'lane-sep':''}"><div class="lane-row">
+    ${cardMacro}<span class="lane-arrow">→</span>${procNode}<span class="lane-arrow">→</span>
+    ${renderUsciteBox(lane, [], nice(proc.tecnica), cd.uscite, cd.scarti, cd.non_trattato)}
+  </div>${bilancioHtml(cd.bilancio)}</div>`;
 }
 
-function renderElementiNonEstrattiCards(elementiNonEstratti){
-  if(!elementiNonEstratti || !elementiNonEstratti.length) return '';
-  return elementiNonEstratti.map(e=>{
-    const midKg = (e.massa_kg_min+e.massa_kg_max)/2;
-    if(midKg <= 0) return '';
-    const [mv,mu] = mass(midKg);
-    return `<div class="output-card scarto" title="Massa di ${e.nome||e.elemento} rimasta nel residuo: contenuta ma non estratta da nessuna uscita elencata">
-      <div class="sym" style="color:var(--mute);font-size:13px">${e.elemento}</div>
-      <div class="nm">non estratto</div>
-      <div class="val">${mv} ${mu}</div>
-      <div class="price-tag">${e.nome||''}</div>
+// ---- taglia dell'impianto e capex (v9.1) ----
+// capex impianto = capex specifico (EUR per t/anno) x taglia; tempo = massa / taglia;
+// al materiale va la quota d'uso = capex impianto x tempo / vita utile
+const anniStr = a => a>=1 ? `${fmt(a, a<10?2:1)} anni` : `${fmt(a*12, 1)} mesi`;
+function tagliaHtml(lane, p, modificabile){
+  if(p.taglia_t_anno==null) return '';
+  return `<div class="taglia-box">
+    <div class="taglia-row">Taglia impianto
+      ${modificabile ? `<input type="number" class="inp-taglia" data-lane="${escAttr(lane)}" min="1" step="100"
+         value="${Math.round(p.taglia_t_anno)}" title="t/anno trattabili. Vuoto = proposta (tratta la massa in 1 anno): ${fmt(p.taglia_proposta_t_anno,0)} t/anno">`
+        : `<b>${fmt(p.taglia_t_anno,0)}</b>`} t/anno</div>
+    ${modificabile ? `<div class="taglia-row" style="margin-top:5px">Anno di costruzione
+      <input type="number" class="inp-anno-costr" data-lane="${escAttr(lane)}" min="${ANNO_CORRENTE}" max="2100" step="1"
+        value="${p.anno_costruzione || ANNO_CORRENTE}" title="Anno a cui si rivaluta il capex dell'impianto (uguale per tutto il gruppo)"></div>` : ''}
+    <div class="taglia-kv">
+      <span>tempo di trattamento</span><b>${anniStr(p.tempo_anni)}</b>
+      <span>capex impianto${p.anno_costruzione ? ` (prezzi ${p.anno_costruzione})` : ''}</span><b>${eur(p.capex_impianto_eur).join(' ')}</b>
+      <span>quota d'uso (su ${fmt(p.vita_utile_anni,0)} anni di vita)</span><b>${fmt(p.quota_uso*100, p.quota_uso<0.1?2:1)} %</b>
+    </div>
+    <div class="taglia-nota">${fmt(p.capex_eur_ton,0)} €/(t/anno) × taglia${p.regola_scala==='0,6' ? ` · regola dello ${fmt(p.esponente_scala,1)} rispetto a ${fmt(p.taglia_riferimento_t_anno,0)} t/anno` : ' (lineare)'}${modificabile && calcState.componenti[lane]?.tagliaProposta ? ' · taglia proposta alla scelta del processo (tratta in 1 anno la massa di quel momento)' : ''}</div>
+  </div>`;
+}
+
+// ---- reagenti e chiusura del bilancio di massa (v9) ----
+const pedici = s => (s||'').replace(/\d/g, d=>'₀₁₂₃₄₅₆₇₈₉'[d]);
+function reagentiNodeHtml(reagenti){
+  if(!reagenti || !reagenti.length) return '';
+  return `<div class="reag-box"><div class="reag-h">Reagenti (stechiometrici)</div>
+    ${reagenti.map(r=>`<div class="reag-row ${r.specificato?'':'nonspec'}" title="${escAttr(r.nome)}${r.uso&&r.uso.length?'\nper: '+r.uso.map(x=>pedici(x.prodotto)+' '+massStr(x.massa_kg)).join(', '):''}\nelementi: ${escAttr(r.elementi.map(e=>e.elemento+' '+massStr(e.massa_kg)).join(' · '))}">
+      <span>${r.specificato ? pedici(r.formula_chimica||r.reagente) : 'non specificati'}</span><span>${massStr(r.massa_kg)}</span></div>`).join('')}
+  </div>`;
+}
+function bilancioHtml(b){
+  if(!b) return '';
+  const c = b.centrale;
+  const extra = [];
+  if(c.reagenti_non_specificati_kg > 1e-6*c.uscite_kg) extra.push(`reagenti non specificati ${massStr(c.reagenti_non_specificati_kg)}`);
+  if(c.massa_non_bilanciata_kg > 1e-6*c.uscite_kg) extra.push(`massa non bilanciata ${massStr(c.massa_non_bilanciata_kg)}`);
+  return `<div class="bil-strip ${b.chiude?'ok':'ko'}" title="Scenario centrale. Uscite = prodotti + impurità + intermedi + scarti (compresi gli elementi non attribuiti) + non trattato.\nScenario min: chiusura ${massStr(b.min.chiusura_kg)} · max: ${massStr(b.max.chiusura_kg)}">
+    <b>Bilancio di massa</b> ingresso ${massStr(c.ingresso_kg)} + reagenti ${massStr(c.reagenti_kg)}${extra.length?' + '+extra.join(' + '):''}
+    = uscite ${massStr(c.uscite_kg)} <span class="bil-esito">${b.chiude ? '✓ chiude' : '⚠ differenza '+massStr(c.chiusura_kg)}</span>
+    ${b.solo_reagenti_indicati ? '' : '<span class="bil-nota">alcuni elementi non arrivano da un reagente indicato</span>'}
+  </div>`;
+}
+
+// riquadro con tutte le uscite di un processo/sottoprocesso
+function renderUsciteBox(macro, path, tecnica, uscite, scarti, nonTrattato){
+  return `<div class="lane-uscite">
+    <span class="uscite-label">uscite di "${tecnica}"</span>
+    ${uscite.map(u=>renderUscitaCard(macro, path, u)).join('')}
+    ${renderScartiCards(macro, path, scarti, (uscite||[]).reduce((a,u)=>a+u.massa_kg+u.impurita_kg,0)+(scarti||[]).reduce((a,x)=>a+x.massa_kg,0))}
+    ${nonTrattato && nonTrattato.massa_kg>0 ? `
+      <div class="output-card scarto clickable" data-nontrattato-macro="${escAttr(macro)}" title="Materiali del macrocomponente che questo processo non tratta">
+        <div class="sym" style="color:var(--mute);font-size:12px">Non trattato</div>
+        <div class="nm">${nonTrattato.materiali.length} materiali</div>
+        <div class="val">${massStr(nonTrattato.massa_kg)}</div>
+        <div class="price-tag">dettaglio ▸</div>
+      </div>` : ''}
+  </div>`;
+}
+
+// ---- elementi (bilancio per elemento) ----
+const ND_LABEL = 'n.d.';
+const elName = e => e===ND_LABEL ? 'n.d.' : e;
+function elTop(lista, n=3){
+  return (lista||[]).filter(e=>e.elemento!==ND_LABEL && e.massa_kg>0).slice(0,n).map(e=>`${e.elemento} ${massStr(e.massa_kg)}`).join(' · ');
+}
+function compTop(comp, n=3){
+  return (comp||[]).filter(c=>c.elemento!==ND_LABEL).slice(0,n).map(c=>`${c.elemento} ${fmt(c.frazione*100, c.frazione<0.1?1:0)}%`).join(' · ');
+}
+function compTitle(comp){
+  return (comp||[]).map(c=>`${c.elemento==='n.d.'?'composizione n.d.':c.elemento}: ${fmt(c.frazione*100,2)}%`).join('\n');
+}
+function elTableHtml(lista, titolo){
+  if(!lista || !lista.length) return `<p class="sub"><i>Nessun elemento: composizione non disponibile.</i></p>`;
+  const tot = lista.reduce((a,e)=>a+e.massa_kg,0);
+  return `<table><thead><tr><th>${titolo||'Elemento'}</th><th>Massa (centrale)</th><th>Range</th><th>% sul totale</th></tr></thead>
+    <tbody>${lista.map(e=>`<tr><td class="name" style="${e.elemento===ND_LABEL?'font-style:italic':'font-weight:600;color:var(--ink)'}">${e.elemento===ND_LABEL?'composizione non disponibile':e.elemento}</td>
+      <td>${massStr(e.massa_kg)}</td><td>${massStr(e.massa_kg_min)} – ${massStr(e.massa_kg_max)}</td><td>${tot?fmt(e.massa_kg/tot*100,1):'0'}%</td></tr>`).join('')}
+    <tr><td class="name" style="font-weight:700">Totale</td><td style="font-weight:700">${massStr(tot)}</td><td></td><td></td></tr></tbody></table>`;
+}
+function avvisiHtml(u){
+  const lim = (u.avvisi||[]).filter(a=>a.tipo==='resa_limitata');
+  const nv = (u.avvisi||[]).filter(a=>a.tipo==='non_verificabile');
+  let h = '';
+  if(lim.length){
+    const t = lim.map(a=>`${a.nome} (scenario ${a.scenario||'centrale'}): resa richiesta ${pct(a.resa_richiesta)}, massimo stechiometrico ${pct(a.resa_max_stechiometrica)} (il materiale contiene ${fmt(a.contenuto_elemento_pct,2)}% di ${a.elemento}) → ridotta a ${pct(a.resa_effettiva)}`).join('\n');
+    h += `<div class="warn-tag" title="${escAttr(t)}">⚠ resa ridotta al max stechiometrico</div>`;
+  }
+  if(nv.length){
+    const t = nv.map(a=>`${a.nome}: composizione non disponibile (o parziale) — impossibile verificare che contenga abbastanza ${a.elemento}`).join('\n');
+    h += `<div class="nv-tag" title="${escAttr(t)}">≈ non verificabile</div>`;
+  }
+  return h;
+}
+function raccogliAvvisi(uscite, out, contesto){
+  (uscite||[]).forEach(u=>{
+    (u.avvisi||[]).filter(a=>a.tipo==='resa_limitata').forEach(a=>out.push({...a, prodotto:u.codice, contesto}));
+    if(u.ramo) raccogliAvvisi(u.ramo.uscite, out, contesto+' › '+u.codice);
+  });
+}
+function raccogliAvvisiMat(c, out, contesto){
+  (c.avvisi||[]).forEach(a=>out.push({...a, contesto}));
+  (c.uscite||[]).forEach(u=>{ if(u.ramo) raccogliAvvisiMat(u.ramo, out, contesto+' › '+u.codice); });
+}
+function renderAvvisiPanel(componenti){
+  const av = [], am = [];
+  componenti.forEach(c=>{
+    const ctx = c.macro_componente ? c.macro_componente + (c.assieme?' › '+c.assieme:'') : 'Intermedio acquistato';
+    raccogliAvvisi(c.uscite, av, ctx);
+    raccogliAvvisiMat(c, am, ctx);
+  });
+  const htmlMat = '';   // nessun controllo sulla somma dei recuperi (sono stechiometrici)
+  if(!av.length) return htmlMat;
+  return htmlMat + `<div class="panel warn-panel">
+    <h3>⚠ Rese ridotte al massimo stechiometrico (${av.length})</h3>
+    <p class="sub">Queste rese chiedono più elemento di quello contenuto nel materiale in ingresso: la massa del prodotto (e il ricavo) è stata ridotta al massimo fisicamente possibile. Correggi le rese nella tabella Processi/Sottoprocessi.</p>
+    <table><thead><tr><th>Dove</th><th>Materiale in ingresso</th><th>Prodotto</th><th>Scenario</th><th>Contenuto ${''}elemento</th><th>Resa richiesta</th><th>Max stechiometrico</th></tr></thead>
+    <tbody>${av.map(a=>`<tr><td class="name">${a.contesto}</td><td class="name">${a.nome}</td><td>${a.prodotto}</td><td>${a.scenario||'centrale'}</td><td>${fmt(a.contenuto_elemento_pct,2)}% ${a.elemento}</td><td>${pct(a.resa_richiesta)}</td><td style="color:var(--red);font-weight:700">${pct(a.resa_max_stechiometrica)}</td></tr>`).join('')}</tbody></table>
+  </div>`;
+}
+
+function renderScartiCards(macro, path, scarti, massaRif){
+  return (scarti||[]).map((p,i)=>{
+    const spec = p.speciale;
+    // gli elementi non attribuiti compaiono come card solo se rilevanti (>0,5% della massa trattata);
+    // restano comunque nel pannello "Elementi persi"
+    if(spec==='non_attribuito' && p.elementi.reduce((a,e)=>a+e.massa_kg,0) < 0.005*(massaRif||0)) return '';
+    const titolo = spec==='non_allocato' ? 'Non allocato' : spec==='non_attribuito' ? 'Non attribuiti' : 'Scarto';
+    const sub = spec==='non_allocato' ? 'somma recuperi < 1' : spec==='non_attribuito' ? 'elementi senza uscita' : p.scarto;
+    const tip = spec==='non_allocato' ? 'Massa dei materiali per cui la somma dei recuperi è minore di 1'
+      : spec==='non_attribuito' ? 'Elementi presenti nei materiali in ingresso che il bilancio per elemento non riesce ad attribuire a nessuna uscita (la massa è già tutta assegnata). Indica rese incoerenti con la composizione.'
+      : 'Scarto: ' + p.scarto;
+    return `<div class="output-card scarto clickable ${spec?'spec-'+spec:''}" data-scarto-macro="${escAttr(macro)}" data-path="${escAttr(path.join('>'))}" data-idx="${i}" title="${escAttr(tip)}">
+      <div class="sym" style="color:var(--mute);font-size:12px">${titolo}</div>
+      <div class="nm" title="${escAttr(p.scarto)}">${spec?sub:'→ '+sub}</div>
+      <div class="val">${spec==='non_attribuito' ? massStr(p.elementi.reduce((a,e)=>a+e.massa_kg,0))+' el.' : massStr(p.massa_kg)}</div>
+      ${spec!=='non_attribuito' ? `<div class="price-tag">${massStr(p.massa_kg_min)} – ${massStr(p.massa_kg_max)}</div>` : ''}
+      ${p.costo_smaltimento_eur>0 ? `<div class="vv" style="color:var(--copper)">− ${eur(p.costo_smaltimento_eur).join(' ')}</div>` : ''}
+      ${elTop(p.elementi,2) ? `<div class="el-tag">${elTop(p.elementi,2)}</div>` : ''}
     </div>`;
   }).join('');
 }
 
+// massa di un'uscita: in grande il TOTALE (puro + impurità), sotto le due parti separate.
+// Senza impurità resta la sola massa (totale = puro).
+function massaUscitaHtml(massa, imp, impDa, contr){
+  // da dove arriva la parte pura: materiale in ingresso × resa = massa
+  const daPuro = (contr||[]).map(x=> x.massa_ingresso_kg>0
+    ? `${x.nome}: ${massStr(x.massa_ingresso_kg)} × ${fmt(x.massa_kg/x.massa_ingresso_kg*100,2)}% = ${massStr(x.massa_kg)}`
+    : `${x.nome}: ${massStr(x.massa_kg)}`).join('\n');
+  const tipPuro = daPuro ? 'Parte pura (la sola valorizzata) proveniente da:\n'+escAttr(daPuro) : '';
+  if(!(imp>0)) return `<div class="val" ${tipPuro?`title="${tipPuro}" style="cursor:help"`:''}>${massStr(massa)}</div>`;
+  const da = (impDa||[]).map(x=>`${x.nome}: ${massStr(x.massa_kg)} (${pct(x.pct)})`).join('\n');
+  const tot = massa + imp;
+  // quota delle impurità sul totale, con più decimali quando è piccola (altrimenti totale e
+  // puro, arrotondati alla stessa unità, sembrano uguali)
+  const q = imp/tot*100, quota = fmt(q, q<0.1?3:q<10?2:1) + '%';
+  return `<div class="val" title="Massa totale in uscita: prodotto puro + impurità">${massStr(tot)}</div>
+      <div class="pure-tag" title="${tipPuro || 'Parte pura: è la sola massa valorizzata'}">puro ${massStr(massa)}</div>
+      <div class="imp-tag" title="Impurità (${pct(imp/tot)} del totale, non valorizzate)${da?' provenienti da:\n'+escAttr(da):''}">impurità ${massStr(imp)} (${quota})</div>`;
+}
+
 function renderUscitaCard(macro, path, u){
-  const [mv,mu] = mass((u.massa_kg_min+u.massa_kg_max)/2);
+  const range = `${massStr(u.massa_kg_min)} – ${massStr(u.massa_kg_max)}`;
   if(u.tipo==='prodotto'){
-    const cls = u.prezzo_personalizzato ? 'custom' : 'default';
-    return `<div class="output-card clickable ${cls}" data-price-prodotto="${u.codice}">
+    const cls = (u.prezzo_personalizzato ? 'custom' : 'default') + ((u.avvisi||[]).some(a=>a.tipo==='resa_limitata') ? ' warn' : '');
+    return `<div class="output-card clickable ${cls}" data-price-prodotto="${u.codice}" title="Range ${range}. Clic per prezzo e andamento di mercato">
       <span class="cat" style="background:${CATCOL[u.categoria]||'var(--mute)'}"></span>
-      <div class="sym">${u.codice}</div><div class="nm">${u.nome||''}</div>
-      <div class="val">${mv} ${mu}</div>
-      <div class="vv">${eur((u.ricavo_eur_min+u.ricavo_eur_max)/2).join(' ')}</div>
-      <div class="price-tag">${fmt(u.prezzo_eur_kg,2)} €/kg${u.prezzo_personalizzato?' ✎':''}</div>
+      <div class="sym ${u.codice.length>7?'sym-long':''}" title="${escAttr(u.codice)}">${u.codice}</div><div class="nm">${u.nome||''}</div>
+      ${massaUscitaHtml(u.massa_kg, u.impurita_kg, u.impurita_da, u.contributi)}
+      <div class="vv">${eur(u.ricavo_eur).join(' ')}${u.prezzo_personalizzato?' ✎':''}</div>
+      ${(u.elementi_da_reagenti||[]).length ? `<div class="nv-tag" title="${escAttr('Elementi della formula non presenti nei materiali: si assumono dai reagenti aggiunti (nessun controllo):\n'+u.elementi_da_reagenti.map(e=>e.elemento+' '+massStr(e.massa_kg)).join('\n'))}">+ reagenti: ${u.elementi_da_reagenti.slice(0,2).map(e=>e.elemento).join(', ')}</div>` : ''}
+      ${avvisiHtml(u)}
     </div>`;
   }
   const childPath = [...path, u.codice];
   if(u.trasformato && u.ramo){
-    const ramo = u.ramo;
+    const ramo = u.ramo, sp = ramo.sottoprocesso;
     return `<div class="output-branch">
-      <div class="output-card intermedio-header">
-        <div class="sym" style="color:var(--gold)">${u.codice}</div><div class="nm">${u.nome||''}</div>
-        <div class="val">${mv} ${mu}</div>
-        <div class="trasforma-tag" data-annulla-macro="${macro}" data-path="${childPath.join('>')}">Trasformato ✕</div>
+      <div class="output-card intermedio-header" title="Range ${range}">
+        <div class="sym ${u.codice.length>7?'sym-long':''}" style="color:var(--gold)" title="${escAttr(u.codice)}">${u.codice}</div><div class="nm">${u.nome||''}</div>
+        ${massaUscitaHtml(u.massa_kg, u.impurita_kg, u.impurita_da, u.contributi)}
+        ${compTop(u.composizione) ? `<div class="el-tag" title="Composizione calcolata (parte pura):\n${escAttr(compTitle(u.composizione))}">${compTop(u.composizione)}</div>` : ''}
+        <div class="trasforma-tag" data-annulla-macro="${escAttr(macro)}" data-path="${escAttr(childPath.join('>'))}">Trasformato ✕</div>
       </div>
       <span class="lane-arrow">→</span>
       <div class="lane-node">
         ${renderSottoprocessoSelectHtml(macro, childPath)}
-        <div class="lane-node-cost">Capex ${eur(ramo.sottoprocesso?.capex_eur||0).join(' ')} · Opex ${eur(ramo.sottoprocesso?.opex_eur||0).join(' ')}</div>
-        ${ramo.sottoprocesso ? `<div class="lane-node-costo-tot">Costo: ${eur(ramo.sottoprocesso.costo_eur).join(' ')}</div>` : ''}
-        <div class="lane-node-fasi">${fasiCompact(ramo.sottoprocesso?.descrizione_fasi)}</div>
+        ${tagliaHtml(null, sp, false)}
+        <div class="lane-node-cost">Capex attribuito ${eur(sp.capex_eur).join(' ')} · Opex ${eur(sp.opex_eur).join(' ')}</div>
+        <div class="lane-node-costo-tot">Costo: ${eur(sp.costo_eur).join(' ')}</div>
+        ${reagentiNodeHtml(ramo.reagenti)}
+        <div class="lane-node-fasi">${fasiCompact(sp.descrizione_fasi)}</div>
       </div>
       <span class="lane-arrow">→</span>
-      <div class="lane-uscite">
-        <span class="uscite-label">uscite di "${(ramo.sottoprocesso?.tecnica||'').replaceAll('_',' ')}"</span>
-        ${ramo.uscite.map(u2=>renderUscitaCard(macro, childPath, u2)).join('')}${renderElementiNonEstrattiCards(ramo.sottoprocesso?.elementi_non_estratti)}
-      </div>
+      ${renderUsciteBox(macro, childPath, nice(sp.tecnica), ramo.uscite, ramo.scarti, null)}
     </div>`;
   }
   const cls = u.prezzo_personalizzato ? 'custom' : 'default';
   return `<div>
-    <div class="output-card clickable ${cls}" data-price-intermedio="${u.codice}">
-      <div class="sym" style="color:var(--gold)">${u.codice}</div><div class="nm">${u.nome||''}</div>
-      <div class="val">${mv} ${mu}</div>
-      <div class="vv">${eur((u.ricavo_eur_min+u.ricavo_eur_max)/2).join(' ')}</div>
-      <div class="price-tag">${fmt(u.prezzo_eur_kg,2)} €/kg${u.prezzo_personalizzato?' ✎':''}</div>
+    <div class="output-card clickable ${cls}" data-price-intermedio="${u.codice}" title="Range ${range}\nComposizione calcolata (parte pura):\n${escAttr(compTitle(u.composizione))}">
+      <div class="sym ${u.codice.length>7?'sym-long':''}" style="color:var(--gold)" title="${escAttr(u.codice)}">${u.codice}</div><div class="nm">${u.nome||''}</div>
+      ${massaUscitaHtml(u.massa_kg, u.impurita_kg, u.impurita_da, u.contributi)}
+      ${compTop(u.composizione) ? `<div class="el-tag">${compTop(u.composizione)}</div>` : ''}
+      <div class="vv">${eur(u.ricavo_eur).join(' ')}${u.prezzo_personalizzato?' ✎':''}</div>
     </div>
-    <button class="btn-trasforma" data-trasforma-macro="${macro}" data-path="${childPath.join('>')}">Trasforma ▸</button>
+    <button class="btn-trasforma" data-trasforma-macro="${escAttr(macro)}" data-path="${escAttr(childPath.join('>'))}">Trasforma ▸</button>
   </div>`;
 }
 
 function renderSottoprocessoSelectHtml(macro, path){
   const node = getFiglioState(macro, path, true);
   const opts = node.sottoprocessoOptions || [];
-  if(opts.length<=1){
-    return `<div class="lane-node-title">${(opts[0]?.tecnica||'').replaceAll('_',' ')}</div>`;
-  }
-  return `<select class="sel-sottoprocesso" data-macro="${macro}" data-path="${path.join('>')}">
-    ${opts.map(o=>`<option value="${o.id_sottoprocesso}" ${o.id_sottoprocesso===node.idSottoprocesso?'selected':''}>${o.tecnica.replaceAll('_',' ')}</option>`).join('')}
+  if(opts.length<=1) return `<div class="lane-node-title">${nice(opts[0]?.tecnica)}</div>`;
+  return `<select class="sel-sottoprocesso" data-macro="${escAttr(macro)}" data-path="${escAttr(path.join('>'))}">
+    ${opts.map(o=>`<option value="${o.id_sottoprocesso}" ${o.id_sottoprocesso===node.idSottoprocesso?'selected':''}>${nice(o.tecnica)}</option>`).join('')}
   </select>`;
 }
 
+// trova (nel risultato dell'ultimo calcolo) le uscite/perso al percorso dato
+function trovaNodo(macro, path){
+  let base;
+  if(macro==='DIRETTO') base = {uscite:lastCalc.uscite, scarti:lastCalc.scarti, non_trattato:null};
+  else base = lastCalc.componenti.find(c=>cdKey(c)===macro);
+  for(const code of path){
+    const u = base.uscite.find(x=>x.codice===code && x.ramo);
+    if(!u) return null;
+    base = {uscite:u.ramo.uscite, scarti:u.ramo.scarti};
+  }
+  return base;
+}
+
 function wireSchemaProcesso(){
-  document.querySelectorAll('.sel-macroprocesso').forEach(sel=>{
-    sel.onchange = ()=>{ calcState.componenti[sel.dataset.macro].idProcessoMacro = sel.value; renderCalcoloMain(); };
+  document.querySelectorAll('.sel-processo').forEach(sel=>{
+    sel.onchange = ()=>{ const c=calcState.componenti[sel.dataset.macro]; c.idProcesso=sel.value; c.figli={}; c.taglia=null; renderCalcoloMain(); };
   });
-  document.querySelectorAll('.lane-card-toggle').forEach(btn=>{
-    btn.onclick = ()=>{
-      const m = btn.dataset.macro, c = calcState.componenti[m];
-      c.attivo = !c.attivo;
-      if(c.attivo && !c.idProcesso) c.idProcesso = c.processoOptions[0]?.id_processo || null;
-      if(!c.attivo){ c.idProcesso = null; c.figli = {}; }
+  document.querySelectorAll('.inp-taglia').forEach(inp=>{
+    inp.onchange = ()=>{
+      const c = calcState.componenti[inp.dataset.lane];
+      const v = +inp.value;
+      c.taglia = v > 0 ? v : null;     // vuoto: al prossimo calcolo si propone di nuovo (tratta la massa in 1 anno)
+      c.tagliaProposta = false;
       renderCalcoloMain();
     };
   });
-  document.querySelectorAll('.sel-processo').forEach(sel=>{
-    sel.onchange = ()=>{ const c=calcState.componenti[sel.dataset.macro]; c.idProcesso=sel.value; c.figli={}; renderCalcoloMain(); };
+  document.querySelectorAll('.inp-anno-costr').forEach(inp=>{
+    inp.onchange = ()=>{
+      const c = calcState.componenti[inp.dataset.lane];
+      const v = +inp.value;
+      c.annoCostr = v >= ANNO_CORRENTE ? v : null;
+      renderCalcoloMain();
+    };
   });
+  const inpTd = document.getElementById('inpTagliaDiretto');
+  if(inpTd) inpTd.onchange = ()=>{ const v=+inpTd.value; calcState.diretto.taglia = v>0 ? v : null; renderCalcoloMain(); };
   document.querySelectorAll('.btn-trasforma').forEach(btn=>{
     btn.onclick = async ()=>{
       const macro = btn.dataset.trasformaMacro, path = btn.dataset.path.split('>');
       const nodeState = getFiglioState(macro, path, true);
-      nodeState.processing = true;
-      if(!nodeState.sottoprocessoOptions){
+      if(!nodeState.sottoprocessoOptions)
         nodeState.sottoprocessoOptions = await apiGet('/filtri/sottoprocessi', {intermedio: path[path.length-1]});
-      }
-      if(!nodeState.idSottoprocesso) nodeState.idSottoprocesso = nodeState.sottoprocessoOptions[0]?.id_sottoprocesso || null;
+      if(!nodeState.sottoprocessoOptions.length){ alert(`Nessun sottoprocesso definito per l'intermedio ${path[path.length-1]}.`); return; }
+      nodeState.processing = true;
+      if(!nodeState.idSottoprocesso) nodeState.idSottoprocesso = nodeState.sottoprocessoOptions[0].id_sottoprocesso;
       renderCalcoloMain();
     };
   });
   document.querySelectorAll('[data-annulla-macro]').forEach(t=>{
     t.onclick = ()=>{
-      const macro = t.dataset.annullaMacro, path = t.dataset.path.split('>');
-      const nodeState = getFiglioState(macro, path, true);
+      const nodeState = getFiglioState(t.dataset.annullaMacro, t.dataset.path.split('>'), true);
       nodeState.processing = false; nodeState.idSottoprocesso = null; nodeState.figli = {};
       renderCalcoloMain();
     };
   });
   document.querySelectorAll('.sel-sottoprocesso').forEach(sel=>{
     sel.onchange = ()=>{
-      const macro = sel.dataset.macro, path = sel.dataset.path.split('>');
-      const nodeState = getFiglioState(macro, path, true);
+      const nodeState = getFiglioState(sel.dataset.macro, sel.dataset.path.split('>'), true);
       nodeState.idSottoprocesso = sel.value; nodeState.figli = {};
       renderCalcoloMain();
     };
   });
+  document.querySelectorAll('[data-materiali-macro]').forEach(b=>{ b.onclick = ()=>openMaterialiModal(b.dataset.materialiMacro); });
+  document.querySelectorAll('[data-scarto-macro]').forEach(b=>{
+    b.onclick = ()=>{
+      const path = b.dataset.path ? b.dataset.path.split('>') : [];
+      const nodo = trovaNodo(b.dataset.scartoMacro, path);
+      const p = nodo?.scarti?.[+b.dataset.idx]; if(!p) return;
+      const spec = p.speciale;
+      const titolo = spec==='non_allocato' ? 'Massa non allocata (somma recuperi < 1)'
+        : spec==='non_attribuito' ? 'Elementi non attribuiti (bilancio per elemento)' : 'Scarto → '+p.scarto;
+      const nota = spec==='non_attribuito'
+        ? `Questi elementi sono presenti nei materiali in ingresso ma nessuna uscita li contiene: la massa dei materiali è già tutta assegnata
+           a prodotti, impurità e scarti, ma le uscite non hanno abbastanza di questi elementi. Di solito indica che un prodotto con formula
+           (es. Li₂CO₃) recupera meno elemento di quello presente e che il resto non è stato assegnato a nessuno scarto.`
+        : `Totale centrale <b>${massStr(p.massa_kg)}</b> (range ${massStr(p.massa_kg_min)} – ${massStr(p.massa_kg_max)})${p.costo_smaltimento_eur_ton>0?` · smaltimento ${fmt(p.costo_smaltimento_eur_ton,0)} €/t → ${eur(p.costo_smaltimento_eur).join(' ')}`:''}.`;
+      const ov = showModal(`
+        <h3>${titolo}</h3>
+        <p class="sub">${nota}</p>
+        <h4 class="mh">Elementi</h4>
+        <p class="sub">Bilancio per elemento: elementi in ingresso − elementi catturati dai prodotti con formula − elementi portati dalle altre uscite.</p>
+        ${elTableHtml(p.elementi)}
+        <h4 class="mh">Per materiale in ingresso</h4>
+        <table><thead><tr><th>Materiale in ingresso</th>${spec==='non_attribuito'?'':'<th>% del materiale</th><th>Massa</th>'}<th style="text-align:left">Elementi principali</th></tr></thead>
+        <tbody>${p.materiali.map(m=>`<tr><td class="name">${m.nome}</td>${spec==='non_attribuito'?'':`<td>${pct(m.pct)}</td><td>${massStr(m.massa_kg)}</td>`}<td style="text-align:left;white-space:normal;font-size:11px;color:var(--mute)">${elTop(m.elementi,4)||'<i>n.d.</i>'}</td></tr>`).join('')}</tbody></table>
+        <div class="modal-close"><button class="btn" id="btnCloseModal">Chiudi</button></div>`);
+      ov.querySelector('.modal').classList.add('wide');
+      document.getElementById('btnCloseModal').onclick=()=>ov.remove();
+    };
+  });
+  document.querySelectorAll('[data-nontrattato-macro]').forEach(b=>{
+    b.onclick = ()=>{
+      const c = lastCalc.componenti.find(x=>cdKey(x)===b.dataset.nontrattatoMacro);
+      const nt = c.non_trattato;
+      const ov = showModal(`
+        <h3>Materiale non trattato — ${c.macro_componente}${c.assieme?' › '+c.assieme:''}</h3>
+        <p class="sub">Materiali per cui il processo "${nice(c.processo.tecnica)}" non prevede alcuna uscita. Totale <b>${massStr(nt.massa_kg)}</b>.</p>
+        <h4 class="mh">Elementi contenuti</h4>
+        ${elTableHtml(nt.elementi)}
+        <h4 class="mh">Materiali</h4>
+        <table><thead><tr><th>Materiale</th><th>Material ID</th><th>Massa</th></tr></thead>
+        <tbody>${nt.materiali.map(m=>`<tr><td class="name">${m.material}</td><td class="name">${m.material_id}</td><td>${massStr(m.massa_kg)}</td></tr>`).join('')}</tbody></table>
+        <div class="modal-close"><button class="btn" id="btnCloseModal">Chiudi</button></div>`);
+      ov.querySelector('.modal').classList.add('wide');
+      document.getElementById('btnCloseModal').onclick=()=>ov.remove();
+    };
+  });
+  document.querySelectorAll('[data-separa]').forEach(b=>{ b.onclick = ()=>openSeparaAssiemi(b.dataset.separa); });
+  document.querySelectorAll('[data-riunisci]').forEach(b=>{
+    b.onclick = ()=>{
+      const c = calcState.componenti[b.dataset.riunisci];
+      calcState.separati[c.macro] = (calcState.separati[c.macro]||[]).filter(a=>a!==c.assieme);
+      rebuildLanes(); renderCalcoloMain();
+    };
+  });
+}
+
+function openSeparaAssiemi(macro){
+  const info = calcState.macroDisponibili.find(m=>m.macro_componente===macro);
+  const sel = new Set(calcState.separati[macro]||[]);
+  const tot = info.massa_kg;
+  const ov = showModal(`
+    <h3>Separa assiemi — ${macro}</h3>
+    <p class="sub">Di default i materiali uguali sono sommati su tutto il macrocomponente. Gli assiemi selezionati vengono
+      trattati in una corsia separata, con un processo scelto a parte; il resto del macrocomponente continua a essere sommato.</p>
+    <input type="text" id="assFilter" placeholder="Filtra assiemi…" style="margin-bottom:10px">
+    <div class="ass-list">${info.assiemi.map(a=>`
+      <label class="ass-row"><input type="checkbox" value="${escAttr(a.assieme)}" ${sel.has(a.assieme)?'checked':''}>
+        <span class="ass-nome">${a.assieme || '<i>(livello 1, senza assieme)</i>'}</span>
+        <span class="ass-m">${massStr(a.massa_kg)} · ${fmt(a.massa_kg/tot*100,1)}% · ${a.n_materiali} mat.</span></label>`).join('')}
+    </div>
+    <div class="modal-close">
+      <button class="btn primary" id="btnApplicaSep">Applica</button>
+      <button class="btn" id="btnCloseModal">Annulla</button>
+    </div>`);
+  ov.querySelector('.modal').classList.add('wide');
+  document.getElementById('assFilter').oninput = e=>{
+    const q = e.target.value.toLowerCase();
+    ov.querySelectorAll('.ass-row').forEach(r=>{ r.style.display = r.textContent.toLowerCase().includes(q) ? '' : 'none'; });
+  };
+  document.getElementById('btnCloseModal').onclick=()=>ov.remove();
+  document.getElementById('btnApplicaSep').onclick=()=>{
+    calcState.separati[macro] = [...ov.querySelectorAll('.ass-row input:checked')].map(i=>i.value);
+    ov.remove(); rebuildLanes(); renderCalcoloMain();
+  };
+}
+
+async function openMaterialiModal(lane){
+  const c = calcState.componenti[lane];
+  const titolo = c.macro + (c.assieme ? ' › '+c.assieme : '');
+  const ov = showModal(`<h3>Materiali — ${titolo}</h3><p class="sub">Caricamento…</p>`);
+  ov.querySelector('.modal').classList.add('wide');
+  let mats;
+  try{ mats = await apiSend('POST', '/filtri/materiali-componente', {id_imps:calcState.impianti, macro_componente:c.macro,
+        assieme:c.assieme, escludi_assiemi: c.assieme ? null : (calcState.separati[c.macro]||[])}); }
+  catch(e){ ov.querySelector('.modal').innerHTML = `<h3>Errore</h3><p class="sub">${e.message}</p>`; return; }
+  const tot = mats.reduce((a,m)=>a+m.massa_kg,0);
+  const cd = lastCalc?.componenti.find(x=>cdKey(x)===lane);
+  const trattati = new Set();
+  const addK = k => trattati.add(k.ingresso.split('@@')[0]);
+  (cd?.uscite||[]).forEach(u=>{ u.contributi.forEach(addK); u.impurita_da.forEach(addK); });
+  (cd?.scarti||[]).forEach(p=>p.materiali.forEach(addK));
+  // elementi contenuti nei soli materiali trattati (massa x composizione)
+  const elTratt = {};
+  let massaTratt = 0;
+  mats.filter(m=>trattati.has(m.material_id)).forEach(m=>{
+    massaTratt += m.massa_kg;
+    const somma = m.composizione.reduce((a,x)=>a+x.frazione_pct,0);
+    const k = somma>100 ? 100/somma : 1;
+    m.composizione.forEach(x=>{ elTratt[x.elemento] = (elTratt[x.elemento]||0) + m.massa_kg*x.frazione_pct/100*k; });
+    const nd = m.massa_kg*Math.max(0, 1 - somma*k/100);
+    if(nd>1e-9) elTratt[ND_LABEL] = (elTratt[ND_LABEL]||0) + nd;
+  });
+  const elRows = Object.entries(elTratt).sort((a,b)=>(a[0]===ND_LABEL)-(b[0]===ND_LABEL) || b[1]-a[1]);
+  const tabElTratt = !elRows.length ? '<p class="sub"><i>Nessun materiale trattato.</i></p>' : `
+    <table><thead><tr><th>Elemento</th><th>Massa</th><th>% sulla massa trattata</th></tr></thead>
+    <tbody>${elRows.map(([e,v])=>`<tr><td class="name" style="${e===ND_LABEL?'font-style:italic':'font-weight:600;color:var(--ink)'}">${e===ND_LABEL?'composizione non disponibile':e}</td><td>${massStr(v)}</td><td>${fmt(v/massaTratt*100, v/massaTratt<0.001?3:2)}%</td></tr>`).join('')}
+      <tr><td class="name" style="font-weight:700">Totale</td><td style="font-weight:700">${massStr(massaTratt)}</td><td></td></tr></tbody></table>`;
+  const multi = calcState.impianti.length > 1;
+  // contributo di ogni impianto al macrocomponente (somma dei materiali)
+  const perImp = {};
+  mats.forEach(m=>(m.impianti||[]).forEach(x=>{
+    const r = perImp[x.id_imp] ||= {nome:x.nome, tot:0, tratt:0};
+    r.tot += x.massa_kg; if(trattati.has(m.material_id)) r.tratt += x.massa_kg;
+  }));
+  const rigaDet = (sx, dx) => `<div style="display:flex;justify-content:space-between;gap:12px;font-size:11.5px;padding:2px 0"><span>${sx}</span><span>${dx}</span></div>`;
+  const tabImp = !multi ? '' : `
+    <h4 class="mh">Contributo di ogni impianto</h4>
+    <table><thead><tr><th>Impianto</th><th>Massa</th><th>%</th><th>di cui trattata</th></tr></thead>
+    <tbody>${Object.values(perImp).sort((a,b)=>b.tot-a.tot).map(r=>`<tr><td class="name">${r.nome}</td><td>${massStr(r.tot)}</td>
+      <td>${fmt(r.tot/tot*100,1)}%</td><td style="color:var(--green)">${massStr(r.tratt)}</td></tr>`).join('')}</tbody></table>`;
+  ov.querySelector('.modal').innerHTML = `
+    <h3>Materiali — ${titolo}</h3>
+    <p class="sub">${mats.length} materiali, massa totale <b>${massStr(tot)}</b>${multi?` da <b>${calcState.impianti.length} impianti</b>`:''}, di cui <b style="color:var(--green)">${massStr(massaTratt)} trattati</b> dal processo selezionato (${tot?fmt(massaTratt/tot*100,1):0}%, materiali in verde). Materiali uguali sommati su ${multi?'impianti e ':''}assiemi: clicca su una riga per il dettaglio per ${multi?'impianto e ':''}assieme.</p>
+    ${tabImp}
+    <table><thead><tr><th>Materiale</th><th>Massa</th><th>%</th>${multi?'<th>Impianti</th>':''}<th>Assiemi</th><th style="text-align:left">Composizione (% in massa)</th></tr></thead>
+    <tbody>${mats.map((m,i)=>`<tr class="mat-row" data-i="${i}" style="cursor:pointer">
+      <td class="name" style="white-space:normal;${trattati.has(m.material_id)?'color:var(--green);font-weight:600':''}">${m.material}<div style="font-size:10px;color:var(--mute);font-weight:400">${m.material_id}</div></td>
+      <td>${massStr(m.massa_kg)}</td><td>${fmt(m.massa_kg/tot*100,1)}%</td>${multi?`<td>${(m.impianti||[]).length}</td>`:''}<td>${new Set(m.assiemi.map(a=>a.assieme)).size}</td>
+      <td style="text-align:left;white-space:normal;font-size:11px;color:var(--mute)">${m.composizione.length ? m.composizione.slice(0,6).map(x=>`${x.elemento} ${fmt(x.frazione_pct, x.frazione_pct<1?2:1)}`).join(' · ')+(m.composizione.length>6?' …':'') : '<i>non disponibile</i>'}</td>
+    </tr><tr class="mat-det" data-i="${i}" hidden><td colspan="${multi?6:5}" style="text-align:left;background:#F8F9F5;white-space:normal">
+      ${multi ? `<div style="font-weight:700;font-size:11px;margin-bottom:2px">Per impianto</div>`
+        + (m.impianti||[]).map(x=>rigaDet(x.nome, massStr(x.massa_kg))).join('')
+        + `<div style="font-weight:700;font-size:11px;margin:6px 0 2px">Per assieme</div>` : ''}
+      ${Object.entries(m.assiemi.reduce((o,a)=>{ o[a.assieme] = (o[a.assieme]||0) + a.massa_kg; return o; }, {}))
+          .sort((a,b)=>b[1]-a[1]).map(([a,kg])=>rigaDet(a||'<i>livello 1</i>', massStr(kg))).join('')}
+    </td></tr>`).join('')}</tbody></table>
+    <h4 class="mh">Elementi contenuti nei materiali trattati (${massStr(massaTratt)})</h4>
+    <p class="sub">Massa di ogni elemento = massa del materiale × frazione della sua composizione, sommata sui soli materiali in verde.</p>
+    ${tabElTratt}
+    <div class="modal-close"><button class="btn" id="btnCloseModal">Chiudi</button></div>`;
+  ov.querySelectorAll('.mat-row').forEach(r=>{ r.onclick = ()=>{ const d = ov.querySelector(`.mat-det[data-i="${r.dataset.i}"]`); d.hidden = !d.hidden; }; });
+  document.getElementById('btnCloseModal').onclick=()=>ov.remove();
 }
 
 // ============================================================
-// Modali prezzo (prodotto, intermedio, macrocomponente)
+// MODALITA' "INTERMEDIO ACQUISTATO"
 // ============================================================
-function priceModalHtml(title, sub, startVal){
+async function renderCalcoloMainDiretto(){
+  const main = document.getElementById('main');
+  const d = calcState.diretto;
+  const ready = d.intermedio && d.idSottoprocesso && d.massaTon>0;
+  const pathHtml = pathBar([['Intermedio',d.intermedio],['Quantità',d.massaTon?d.massaTon+' t':''],['Anno',calcState.annoDismissione]]);
+  if(!ready){
+    main.innerHTML = pathHtml + `<div class="empty-state">${d.intermedio && !d.sottoprocessoOptions.length ? `Nessun sottoprocesso definito per ${d.intermedio}.` : 'Completa la selezione a sinistra per vedere lo schema del processo.'}</div>`;
+    return;
+  }
+  const myId = ++calcRequestId;
+  main.innerHTML = pathHtml + `<div class="empty-state">Calcolo in corso…</div>`;
+  let data;
+  try{
+    data = await apiSend('POST', '/calcolo-da-intermedio', {
+      intermedio:d.intermedio, massa_ton:d.massaTon, id_sottoprocesso:d.idSottoprocesso,
+      anno_dismissione: calcState.annoDismissione, anno_corrente: ANNO_CORRENTE, id_indice_costi: calcState.indiceCosti,
+      prezzo_acquisto_override: d.prezzoAcquistoOverride,
+      prezzi_prodotti_override: calcState.prezziManuali.prodotti,
+      prezzi_intermedi_override: calcState.prezziManuali.intermedi,
+      figli_sottoprocesso: buildFigliPayload(d.figli),
+      taglia_t_anno: d.taglia || null,
+    });
+  }catch(e){
+    if(myId!==calcRequestId) return;
+    main.innerHTML = pathHtml + `<div class="empty-state">Errore nel calcolo: ${e.message}</div>`;
+    return;
+  }
+  if(myId!==calcRequestId) return;
+  lastCalc = data;
+  main.innerHTML = pathHtml
+    + renderAvvisiPanel([{uscite:data.uscite, avvisi:data.avvisi}])
+    + renderSchemaDiretto(data, d)
+    + renderMaterialeRecuperatoPanel([{uscite:data.uscite}])
+    + `<div class="panel"><h3>Elementi persi</h3><p class="sub">Non disponibili: l'intermedio acquistato non ha un'origine nota nel database, quindi la sua composizione elementare non si può calcolare.</p></div>`
+    + renderEconomicSummary(data, 'Quantità acquistata', data.massa_input_kg, `acquisto ${eur(data.acquisto.costo_eur).join(' ')}`);
+  wireSchemaProcesso();
+  wirePriceTiles();
+  document.querySelectorAll('[data-price-acquisto]').forEach(t=>{ t.onclick = ()=>openPriceModalAcquisto(); });
+  document.querySelectorAll('.sel-sottoprocesso-diretto').forEach(sel=>{
+    sel.onchange = ()=>{ d.idSottoprocesso=sel.value; d.figli={}; renderCalcoloMain(); };
+  });
+}
+
+function renderSchemaDiretto(data, d){
+  const acq = data.acquisto, sp = data.sottoprocesso;
+  return `<div class="panel">
+    <h3>Schema del processo</h3>
+    <p class="sub">Intermedio acquistato e lavorato — nessun impianto coinvolto, si parte dalla quantità indicata.</p>
+    <div class="lane"><div class="lane-row">
+      <div class="output-card clickable ${acq.prezzo_personalizzato?'custom':'default'}" data-price-acquisto="1">
+        <div class="sym" style="font-size:13px;color:var(--copper)">${d.intermedio}</div>
+        <div class="nm">acquistato</div>
+        <div class="val">${massStr(data.massa_input_kg)}</div>
+        <div class="vv">− ${eur(acq.costo_eur).join(' ')}</div>
+        <div class="price-tag">${fmt(acq.prezzo_eur_kg,2)} €/kg${acq.prezzo_personalizzato?' ✎':''}</div>
+      </div>
+      <span class="lane-arrow">→</span>
+      <div class="lane-node">
+        ${d.sottoprocessoOptions.length>1 ? `<select class="sel-sottoprocesso-diretto">
+          ${d.sottoprocessoOptions.map(p=>`<option value="${p.id_sottoprocesso}" ${p.id_sottoprocesso===d.idSottoprocesso?'selected':''}>${nice(p.tecnica)}</option>`).join('')}
+        </select>` : `<div class="lane-node-title">${nice(sp.tecnica)}</div>`}
+        <div class="taglia-box"><div class="taglia-row">Taglia impianto
+          <input type="number" id="inpTagliaDiretto" min="0.1" step="1" value="${Math.round(sp.taglia_t_anno*10)/10}"> t/anno</div>
+          <div class="taglia-kv"><span>tempo di trattamento</span><b>${anniStr(sp.tempo_anni)}</b>
+          <span>capex impianto</span><b>${eur(sp.capex_impianto_eur).join(' ')}</b>
+          <span>quota d'uso (su ${fmt(sp.vita_utile_anni,0)} anni)</span><b>${fmt(sp.quota_uso*100, sp.quota_uso<0.1?2:1)} %</b></div></div>
+        <div class="lane-node-cost">Capex attribuito ${eur(sp.capex_eur).join(' ')} · Opex ${eur(sp.opex_eur).join(' ')}</div>
+        <div class="lane-node-costo-tot">Costo: ${eur(sp.costo_eur).join(' ')}</div>
+        ${reagentiNodeHtml(data.reagenti)}
+        <div class="lane-node-fasi">${fasiCompact(sp.descrizione_fasi)}</div>
+      </div>
+      <span class="lane-arrow">→</span>
+      ${renderUsciteBox('DIRETTO', [], nice(sp.tecnica), data.uscite, data.scarti, null)}
+    </div>${bilancioHtml(data.bilancio)}</div>
+  </div>`;
+}
+
+function openPriceModalAcquisto(){
+  const d = calcState.diretto;
+  const def = lastCalc?.acquisto?.prezzo_default_eur_kg ?? 0;
+  const startVal = d.prezzoAcquistoOverride ?? def;
+  const overlay = showModal(priceModalHtml(`Prezzo di acquisto — ${d.intermedio}`,
+    `Prezzo di listino: <b>${fmt(def,2)} €/kg</b>. Modificalo per simulare un prezzo di mercato diverso.`, startVal));
+  document.getElementById('btnCloseModal').onclick=()=>overlay.remove();
+  document.getElementById('btnConfirmPrice').onclick=()=>{
+    const v = parseFloat(document.getElementById('modalPriceInput').value);
+    if(!isNaN(v) && v>=0){ d.prezzoAcquistoOverride=v; overlay.remove(); renderCalcoloMain(); }
+  };
+}
+
+// ============================================================
+// Modali prezzo (prodotto con grafici storici, intermedio)
+// ============================================================
+function priceModalHtml(title, sub, startVal, extraHtml=''){
   return `
     <h3>${title}</h3>
     <p class="sub">${sub}</p>
+    ${extraHtml}
     <div class="field">
       <label class="comp-mini-label">Prezzo (€/kg)</label>
       <input type="number" id="modalPriceInput" value="${startVal}" step="0.01" min="0"
@@ -1095,18 +1545,26 @@ function priceModalHtml(title, sub, startVal){
     </div>
     <div class="modal-close">
       <button class="btn primary" id="btnConfirmPrice">Conferma prezzo</button>
+      <button class="btn" id="btnResetPrice">Ripristina listino</button>
       <button class="btn" id="btnCloseModal">Annulla</button>
     </div>
   `;
 }
-function openPriceModalProdotto(codice){
+
+async function openPriceModalProdotto(codice){
   const p = prodottiCache.find(x=>x.prodotto===codice);
   const defaultPrice = p?.prezzo_attuale_eur_kg || 0;
   const startVal = calcState.prezziManuali.prodotti[codice] ?? defaultPrice;
+  let storico = [];
+  try{ storico = await apiGet('/storico-prodotto/'+encodeURIComponent(codice)); }catch(e){ storico = []; }
   const overlay = showModal(priceModalHtml(
     `Prezzo — ${codice} (${p?.nome||''})`,
-    `Prezzo corrente da database: <b>${fmt(defaultPrice,2)} €/kg</b>. Modificalo per rivalutarlo.`, startVal));
+    `Prezzo corrente da database: <b>${fmt(defaultPrice,2)} €/kg</b>. Modificalo per rivalutarlo.`, startVal,
+    renderStoricoCharts(storico)));
+  overlay.querySelector('.modal').classList.add('wide');
+  wireCharts(overlay);
   document.getElementById('btnCloseModal').onclick=()=>overlay.remove();
+  document.getElementById('btnResetPrice').onclick=()=>{ delete calcState.prezziManuali.prodotti[codice]; overlay.remove(); renderCalcoloMain(); };
   document.getElementById('btnConfirmPrice').onclick=()=>{
     const v = parseFloat(document.getElementById('modalPriceInput').value);
     if(!isNaN(v) && v>=0){ calcState.prezziManuali.prodotti[codice]=v; overlay.remove(); renderCalcoloMain(); }
@@ -1120,29 +1578,209 @@ function openPriceModalIntermedio(codice){
     `Prezzo — ${codice} (${sp?.nome||''})`,
     `Prezzo corrente da database: <b>${fmt(defaultPrice,2)} €/kg</b>. Modificalo per rivalutarlo.`, startVal));
   document.getElementById('btnCloseModal').onclick=()=>overlay.remove();
+  document.getElementById('btnResetPrice').onclick=()=>{ delete calcState.prezziManuali.intermedi[codice]; overlay.remove(); renderCalcoloMain(); };
   document.getElementById('btnConfirmPrice').onclick=()=>{
     const v = parseFloat(document.getElementById('modalPriceInput').value);
     if(!isNaN(v) && v>=0){ calcState.prezziManuali.intermedi[codice]=v; overlay.remove(); renderCalcoloMain(); }
   };
 }
-function openPriceModalMacro(macro){
-  const c = calcState.componenti[macro];
-  const mpOpt = c.macroProcessoOptions.find(o=>o.id_processo_macro===c.idProcessoMacro);
-  const defaultPrice = mpOpt?.prezzo_vendita_eur_kg || 0;
-  const startVal = calcState.prezziManuali.macro[macro] ?? defaultPrice;
-  const overlay = showModal(priceModalHtml(
-    `Prezzo di vendita diretta — ${macro.replaceAll('_',' ')}`,
-    `Prezzo corrente da database: <b>${fmt(defaultPrice,2)} €/kg</b>. Modificalo per rivalutarlo.`, startVal));
-  document.getElementById('btnCloseModal').onclick=()=>overlay.remove();
-  document.getElementById('btnConfirmPrice').onclick=()=>{
-    const v = parseFloat(document.getElementById('modalPriceInput').value);
-    if(!isNaN(v) && v>=0){ calcState.prezziManuali.macro[macro]=v; overlay.remove(); renderCalcoloMain(); }
-  };
-}
 function wirePriceTiles(){
   document.querySelectorAll('[data-price-prodotto]').forEach(t=>{ t.onclick = ()=>openPriceModalProdotto(t.dataset.priceProdotto); });
   document.querySelectorAll('[data-price-intermedio]').forEach(t=>{ t.onclick = ()=>openPriceModalIntermedio(t.dataset.priceIntermedio); });
-  document.querySelectorAll('[data-price-macro]').forEach(t=>{ t.onclick = ()=>openPriceModalMacro(t.dataset.priceMacro); });
+}
+
+// ============================================================
+// Grafici storici (SVG inline, nessuna libreria esterna)
+//   un grafico per misura (nessun doppio asse), una sola serie ciascuno
+// ============================================================
+const CHART_SERIES = [
+  {key:'prezzo_usd_t', title:'Prezzo LME (cash/settlement)', unit:'$/t', kind:'line', color:'#B5651D', dec:0},
+  {key:'produzione_eu_kt', title:'Produzione EU27', unit:'migliaia di t', kind:'bar', color:'#2E7A5B', dec:2},
+  {key:'consumo_mondiale_mt', title:'Consumo mondiale (primario)', unit:'milioni di t', kind:'line', color:'#6E5AA8', dec:3},
+];
+function niceTicks(max){
+  if(!(max>0)) return [0,1];
+  const raw = max/4, p = Math.pow(10, Math.floor(Math.log10(raw)));
+  const step = [1,2,2.5,5,10].map(m=>m*p).find(s=>s>=raw) || raw;
+  const ticks=[]; for(let v=0; v<=max+step*0.001; v+=step) ticks.push(+v.toPrecision(12));
+  if(ticks[ticks.length-1]<max) ticks.push(+(ticks[ticks.length-1]+step).toPrecision(12));
+  return ticks;
+}
+function fmtTick(v){
+  const a=Math.abs(v);
+  if(a>=1e6) return fmt(v/1e6, v%1e6?1:0)+' M';
+  if(a>=1e4) return fmt(v/1e3, 0)+' k';
+  if(a>=100) return fmtInt(v);
+  if(a>=1) return fmt(v, v%1?1:0);
+  return fmt(v, 3).replace(/0+$/,'').replace(/,$/,'');
+}
+function svgChart(rows, s, w, h){
+  const pts = rows.filter(r=>r[s.key]!=null).map(r=>({x:r.anno, y:+r[s.key]}));
+  if(!pts.length) return `<div class="chart-empty">Nessun dato</div>`;
+  const anni = rows.map(r=>r.anno), x0=Math.min(...anni), x1=Math.max(...anni);
+  const ticks = niceTicks(Math.max(...pts.map(p=>p.y)));
+  const yMax = ticks[ticks.length-1];
+  const m = {l:48, r:12, t:10, b:22}, iw=w-m.l-m.r, ih=h-m.t-m.b;
+  const band = iw/(x1-x0+1);
+  const X = a => m.l + (a-x0+0.5)*band;
+  const Y = v => m.t + ih - v/yMax*ih;
+  let g = ticks.map(t=>`<line x1="${m.l}" x2="${w-m.r}" y1="${Y(t)}" y2="${Y(t)}" stroke="#E2E6DD" stroke-width="1"/>
+    <text x="${m.l-6}" y="${Y(t)+3.5}" text-anchor="end" class="ax">${fmtTick(t)}</text>`).join('');
+  const step = Math.ceil((x1-x0+1)/8);
+  for(let a=x0; a<=x1; a+=step) g += `<text x="${X(a)}" y="${h-6}" text-anchor="middle" class="ax">${a}</text>`;
+  let marks = '';
+  if(s.kind==='bar'){
+    const bw = Math.min(24, band-2);
+    marks = pts.map(p=>{
+      const y=Y(p.y), x=X(p.x)-bw/2, hh=m.t+ih-y, r=Math.min(4,hh);
+      return `<path d="M${x},${m.t+ih} V${y+r} Q${x},${y} ${x+r},${y} H${x+bw-r} Q${x+bw},${y} ${x+bw},${y+r} V${m.t+ih} Z" fill="${s.color}"/>`;
+    }).join('');
+  } else {
+    // spezza la linea dove mancano anni (nessuna interpolazione inventata)
+    let d='', prev=null;
+    pts.forEach(p=>{ d += (prev!==null && p.x===prev+1 ? 'L' : 'M') + X(p.x)+','+Y(p.y)+' '; prev=p.x; });
+    const last = pts[pts.length-1];
+    marks = `<path d="${d}" fill="none" stroke="${s.color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+      <circle cx="${X(last.x)}" cy="${Y(last.y)}" r="4" fill="${s.color}" stroke="#fff" stroke-width="2"/>`;
+  }
+  const hits = pts.map(p=>`<rect class="hit" x="${X(p.x)-band/2}" y="${m.t}" width="${band}" height="${ih}" fill="transparent"
+     data-anno="${p.x}" data-val="${p.y}" data-cx="${X(p.x)}" data-cy="${Y(p.y)}"/>`).join('');
+  return `<svg viewBox="0 0 ${w} ${h}" width="100%" role="img" aria-label="${escAttr(s.title)}" data-unit="${escAttr(s.unit)}" data-dec="${s.dec}">
+    ${g}${marks}<line class="xhair" x1="0" x2="0" y1="${m.t}" y2="${m.t+ih}" stroke="#9AA59E" stroke-width="1" visibility="hidden"/>
+    <circle class="xdot" r="4" fill="${s.color}" stroke="#fff" stroke-width="2" visibility="hidden"/>${hits}</svg>`;
+}
+function renderStoricoCharts(rows){
+  if(!rows || !rows.length)
+    return `<div class="chart-note">Nessuno storico di mercato in database per questo prodotto (tabella <code>db_prodotti_storico</code>).</div>`;
+  const fonte = [...new Set(rows.map(r=>r.fonte).filter(Boolean))].join(', ');
+  const esempio = /ESEMPIO/i.test(fonte);
+  const last = k => { const r=[...rows].reverse().find(r=>r[k]!=null); return r ? `${fmtTick(+r[k])} (${r.anno})` : '—'; };
+  const card = (s, w, h) => `<div class="chart-card">
+      <div class="chart-title">${s.title} <span>${s.unit}</span></div>
+      <div class="chart-last">ultimo: ${last(s.key)}</div>
+      ${svgChart(rows, s, w, h)}</div>`;
+  return `<div class="charts">
+    ${esempio ? `<div class="chart-warn">⚠ Dati di esempio, da sostituire con i dati reali (tabella "Storico prezzi").</div>` : ''}
+    ${card(CHART_SERIES[0], 720, 170)}
+    <div class="chart-row">${card(CHART_SERIES[1], 350, 150)}${card(CHART_SERIES[2], 350, 150)}</div>
+    <div class="chart-note">Fonte: ${fonte||'—'}. Passa il mouse sui grafici per i valori annuali.</div>
+    <div class="chart-tip" hidden></div>
+  </div>`;
+}
+function wireCharts(root){
+  const tip = root.querySelector('.chart-tip'); if(!tip) return;
+  root.querySelectorAll('.charts svg').forEach(svg=>{
+    const xh = svg.querySelector('.xhair'), xd = svg.querySelector('.xdot');
+    svg.querySelectorAll('.hit').forEach(r=>{
+      r.addEventListener('mouseenter', ()=>{
+        const cx=+r.dataset.cx, cy=+r.dataset.cy;
+        xh.setAttribute('x1',cx); xh.setAttribute('x2',cx); xh.setAttribute('visibility','visible');
+        xd.setAttribute('cx',cx); xd.setAttribute('cy',cy); xd.setAttribute('visibility','visible');
+        tip.innerHTML = `<b>${r.dataset.anno}</b> · ${fmt(+r.dataset.val, +svg.dataset.dec)} ${svg.dataset.unit}`;
+        tip.hidden = false;
+        const box = root.querySelector('.charts').getBoundingClientRect(), rb = r.getBoundingClientRect();
+        tip.style.left = Math.min(box.width-150, Math.max(0, rb.left - box.left + rb.width/2 - 60))+'px';
+        tip.style.top = (rb.top - box.top - 8)+'px';
+      });
+      r.addEventListener('mouseleave', ()=>{ xh.setAttribute('visibility','hidden'); xd.setAttribute('visibility','hidden'); tip.hidden = true; });
+    });
+  });
+}
+
+// ============================================================
+// Elementi persi — perso di processi e sottoprocessi + colonna "non trattato"
+// ============================================================
+let elementiPersiDettaglio = null;
+function raccogliPerso(uscite, scarti, contesto, out){
+  (scarti||[]).forEach(p=>out.push({contesto, destinazione:p.speciale==='non_attribuito'?'non attribuiti':p.speciale==='non_allocato'?'non allocato':p.scarto, elementi:p.elementi}));
+  (uscite||[]).forEach(u=>{ if(u.ramo) raccogliPerso(u.ramo.uscite, u.ramo.scarti, contesto+' › '+u.codice+' ('+nice(u.ramo.sottoprocesso.tecnica).toLowerCase()+')', out); });
+}
+function renderElementiPersiPanel(componenti){
+  const fonti = [], nt = [];
+  componenti.forEach(c=>{
+    const ctx = c.macro_componente ? c.macro_componente + (c.assieme ? ' › '+c.assieme : '') : 'Intermedio acquistato';
+    raccogliPerso(c.uscite, c.scarti, ctx, fonti);
+    if(c.non_trattato) nt.push({contesto:ctx, elementi:c.non_trattato.elementi});
+  });
+  const agg = {};
+  const get = e => agg[e] ||= {elemento:e, persoMin:0, perso:0, persoMax:0, nt:0};
+  fonti.forEach(f=>f.elementi.forEach(e=>{ const a=get(e.elemento); a.persoMin+=e.massa_kg_min; a.perso+=e.massa_kg; a.persoMax+=e.massa_kg_max; }));
+  nt.forEach(f=>f.elementi.forEach(e=>{ get(e.elemento).nt += e.massa_kg; }));
+  const rows = Object.values(agg).filter(r=>r.persoMax>1e-6||r.nt>1e-6).sort((a,b)=>(a.elemento===ND_LABEL)-(b.elemento===ND_LABEL) || (b.perso-a.perso) || (b.nt-a.nt));
+  if(!rows.length) return '';
+  elementiPersiDettaglio = {fonti, nt, rows};
+  const tot = k => rows.reduce((s,r)=>s+r[k],0);
+  const hasNt = nt.length>0;
+  const top = rows.filter(r=>r.elemento!==ND_LABEL).slice(0,4).map(r=>`${r.elemento} ${massStr(r.perso)}`).join(' · ');
+  return `
+  <div class="panel">
+    <h3>Elementi persi</h3>
+    <div class="el-summary clickable" id="cardElementiPersi" title="Apri la tabella di dettaglio per elemento">
+      <div class="el-sum-main">
+        <div class="k">Negli scarti</div>
+        <div class="v">${massStr(tot('perso'))}</div>
+        <div class="s">range ${massStr(tot('persoMin'))} – ${massStr(tot('persoMax'))}</div>
+      </div>
+      ${hasNt ? `<div class="el-sum-main">
+        <div class="k">Non trattato</div>
+        <div class="v">${massStr(tot('nt'))}</div>
+        <div class="s">materiali senza processo</div>
+      </div>` : ''}
+      <div class="el-sum-top">
+        <div class="k">Elementi principali (scarti)</div>
+        <div class="t">${top||'—'}</div>
+        <div class="s">${rows.length} elementi · clicca per il dettaglio ▸</div>
+      </div>
+    </div>
+  </div>`;
+}
+function elementiPersiTabellaHtml(){
+  const {rows, nt} = elementiPersiDettaglio;
+  const tot = k => rows.reduce((s,r)=>s+r[k],0);
+  const hasNt = nt.length>0;
+  return `
+    <h3>Elementi persi — dettaglio</h3>
+    <p class="sub">Elementi che finiscono negli scarti (più quelli non allocati o non attribuiti) su tutti i processi e sottoprocessi mostrati.
+      Bilancio per elemento: elementi in ingresso (composizione dei materiali e composizione calcolata degli intermedi)
+      meno gli elementi catturati dai prodotti con formula chimica e portati dalle altre uscite.
+      ${hasNt?'La colonna <b>Non trattato</b> riporta gli elementi dei materiali che il processo non lavora.':''} Clicca su una riga per vedere dove si perde l'elemento.</p>
+    <div class="db-table-wrap"><table class="eltab">
+      <thead><tr><th>Elemento</th><th>Negli scarti (centrale)</th><th>Range</th>${hasNt?'<th>Non trattato</th><th>Totale non recuperato</th>':''}</tr></thead>
+      <tbody>${rows.map(r=>`<tr class="clickable-row" data-el="${escAttr(r.elemento)}">
+        <td class="name" style="${r.elemento===ND_LABEL?'font-style:italic':'font-weight:700;color:var(--ink)'}">${r.elemento===ND_LABEL?'composizione non disponibile':r.elemento}</td>
+        <td>${massStr(r.perso)}</td><td style="color:var(--mute)">${massStr(r.persoMin)} – ${massStr(r.persoMax)}</td>
+        ${hasNt?`<td>${massStr(r.nt)}</td><td style="font-weight:700">${massStr(r.perso+r.nt)}</td>`:''}</tr>`).join('')}
+        <tr><td class="name" style="font-weight:700">Totale</td><td style="font-weight:700">${massStr(tot('perso'))}</td><td></td>${hasNt?`<td style="font-weight:700">${massStr(tot('nt'))}</td><td style="font-weight:700">${massStr(tot('perso')+tot('nt'))}</td>`:''}</tr>
+      </tbody></table></div>
+    <div class="modal-close"><button class="btn" id="btnCloseElTab">Chiudi</button></div>`;
+}
+function wireElementiPersi(){
+  const card = document.getElementById('cardElementiPersi');
+  if(!card) return;
+  card.onclick = ()=>{
+    const ovTab = showModal(elementiPersiTabellaHtml());
+    ovTab.querySelector('.modal').classList.add('wide');
+    document.getElementById('btnCloseElTab').onclick = ()=>ovTab.remove();
+    wireRigheElementi(ovTab);
+  };
+}
+function wireRigheElementi(root){
+  root.querySelectorAll('.eltab tr[data-el]').forEach(tr=>{
+    tr.onclick = ()=>{
+      const el = tr.dataset.el, d = elementiPersiDettaglio; if(!d) return;
+      const righe = [];
+      d.fonti.forEach(f=>{ const e=f.elementi.find(x=>x.elemento===el); if(e) righe.push([f.contesto, '→ '+f.destinazione, e.massa_kg]); });
+      d.nt.forEach(f=>{ const e=f.elementi.find(x=>x.elemento===el); if(e) righe.push([f.contesto, 'non trattato', e.massa_kg]); });
+      righe.sort((a,b)=>b[2]-a[2]);
+      const ov = showModal(`<h3>${el===ND_LABEL?'Composizione non disponibile':el} — dove si perde</h3>
+        <p class="sub">Valori centrali, per macrocomponente (e sottoprocesso) e destinazione.</p>
+        <table><thead><tr><th>Origine</th><th>Destinazione</th><th>Massa</th></tr></thead>
+        <tbody>${righe.map(r=>`<tr><td class="name">${r[0]}</td><td class="name">${r[1]}</td><td>${massStr(r[2])}</td></tr>`).join('')}</tbody></table>
+        <div class="modal-close"><button class="btn" id="btnCloseModal">Chiudi</button></div>`);
+      ov.querySelector('.modal').classList.add('wide');
+      document.getElementById('btnCloseModal').onclick=()=>ov.remove();
+    };
+  });
 }
 
 // ============================================================
@@ -1154,34 +1792,32 @@ function raccogliProdotti(uscite, out){
     else if(u.ramo) raccogliProdotti(u.ramo.uscite, out);
   });
 }
-function renderMaterialeRecuperatoPanel(data){
+function renderMaterialeRecuperatoPanel(componenti){
   const aggr = {};
-  data.componenti.forEach(c=>{
+  componenti.forEach(c=>{
     const list = []; raccogliProdotti(c.uscite, list);
     list.forEach(r=>{
-      if(!aggr[r.codice]) aggr[r.codice] = {codice:r.codice, nome:r.nome, categoria:r.categoria,
-        massa_min:0, massa_max:0, ricavo_min:0, ricavo_max:0, personalizzato:false};
-      aggr[r.codice].massa_min += r.massa_kg_min; aggr[r.codice].massa_max += r.massa_kg_max;
-      aggr[r.codice].ricavo_min += r.ricavo_eur_min; aggr[r.codice].ricavo_max += r.ricavo_eur_max;
-      if(r.prezzo_personalizzato) aggr[r.codice].personalizzato = true;
+      const a = aggr[r.codice] ||= {codice:r.codice, nome:r.nome, categoria:r.categoria, massa:0, imp:0, ricavo:0, personalizzato:false, prezzo:r.prezzo_eur_kg};
+      a.massa += r.massa_kg; a.imp += r.impurita_kg; a.ricavo += r.ricavo_eur;
+      if(r.prezzo_personalizzato) a.personalizzato = true;
     });
   });
-  const rows = Object.values(aggr).sort((a,b)=>b.massa_max-a.massa_max);
+  const rows = Object.values(aggr).sort((a,b)=>b.ricavo-a.ricavo);
   if(!rows.length) return '';
   return `
   <div class="panel">
     <h3>Materiale recuperato</h3>
-    <p class="sub">Prezzo corrente di mercato, applicato automaticamente. Clicca su una card per rivalutarlo: dopo aver confermato il nuovo prezzo, l'analisi economica si ricalcola subito.</p>
+    <p class="sub">Valori centrali. In grande la massa totale in uscita; dove ci sono impurità, sotto sono separate la parte pura (la sola valorizzata) e le impurità. Prezzo corrente di mercato, applicato automaticamente: clicca su una card per vedere l'andamento di mercato e rivalutarlo.</p>
     <div class="tiles">
       ${rows.map(r=>{
-        const [kv,ku]=mass((r.massa_min+r.massa_max)/2);
-        const midVal=(r.ricavo_min+r.ricavo_max)/2;
-        const cls = r.personalizzato?'custom':'default';
-        return `<div class="tile clickable ${cls}" data-price-prodotto="${r.codice}">
+        const [kv,ku]=mass(r.massa + r.imp);   // totale: puro + impurità
+        return `<div class="tile clickable ${r.personalizzato?'custom':'default'}" data-price-prodotto="${r.codice}">
           <span class="cat" style="background:${CATCOL[r.categoria]||'var(--mute)'}"></span>
-          <div class="sym" style="color:${CATCOL[r.categoria]||'var(--ink)'}">${r.codice}</div><div class="nm">${r.nome}</div>
+          <div class="sym ${r.codice.length>4?'sym-long':''}" title="${escAttr(r.codice)}">${r.codice}</div><div class="nm">${r.nome||''}</div>
           <div class="val">${kv} <span style="color:var(--mute);font-weight:600">${ku}</span></div>
-          <div class="vv">${eur(midVal).join(' ')}</div>
+          ${r.imp>0?`<div class="pure-tag" title="Parte pura: è la sola massa valorizzata">puro ${massStr(r.massa)}</div><div class="imp-tag" title="Impurità (non valorizzate)">impurità ${massStr(r.imp)} (${(q=>fmt(q, q<0.1?3:q<10?2:1))(r.imp/(r.massa+r.imp)*100)}%)</div>`:''}
+          <div class="vv">${eur(r.ricavo).join(' ')}</div>
+          <div class="price-tag">${fmt(r.prezzo,2)} €/kg${r.personalizzato?' ✎':''}</div>
         </div>`;
       }).join('')}
     </div>
@@ -1190,28 +1826,30 @@ function renderMaterialeRecuperatoPanel(data){
       <span><i style="background:var(--strategico)"></i>Strategico</span>
       <span><i style="background:var(--utile)"></i>Utile</span>
       <span><i class="sq" style="background:#fff;border:1.5px solid var(--gold)"></i>Prezzo rivalutato</span>
+      <span style="color:var(--green);font-weight:600">puro: parte valorizzata</span>
+      <span style="color:var(--orange);font-weight:600">impurità: comprese nel totale, non valorizzate</span>
     </div>
   </div>`;
 }
 
 // ============================================================
-// Analisi economica (sempre attiva, nessuna nota sul fattore di rivalutazione)
+// Analisi economica (valore centrale, range min–max)
 // ============================================================
-function renderEconomicSummary(data){
-  const [mv,mu]=mass(data.massa_totale_kg);
+function renderEconomicSummary(data, massaLabel, massaKg, massaSub){
+  const [mv,mu]=mass(massaKg);
   const [cv,cu]=eur(data.costo_totale_eur);
-  const ricavoMid=(data.ricavo_eur_min+data.ricavo_eur_max)/2, margineMid=(data.margine_eur_min+data.margine_eur_max)/2;
-  const [rv,ru]=eur(ricavoMid), [nv,nu]=eur(margineMid);
-  const pos = margineMid>=0;
+  const [rv,ru]=eur(data.ricavo_eur), [nv,nu]=eur(data.margine_eur);
   return `
   <div class="panel">
     <h3>Analisi economica</h3>
     ${data.ha_prezzi_personalizzati ? `<p class="sub">Alcuni prezzi sono stati rivalutati manualmente rispetto al listino (card con bordo dorato).</p>` : ''}
     <div class="kpis">
-      <div class="kpi"><div class="k">Massa totale scomposta</div><div class="v">${mv} <small>${mu}</small></div></div>
-      <div class="kpi copper"><div class="k">Costo totale rivalutato</div><div class="v">${cv} <small>${cu}</small></div></div>
-      <div class="kpi"><div class="k">Ricavo stimato</div><div class="v">${rv} <small>${ru}</small></div><div class="s">range ${eur(data.ricavo_eur_min).join(' ')} – ${eur(data.ricavo_eur_max).join(' ')}</div></div>
-      <div class="kpi net"><div class="k">Margine (${calcState.annoDismissione})</div><div class="v ${pos?'pos':'neg'}">${nv} <small>${nu}</small></div><div class="s">range ${eur(data.margine_eur_min).join(' ')} – ${eur(data.margine_eur_max).join(' ')}</div></div>
+      <div class="kpi"><div class="k">${massaLabel}</div><div class="v">${mv} <small>${mu}</small></div><div class="s">${massaSub||''}</div></div>
+      <div class="kpi copper"><div class="k">Costo totale rivalutato</div><div class="v">${cv} <small>${cu}</small></div><div class="s">fattore ×${fmt(data.fattore_rivalutazione_costi,3)}</div></div>
+      <div class="kpi"><div class="k">Ricavo stimato (centrale)</div><div class="v">${rv} <small>${ru}</small></div><div class="s">range ${eur(data.ricavo_eur_min).join(' ')} – ${eur(data.ricavo_eur_max).join(' ')}</div></div>
+      <div class="kpi net"><div class="k">Margine (${data.anno_dismissione_min!=null
+        ? (data.anno_dismissione_min===data.anno_dismissione_max ? data.anno_dismissione_min : `${data.anno_dismissione_min}–${data.anno_dismissione_max}`)
+        : calcState.annoDismissione})</div><div class="v ${data.margine_eur>=0?'pos':'neg'}">${nv} <small>${nu}</small></div><div class="s">range ${eur(data.margine_eur_min).join(' ')} – ${eur(data.margine_eur_max).join(' ')}</div></div>
     </div>
   </div>`;
 }
@@ -1219,20 +1857,23 @@ function renderEconomicSummary(data){
 // ============================================================
 // SEZIONI DATABASE (CRUD via REST)
 // ============================================================
-function fmtCellValue(col, val){ if(col.type==='percent') return val==null?'':(val*100); return val==null?'':val; }
+function fmtCellValue(col, val){ if(col.type==='percent') return val==null?'':+(val*100).toFixed(6); return val==null?'':val; }
 function parseCellValue(col, raw){
-  if(col.type==='number') return parseFloat(raw)||0;
+  if(col.type==='number'){ if(raw==='' && col.nullable) return null; return parseFloat(raw)||0; }
   if(col.type==='percent') return (parseFloat(raw)||0)/100;
+  if(col.type==='text' && col.nullable && raw.trim()==='') return null;
   return raw;
 }
 function rowKey(cfg, rec){ return cfg.pk.map(k=>rec[k]).join('|'); }
-const TEXTISH = c => c.type==='select'||c.type==='prodotto-select'||c.type==='intermedio-select'||c.type==='text';
+const TEXTISH = c => c.type==='select'||c.type==='prodotto-select'||c.type==='intermedio-select'||c.type==='scarto-select'||(c.type==='text'&&!c.nullable);
 
+const DB_MAX_ROWS = 300;
 async function renderDbSection(tableKey){
   const cfg = TABLES[tableKey];
   const main = document.getElementById('main');
   if(!prodottiCache.length) prodottiCache = await apiGet('/prodotti');
   if(!intermediAllCache.length) intermediAllCache = await apiGet('/intermedi');
+  scartiCache = await apiGet('/scarti');
   let rows;
   try{ rows = await apiGet('/'+cfg.url); }
   catch(e){ main.innerHTML = `<div class="empty-state">Errore nel caricamento: ${e.message}</div>`; return; }
@@ -1242,6 +1883,7 @@ async function renderDbSection(tableKey){
       <div class="toolbar">
         <div><h3 style="margin-bottom:4px">${cfg.label}</h3><span class="cnt">${rows.length} record</span></div>
         <div style="display:flex;gap:8px;align-items:center">
+          <input type="text" id="dbFilter" placeholder="Filtra righe…" style="width:220px">
           <button class="btn" id="btnExportThis">⬇ Esporta questa tabella</button>
         </div>
       </div>
@@ -1252,33 +1894,46 @@ async function renderDbSection(tableKey){
           <tfoot><tr class="newrow">${cfg.columns.map(c=>`<td></td>`).join('')}<td></td></tr></tfoot>
         </table>
       </div>
+      <p class="db-note" id="dbShown" style="font-weight:600"></p>
       <p class="db-note">Ogni modifica di cella salva subito su Postgres. Il bordo verde conferma il salvataggio,
       quello rosso segnala un errore (passa il mouse per il dettaglio). Riga in fondo evidenziata per aggiungere un record.
       ${tableKey==='prodotti'||tableKey==='intermedi' ? 'Un prodotto/intermedio ancora usato altrove non può essere eliminato: il database lo impedisce.':''}</p>
     </div>
   `;
-  renderDbBody(tableKey, rows);
+  const draw = ()=>{
+    const q = (document.getElementById('dbFilter').value||'').trim().toLowerCase();
+    const filtered = q ? rows.filter(r=>cfg.columns.some(c=>String(r[c.key]??'').toLowerCase().includes(q))) : rows;
+    const shown = filtered.slice(0, DB_MAX_ROWS);
+    renderDbBody(tableKey, shown);
+    document.getElementById('dbShown').textContent = filtered.length>shown.length
+      ? `Mostrate ${shown.length} righe su ${filtered.length}: usa il filtro per restringere.` : (q ? `${filtered.length} righe corrispondono al filtro.` : '');
+  };
+  let tmr; document.getElementById('dbFilter').oninput = ()=>{ clearTimeout(tmr); tmr=setTimeout(draw, 200); };
+  draw();
   renderNewRowForm(tableKey);
   document.getElementById('btnExportThis').onclick = ()=>exportTables([cfg.dbTable]);
 }
 
 function cellInput(col, rec, extraAttrs=''){
   if(col.type==='select'){
-    return `<select data-k="${col.key}" ${extraAttrs}>${col.options.map(o=>`<option value="${o}" ${rec[col.key]===o?'selected':''}>${o}</option>`).join('')}</select>`;
+    return `<select data-k="${col.key}" ${extraAttrs}>${col.options.map(o=>`<option value="${o}" ${rec[col.key]===o?'selected':''}>${(col.labels||{})[o]||o}</option>`).join('')}</select>`;
   }
   if(col.type==='prodotto-select'){
     return `<select data-k="${col.key}" ${extraAttrs}><option value="">—</option>${prodottiCache.map(e=>`<option value="${e.prodotto}" ${rec[col.key]===e.prodotto?'selected':''}>${e.prodotto} — ${e.nome}</option>`).join('')}</select>`;
+  }
+  if(col.type==='scarto-select'){
+    return `<select data-k="${col.key}" ${extraAttrs}><option value="">—</option>${scartiCache.map(x=>`<option value="${escAttr(x.scarto)}" ${rec[col.key]===x.scarto?'selected':''}>${x.scarto}</option>`).join('')}</select>`;
   }
   if(col.type==='intermedio-select'){
     return `<select data-k="${col.key}" ${extraAttrs}><option value="">—</option>${intermediAllCache.map(s=>`<option value="${s.intermedio}" ${rec[col.key]===s.intermedio?'selected':''}>${s.intermedio} — ${s.nome}</option>`).join('')}</select>`;
   }
   if(col.type==='number'){
-    return `<input type="number" step="${col.step||1}" data-k="${col.key}" value="${rec[col.key]??0}" ${extraAttrs}>`;
+    return `<input type="number" step="${col.step||1}" data-k="${col.key}" value="${rec[col.key]??(col.nullable?'':0)}" ${extraAttrs}>`;
   }
   if(col.type==='percent'){
     return `<input type="number" step="${col.step||0.1}" data-k="${col.key}" value="${fmtCellValue(col,rec[col.key])}" ${extraAttrs}>`;
   }
-  return `<input type="text" data-k="${col.key}" value="${rec[col.key]??''}" ${extraAttrs}>`;
+  return `<input type="text" data-k="${col.key}" value="${escAttr(rec[col.key]??'')}" ${extraAttrs}>`;
 }
 
 function renderDbBody(tableKey, rows){
@@ -1301,7 +1956,7 @@ function renderDbBody(tableKey, rows){
           if(c.auto) return;
           const inp = tr.querySelector(`[data-k="${c.key}"]`);
           let val = TEXTISH(c) ? inp.value : parseCellValue(c, inp.value);
-          if((c.type==='prodotto-select'||c.type==='intermedio-select') && val==='') val = null;
+          if((c.type==='prodotto-select'||c.type==='intermedio-select'||c.type==='scarto-select') && val==='') val = null;
           current[c.key] = val;
         });
         cfg.pk.forEach((pk,i)=>{ current[pk] = pkValues[i]; });
@@ -1347,7 +2002,7 @@ function renderNewRowForm(tableKey){
       if(c.auto) return;
       const inp = tr.querySelector(`[data-k="${c.key}"]`);
       let val = TEXTISH(c) ? inp.value : parseCellValue(c, inp.value);
-      if((c.type==='prodotto-select'||c.type==='intermedio-select') && val==='') val = null;
+      if((c.type==='prodotto-select'||c.type==='intermedio-select'||c.type==='scarto-select') && val==='') val = null;
       rec[c.key] = val;
     });
     const missingPk = cfg.pk.filter(k=>{
@@ -1366,9 +2021,9 @@ function renderNewRowForm(tableKey){
 // EXPORT / IMPORT EXCEL
 // ============================================================
 const TABLE_LABELS = {
-  db_impianti:'Impianti', db_prodotti:'Prodotti', db_macro:'Macro componenti',
-  db_intermedi_composizione:'Composizione intermedi',
-  db_macro_processi:'Macro processi', db_processi:'Processi',
+  db_impianti:'Impianti', db_prodotti:'Prodotti', db_prodotti_storico:'Storico prezzi',
+  db_materiali:'Materiali e composizione', db_scarti:'Scarti',
+  db_macro:'Macro componenti', db_processi:'Processi',
   db_intermedi:'Intermedi', db_sottoprocessi:'Sottoprocessi',
   db_indici_rivalutazione:'Indici rivalutazione',
 };
@@ -1385,6 +2040,26 @@ async function exportTables(tables){
   a.href = URL.createObjectURL(blob); a.download = filename;
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
   URL.revokeObjectURL(a.href);
+}
+
+// report Excel del bilancio di massa del calcolo corrente (stessa richiesta del calcolo)
+let lastCalcBody = null;
+async function exportBilancio(btn){
+  if(!lastCalcBody){ alert('Esegui prima un calcolo.'); return; }
+  const testo = btn ? btn.textContent : '';
+  if(btn){ btn.disabled = true; btn.textContent = 'Preparazione…'; }
+  try{
+    const r = await fetch(API+'/calcolo-impianto/export', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(lastCalcBody)});
+    if(!r.ok){ alert('Errore export: '+(await r.text())); return; }
+    const blob = await r.blob();
+    const match = (r.headers.get('Content-Disposition')||'').match(/filename="(.+)"/);
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = match ? match[1] : 'bilancio_massa.xlsx';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
+  } finally {
+    if(btn){ btn.disabled = false; btn.textContent = testo; }
+  }
 }
 
 function chooseImportModeHtml(){
@@ -1454,7 +2129,8 @@ async function doImport(file, dryRun, replace){
   window._pendingImportFile = dryRun ? file : null;
   renderImportReport(payload, !dryRun, replace);
   if(!dryRun){
-    prodottiCache = []; intermediAllCache = [];
+    prodottiCache = []; intermediAllCache = []; impiantiCache = []; indiciCache = [];
+    resetSelection();
     if(section!=='calcolo') await renderDbSection(section);
     else await renderSection();
   }
@@ -1463,8 +2139,8 @@ async function doImport(file, dryRun, replace){
 function wipeConfirmHtml(){
   return `
     <h3 style="color:var(--red)">⚠ Cancella tutti i record</h3>
-    <p class="sub">Questa operazione cancella <b>irreversibilmente</b> tutte le righe di tutte le 8 tabelle
-    (impianti, prodotti, macro componenti, macro processi, processi, intermedi, sottoprocessi, indici).
+    <p class="sub">Questa operazione cancella <b>irreversibilmente</b> tutte le righe di tutte le tabelle
+    (impianti, macro componenti, materiali, processi, scarti, prodotti e storico prezzi, intermedi, sottoprocessi, indici).
     Lo schema del database resta intatto, ma ogni dato andrà perso.</p>
     <p class="sub">Digita <b>CANCELLA</b> per confermare:</p>
     <input type="text" id="wipeConfirmInput" autocomplete="off"
@@ -1501,7 +2177,7 @@ document.getElementById('btnWipeAll').addEventListener('click', ()=>{
     try{
       const r = await apiSend('POST', '/database/wipe?confirm=true');
       prodottiCache = []; intermediAllCache = []; impiantiCache = []; indiciCache = [];
-      calcState.componenti = {};
+      resetSelection();
       alert('Cancellati '+r.totale+' record in totale su tutte le tabelle.');
       if(section!=='calcolo') await renderDbSection(section);
       else await renderSection();

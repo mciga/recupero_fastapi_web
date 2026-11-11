@@ -1,31 +1,36 @@
 """Route CRUD generiche, parametrizzate sul nome della tabella. Un unico
-router serve tutte e 8 le tabelle grazie alla configurazione in crud.TABLES."""
+router serve tutte le tabelle grazie alla configurazione in crud.TABLES."""
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 import crud
-from schemas import Impianto, Prodotto, Macro, Processo, MacroProcesso, IndiceRivalutazione, Intermedio, Sottoprocesso, IntermedioComposizione
+from schemas import (Impianto, Prodotto, ProdottoStorico, Materiale, Macro, Scarto, Processo,
+                     IndiceRivalutazione, Intermedio, Sottoprocesso, Reagente)
 
 router = APIRouter(prefix="/api", tags=["crud"])
 
 MODELS: dict[str, type[BaseModel]] = {
     "db_impianti": Impianto,
     "db_prodotti": Prodotto,
+    "db_prodotti_storico": ProdottoStorico,
+    "db_materiali": Materiale,
+    "db_scarti": Scarto,
     "db_macro": Macro,
-    "db_intermedi_composizione": IntermedioComposizione,
     "db_processi": Processo,
-    "db_macro_processi": MacroProcesso,
     "db_indici_rivalutazione": IndiceRivalutazione,
     "db_intermedi": Intermedio,
     "db_sottoprocessi": Sottoprocesso,
+    "db_reagenti": Reagente,
 }
 
 URL_NAMES = {
+    "db_reagenti": "reagenti",
     "db_impianti": "impianti",
     "db_prodotti": "prodotti",
+    "db_prodotti_storico": "prodotti-storico",
+    "db_materiali": "materiali",
+    "db_scarti": "scarti",
     "db_macro": "macro",
-    "db_intermedi_composizione": "intermedi-composizione",
     "db_processi": "processi",
-    "db_macro_processi": "macro-processi",
     "db_indici_rivalutazione": "indici-rivalutazione",
     "db_intermedi": "intermedi",
     "db_sottoprocessi": "sottoprocessi",
@@ -40,6 +45,17 @@ def _pk_from_path(table: str, pk1: str, pk2: str | None) -> list[str]:
     return values
 
 
+def _validate(model, body):
+    try:
+        return model(**body)
+    except ValidationError as e:
+        msgs = []
+        for er in e.errors():
+            loc = ".".join(map(str, er["loc"]))
+            msgs.append(f"{loc}: {er['msg']}" if loc else er["msg"].replace("Value error, ", ""))
+        raise HTTPException(422, "; ".join(msgs))
+
+
 def register_table_routes(table: str):
     model = MODELS[table]
     url = URL_NAMES[table]
@@ -52,21 +68,27 @@ def register_table_routes(table: str):
 
     @router.post(f"/{url}", status_code=201, name=f"create_{table}")
     def create_(body: dict, table=table, model=model):
-        validated = model(**body)
+        validated = _validate(model, body)
         try:
-            return crud.create_row(table, validated.model_dump())
+            data = validated.model_dump()
+            if table in ("db_processi", "db_sottoprocessi"):
+                data = crud.normalizza_scarto(data)
+            return crud.create_row(table, data)
         except Exception as e:
             raise HTTPException(400, str(e))
 
     @router.put(path_single, name=f"update_{table}")
     def update_(pk1: str, body: dict, pk2: str | None = None, table=table, model=model, composite=composite):
-        validated = model(**body)
+        validated = _validate(model, body)
         pk_values = _pk_from_path(table, pk1, pk2 if composite else None)
         existing = crud.get_row(table, pk_values)
         if not existing:
             raise HTTPException(404, "Record non trovato")
         try:
-            return crud.update_row(table, pk_values, validated.model_dump())
+            data = validated.model_dump()
+            if table in ("db_processi", "db_sottoprocessi"):
+                data = crud.normalizza_scarto(data)
+            return crud.update_row(table, pk_values, data)
         except Exception as e:
             raise HTTPException(400, str(e))
 

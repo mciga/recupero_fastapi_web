@@ -1,22 +1,28 @@
-"""Entry point dell'applicazione FastAPI."""
+"""Entry point dell'applicazione FastAPI.
+
+Avvio locale (sviluppo):  uvicorn main:app --reload --port 8000
+Avvio in Docker:          vedi ../Dockerfile e ../docker-compose.yml
+"""
 import sys
 from pathlib import Path
-sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent))  # per gli import "flat" (db, crud, calc, schemas)
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
-from sqlalchemy import text
 
 from routers import tables, calcolo, excel
-from db import ENGINE, SCHEMA
+from db import ENGINE
+import auth
 
-app = FastAPI(title="Recupero materie prime strategiche - API", version="1.0")
+app = FastAPI(title="MACTEE - recupero materie prime strategiche - API", version="9.0")
+
+auth.proteggi(app)  # password di accesso, attiva solo se APP_PASSWORD e' impostata (online)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],  # frontend servito dallo stesso processo: CORS permissivo va bene per uso locale
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -32,43 +38,8 @@ def health():
         with ENGINE.connect() as conn:
             conn.exec_driver_sql("SELECT 1")
         return {"status": "ok", "database": "connesso"}
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         return {"status": "errore", "database": str(e)}
-
-
-def _run_sql_file(rel_path: str):
-    path = Path(__file__).resolve().parent.parent / rel_path
-    if not path.exists():
-        raise FileNotFoundError(f"File non trovato: {path}")
-    with open(path, "r", encoding="utf-8") as f:
-        raw = f.read()
-    # Rimuove righe di commento SQL
-    lines = [line for line in raw.splitlines() if not line.strip().startswith("--")]
-    sql = "\n".join(lines)
-    statements = [s.strip() for s in sql.split(";") if s.strip()]
-    with ENGINE.begin() as conn:
-        for stmt in statements:
-            conn.execute(text(stmt + ";"))
-    return {"file": rel_path, "statements": len(statements)}
-
-
-@app.get("/api/setup")
-def setup_database():
-    """Inizializza il database (schema + dati seed). Sicuro da chiamare più volte."""
-    try:
-        with ENGINE.connect() as conn:
-            conn.exec_driver_sql(f"SET search_path TO {SCHEMA}")
-            conn.execute(text(f"SELECT 1 FROM {SCHEMA}.db_prodotti LIMIT 1"))
-            return {"status": "already_initialized", "message": "Database già popolato."}
-    except Exception:
-        pass  # tabelle non esistenti, procedi con setup
-    
-    try:
-        r1 = _run_sql_file("db/01_schema.sql")
-        r2 = _run_sql_file("db/02_seed_data.sql")
-        return {"status": "ok", "schema": r1, "seed": r2}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
 
 
 FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend"

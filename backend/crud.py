@@ -1,4 +1,4 @@
-"""CRUD generico per le 8 tabelle, basato sulla configurazione TABLES.
+"""CRUD generico per le 10 tabelle, basato sulla configurazione TABLES.
 Ogni tabella ha una chiave primaria (singola o composita) usata per
 identificare la riga da aggiornare/cancellare nelle route REST."""
 from typing import Any
@@ -8,35 +8,47 @@ from db import ENGINE, SCHEMA
 TABLES: dict[str, dict[str, Any]] = {
     "db_impianti": {
         "pk": ["id_imp"],
-        "columns": ["id_imp", "tipologia", "sotto_tecnologia", "potenza_mw",
+        "columns": ["id_imp", "nome", "tipologia", "sotto_tecnologia", "potenza_mw",
                     "anno_installazione", "anno_dismissione", "regione", "provincia", "lat", "lon"],
+        "order": "tipologia, nome",
     },
     "db_prodotti": {
         "pk": ["prodotto"],
-        "columns": ["prodotto", "nome", "categoria", "peso_molare", "elemento_confronto", "parametro_equivalenza",
-                    "prezzo_attuale_eur_kg", "proiezione_prezzo_p1", "proiezione_prezzo_p2"],
+        "columns": ["prodotto", "nome", "categoria", "formula_chimica", "peso_molare", "elemento_confronto",
+                    "parametro_equivalenza", "prezzo_attuale_eur_kg", "proiezione_prezzo_p1", "proiezione_prezzo_p2"],
+    },
+    "db_prodotti_storico": {
+        "pk": ["prodotto", "anno"],
+        "columns": ["prodotto", "anno", "prezzo_usd_t", "produzione_eu_kt", "consumo_mondiale_mt", "fonte"],
+        "order": "prodotto, anno",
+    },
+    "db_materiali": {
+        "pk": ["material_id", "elemento"],
+        "columns": ["material_id", "material", "elemento", "frazione_pct"],
+        "order": "material_id, frazione_pct DESC NULLS LAST",
     },
     "db_macro": {
-        "pk": ["id_macro", "prodotto"],
-        "columns": ["id_macro", "tipologia", "sotto_tecnologia", "macro_componente", "massa_kg_per_mw",
-                    "prodotto", "pct_contenuto_min", "pct_contenuto_max"],
+        "pk": ["id"],
+        "columns": ["id", "impianto", "id_macro", "tipologia", "sotto_tecnologia", "macro_componente",
+                    "assieme_dettaglio", "material", "material_id", "massa_kg"],
     },
-    "db_intermedi_composizione": {
-        "pk": ["intermedio", "prodotto"],
-        "columns": ["intermedio", "prodotto", "pct_contenuto_min", "pct_contenuto_max"],
-    },
-    "db_macro_processi": {
-        "pk": ["id_processo_macro"],
-        "columns": ["id_processo_macro", "tipologia", "sotto_tecnologia", "macro_componente",
-                    "tecnica", "capex_eur_ton", "opex_eur_ton",
-                    "prezzo_vendita_eur_kg", "proiezione_prezzo_p1", "proiezione_prezzo_p2",
-                    "descrizione_fasi"],
+    "db_scarti": {
+        "pk": ["scarto"],
+        "columns": ["scarto", "descrizione", "costo_smaltimento_eur_ton"],
     },
     "db_processi": {
         "pk": ["id"],
         "columns": ["id", "id_processo", "tipologia", "sotto_tecnologia", "macro_componente", "tecnica",
-                    "capex_eur_ton", "opex_eur_ton", "tipo_output", "prodotto", "intermedio_output",
-                    "recupero_pct_min", "recupero_pct_max", "descrizione_fasi"],
+                    "capex_eur_ton", "opex_eur_ton", "material_id", "assieme_dettaglio", "tipo_output", "prodotto",
+                    "intermedio_output", "scarto", "recupero_pct_min", "recupero_pct", "recupero_pct_max",
+                    "descrizione_fasi", "reagente", "taglia_riferimento_t_anno", "esponente_scala", "vita_utile_anni"],
+    },
+    "db_reagenti": {
+        "pk": ["reagente"],
+        "columns": ["reagente", "nome", "formula_chimica", "peso_molare", "sale_residuo", "reagente_sale",
+                    "scarto_residuo", "descrizione"],
+        # prima i reagenti senza reagente_sale (es. H2SO4), referenziati dagli altri
+        "order": "reagente_sale NULLS FIRST, reagente",
     },
     "db_indici_rivalutazione": {
         "pk": ["id_indice"],
@@ -50,15 +62,37 @@ TABLES: dict[str, dict[str, Any]] = {
     "db_sottoprocessi": {
         "pk": ["id"],
         "columns": ["id", "id_sottoprocesso", "intermedio", "tecnica", "capex_eur_ton", "opex_eur_ton",
-                    "tipo_output", "prodotto", "intermedio_output",
-                    "recupero_pct_min", "recupero_pct_max", "descrizione_fasi"],
+                    "tipo_output", "prodotto", "intermedio_output", "scarto",
+                    "recupero_pct_min", "recupero_pct", "recupero_pct_max", "descrizione_fasi", "reagente",
+                    "taglia_riferimento_t_anno", "esponente_scala", "vita_utile_anni"],
     },
 }
 
 
+ALIAS_COLONNE = {"material": "material_id", "Material_ID": "material_id", "Material": "material"}
+
+
+def normalizza_scarto(data: dict) -> dict:
+    """Uno scarto citato in un processo viene agganciato (maiuscole/minuscole
+    indifferenti) a quello esistente in db_scarti, oppure creato con costo 0."""
+    nome = (data.get("scarto") or "").strip()
+    if not nome:
+        return data
+    with ENGINE.begin() as conn:
+        conn.exec_driver_sql(f"SET search_path TO {SCHEMA}")
+        row = conn.execute(text(f"SELECT scarto FROM {SCHEMA}.db_scarti WHERE lower(scarto)=lower(:s)"), {"s": nome}).first()
+        if row:
+            nome = row[0]
+        else:
+            nome = nome[0].upper() + nome[1:]
+            conn.execute(text(f"INSERT INTO {SCHEMA}.db_scarti (scarto, costo_smaltimento_eur_ton) VALUES (:s, 0)"),
+                         {"s": nome})
+    return {**data, "scarto": nome}
+
+
 def list_rows(table: str, order_by: str | None = None) -> list[dict]:
     cfg = TABLES[table]
-    order = order_by or cfg["pk"][0]
+    order = order_by or cfg.get("order") or cfg["pk"][0]
     with ENGINE.connect() as conn:
         conn.exec_driver_sql(f"SET search_path TO {SCHEMA}")
         rows = conn.execute(text(f"SELECT {','.join(cfg['columns'])} FROM {SCHEMA}.{table} ORDER BY {order}"))
@@ -117,8 +151,8 @@ def delete_row(table: str, pk_values: list[str]) -> None:
 # ordine di cancellazione sicuro per le chiavi esterne: le tabelle che
 # referenziano le altre vengono svuotate per prime (l'esatto contrario
 # dell'ordine di import, che invece crea prima le tabelle referenziate)
-WIPE_ORDER = ["db_sottoprocessi", "db_processi", "db_macro", "db_intermedi_composizione", "db_macro_processi",
-              "db_indici_rivalutazione", "db_impianti", "db_intermedi", "db_prodotti"]
+WIPE_ORDER = ["db_sottoprocessi", "db_processi", "db_reagenti", "db_macro", "db_materiali", "db_scarti",
+              "db_prodotti_storico", "db_indici_rivalutazione", "db_impianti", "db_intermedi", "db_prodotti"]
 
 
 def wipe_all_tables() -> dict[str, int]:

@@ -4,14 +4,17 @@ services:
     runtime: python
     plan: free
     buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    startCommand: uvicorn main:app --app-dir backend --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
     envVars:
+      # stringa di connessione di Neon (postgresql://...?sslmode=require): si inserisce a mano su Render
       - key: DATABASE_URL
-        fromDatabase:
-          name: recupero-materie-db
-          property: connectionString
-
-databases:
-  - name: recupero-materie-db
-    plan: free
-    ipAllowList: []
+        sync: false
+      # schema del database con le tabelle della versione di novembre
+      - key: PGSCHEMA
+        value: recupero_novembre
+      # password di accesso alla dashboard (nome utente: APP_USER, predefinito "mactee")
+      - key: APP_PASSWORD
+        sync: false
+      - key: APP_USER
+        value: mactee
