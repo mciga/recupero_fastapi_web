@@ -807,8 +807,12 @@ function posizionaTendina(){
   const barra = document.getElementById('aside').getBoundingClientRect();
   const larg = 340, spazioDestra = window.innerWidth - barra.right - 24;
   if(spazioDestra >= larg){
-    // di fianco alla barra: in alto allineato al pulsante, alzato se non c'e' spazio sotto
-    const h = Math.min(window.innerHeight - 24, Math.max(320, window.innerHeight * 0.7));
+    // di fianco alla barra, allineato al pulsante; alzato solo quanto serve se il contenuto
+    // (altezza reale, non una fissa) non sta sotto
+    // una lista lunga scorre dentro il pannello; si alza solo se sotto restano meno di 360 px
+    p.style.maxHeight = 'none';
+    const naturale = p.scrollHeight, spazioSotto = window.innerHeight - (r.top - 8) - 12;
+    const h = Math.min(naturale, Math.max(spazioSotto, Math.min(360, naturale)), window.innerHeight * 0.8);
     const top = Math.max(12, Math.min(r.top - 8, window.innerHeight - h - 12));
     Object.assign(p.style, { left:(barra.right+12)+'px', width:larg+'px', maxHeight:h+'px', top:top+'px', bottom:'auto' });
     return;
