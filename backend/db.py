@@ -17,7 +17,7 @@ SCHEMA = os.getenv("PGSCHEMA", "recupero_materie")
 
 
 def get_engine() -> Engine:
-    # online (Render + Neon): stringa di connessione di Neon nella variabile DATABASE_URL
+    # online (Vercel + Neon): stringa di connessione di Neon nella variabile DATABASE_URL
     db_url = os.getenv("DATABASE_URL")
     if db_url:
         # i provider danno postgres:// o postgresql://, SQLAlchemy vuole postgresql+psycopg2://

@@ -5,12 +5,12 @@ dalla dismissione degli impianti (eolico, fotovoltaico, BESS).
 
 ## Online
 
-- **Vercel** esegue il backend e serve la dashboard (`vercel.json` + `api/index.py`);
-  in alternativa **Render** (`render.yaml`).
+- **Vercel** esegue il backend e serve la dashboard (`app.py`, riconosciuto da Vercel come app FastAPI,
+  e `vercel.json`); a ogni push su `main` Vercel rifà il deploy.
 - **Neon** ospita il database PostgreSQL (schema `recupero_novembre`).
 - I dati **non** sono in questo repository: si caricano su Neon da una copia del database locale.
 
-Variabili d'ambiente su Render:
+Variabili d'ambiente su Vercel:
 
 | Variabile | Valore |
 |---|---|
@@ -18,8 +18,6 @@ Variabili d'ambiente su Render:
 | `PGSCHEMA` | `recupero_novembre` |
 | `APP_PASSWORD` | password di accesso alla dashboard |
 | `APP_USER` | nome utente di accesso (predefinito `mactee`) |
-
-Comando di avvio: `uvicorn main:app --app-dir backend --host 0.0.0.0 --port $PORT`
 
 ## In locale
 

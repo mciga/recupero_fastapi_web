@@ -1,10 +1,10 @@
 """Password di accesso alla dashboard (HTTP Basic: il browser mostra la sua finestra
 di accesso e poi ricorda le credenziali per tutta la sessione).
 
-Si attiva solo se e' impostata la variabile d'ambiente APP_PASSWORD (su Render);
+Si attiva solo se e' impostata la variabile d'ambiente APP_PASSWORD (online, su Vercel);
 in locale, senza la variabile, la dashboard resta libera come prima.
 Nome utente: variabile APP_USER (predefinito "mactee").
-/api/health resta libero per il controllo di Render."""
+/api/health resta libero per i controlli automatici."""
 import base64
 import os
 import secrets
