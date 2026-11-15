@@ -58,8 +58,8 @@
   .mwval{font-family:Fraunces;font-weight:700;font-size:20px;color:var(--green);min-width:74px;text-align:right}
   .mwval small{font-family:Inter;font-size:12px;color:var(--mute);font-weight:600}
   .chip{display:inline-flex;align-items:center;gap:6px;background:#FBF2E7;color:var(--copper);border:1px solid #EBD7BE;border-radius:999px;padding:4px 10px;font-size:11px;font-weight:600;margin-top:8px}
-  .mode-toggle{display:flex;gap:8px;margin-bottom:14px}
-  .mode-btn{flex:1;padding:9px 10px;border:1px solid var(--line);border-radius:10px;background:#fff;cursor:pointer;font-family:Inter;font-size:12px;font-weight:600;color:var(--mute)}
+  .mode-toggle{display:flex;gap:6px;margin-bottom:14px}
+  .mode-btn{flex:1;padding:9px 6px;line-height:1.25;border:1px solid var(--line);border-radius:10px;background:#fff;cursor:pointer;font-family:Inter;font-size:12px;font-weight:600;color:var(--mute)}
   .mode-btn.active{border-color:var(--green);background:#F1F7F3;color:var(--green)}
   .comp-mini-label{display:block;font-size:9.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--mute);font-weight:700;margin-bottom:3px}
 
@@ -292,6 +292,96 @@
   .output-card .nm{white-space:nowrap}
   @media (max-width:700px){.chart-row{grid-template-columns:1fr}}
   @media (max-width:1080px){.wrap{grid-template-columns:1fr}aside{border-right:0;border-bottom:1px solid var(--line)}.kpis{grid-template-columns:repeat(2,1fr)}}
+  /* ===== cruscotto territoriale (frontend/cruscotto.js), stili isolati sotto .cz ===== */
+  .cz{--pv:#E0A83E;--eol:#2E8B8B;--bess:#6E5AA8;--soft:#F4F6F1;--warn:#9A5B12;--warnbg:#FBF2E7}
+  .cz button{font-family:inherit}
+  .cz .cz-seg{display:flex;background:#EEF0EA;border-radius:10px;padding:3px}
+  .cz .cz-seg button{flex:1;border:0;background:transparent;color:var(--mute);font-weight:600;font-size:12px;padding:7px 6px;border-radius:8px;cursor:pointer}
+  .cz .cz-seg button[aria-pressed="true"]{background:#fff;color:var(--green);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+  .cz .toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%) translateY(30px);background:var(--deep);color:#fff;padding:9px 16px;border-radius:10px;font-size:13px;opacity:0;transition:.25s;z-index:60;pointer-events:none}
+  .cz .toast.show{opacity:1;transform:translateX(-50%)}
+  .cz select,.cz input[type=number]{padding:8px 10px}
+  .cz h1,.cz h2,.cz h3,.cz .num{font-family:Fraunces,Georgia,serif}
+  .cz .tech{display:flex;flex-direction:column;gap:7px}
+  .cz .tech button{display:flex;align-items:center;gap:10px;border:1px solid var(--line);background:#fff;border-radius:10px;padding:8px 11px;cursor:pointer;font-size:13.5px;color:var(--ink);font-weight:500;text-align:left}
+  .cz .tech button .dot{width:11px;height:11px;border-radius:3px;flex:none}
+  .cz .tech button .n{margin-left:auto;font-size:11.5px;color:var(--mute);font-variant-numeric:tabular-nums}
+  .cz .tech button[aria-pressed="true"]{border-color:var(--green);background:#F1F7F3}
+  .cz .tech button[aria-pressed="false"]{opacity:.5}
+  .cz select,.cz input[type=number]{width:100%;border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-family:Inter;font-size:13.5px;background:#fff;color:var(--ink)}
+  .cz .yrrow{display:flex;gap:8px;align-items:center}.yrrow span{font-size:12px;color:var(--mute)}
+  .cz .btnrow{display:flex;flex-wrap:wrap;gap:6px}
+  .cz .sbtn{border:1px solid var(--line);background:#fff;border-radius:9px;padding:7px 10px;font-weight:600;font-size:12.5px;color:var(--ink);cursor:pointer}
+  .cz .sbtn[aria-pressed="true"]{border-color:var(--green);background:#F1F7F3;color:var(--green)}
+  .cz .sbtn:hover{background:var(--soft)}
+  .cz .sbtn.full{width:100%;margin-top:6px;color:var(--green)}
+  .cz .note{font-size:11.5px;color:var(--mute);line-height:1.45;margin-top:7px}
+  .cz .life{display:grid;grid-template-columns:1fr 74px;gap:6px 8px;align-items:center;font-size:12.5px}
+  .cz .chk{display:flex;gap:8px;align-items:flex-start;font-size:12.5px;line-height:1.4;cursor:pointer}
+  .cz .chk input{margin-top:2px}
+  .cz .chip{display:inline-flex;align-items:center;gap:6px;background:var(--warnbg);color:var(--copper);border:1px solid #EBD7BE;border-radius:999px;padding:4px 10px;font-size:11px;font-weight:600}
+  .cz .status{font-size:11.5px;color:var(--mute);line-height:1.5;margin-top:6px;word-break:break-word}
+  .cz .status b{color:var(--ink)}
+  .cz .kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:16px}
+  .cz .kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:13px 15px;box-shadow:var(--shadow);min-width:0}
+  .cz .kpi .k{font-size:10.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--mute);font-weight:600}
+  .cz .kpi .v{font-family:Fraunces;font-size:25px;font-weight:600;margin-top:5px;color:var(--green);line-height:1.05}
+  .cz .kpi .v small{font-size:13px;color:var(--ink);font-weight:600;font-family:Inter}
+  .cz .kpi .s{font-size:11.5px;color:var(--mute);margin-top:5px}
+  .cz .kpi.accent .v{color:var(--copper)}
+  .cz .kpi.warn .v{color:var(--warn)}
+  .cz .grid2{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:16px}
+  .cz .panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px 16px 14px;box-shadow:var(--shadow);margin-bottom:16px;min-width:0}
+  .cz .panel h3{margin:0 0 2px;font-size:16px;font-weight:600}
+  .cz .panel .sub{font-size:12px;color:var(--mute);margin:2px 0 0}
+  .cz .panel .head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:10px;flex-wrap:wrap}
+  .cz .toggle{display:flex;background:#EEF0EA;border-radius:9px;padding:3px;flex:none}
+  .cz .toggle button{border:0;background:transparent;font-weight:600;font-size:11.5px;padding:6px 11px;border-radius:7px;cursor:pointer;color:var(--mute)}
+  .cz .toggle button[aria-pressed="true"]{background:#fff;color:var(--green);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+  .cz #map{width:100%;display:block;touch-action:none;user-select:none}
+  .cz #map .prov{fill:#E9EEE7;stroke:#A9B5AD;stroke-width:1;vector-effect:non-scaling-stroke;cursor:pointer}
+  .cz #map .prov.sel{fill:#D6E8DD;stroke:var(--green)}
+  .cz #map .prov:hover{fill:#DFE8E0}
+  .cz #map .plab{font-size:13px;fill:#5F6F66;font-weight:600;pointer-events:none;paint-order:stroke;stroke:#fff;stroke-width:3px}
+  .cz #map .pt{stroke:#fff;stroke-width:.8;cursor:pointer}
+  .cz #map .pt.off{opacity:.18}
+  .cz #map .pt.test{stroke-dasharray:2 1.5}
+  .cz #map .shape{fill:rgba(31,90,67,.08);stroke:var(--green);stroke-width:1.6;stroke-dasharray:6 4;vector-effect:non-scaling-stroke;pointer-events:none}
+  .cz #map.draw{cursor:crosshair}
+  .cz .maplegend{display:flex;gap:14px;flex-wrap:wrap;font-size:11.5px;color:var(--mute);margin-top:8px;align-items:center}
+  .cz .maplegend i{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:5px;vertical-align:-1px}
+  .cz .chartbox{position:relative;height:300px}
+  .cz .legend{display:flex;gap:16px;margin-top:10px;flex-wrap:wrap}
+  .cz .legend span{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--mute)}
+  .cz .legend i{width:12px;height:10px;border-radius:3px;display:inline-block}
+  .cz .tiles{display:flex;flex-wrap:wrap;gap:8px;max-height:330px;overflow:auto;padding:2px}
+  .cz .tile{width:86px;border:1.5px solid var(--line);border-radius:10px;padding:8px 8px 7px;cursor:pointer;background:#fff;transition:.13s;position:relative;text-align:left}
+  .cz .tile:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
+  .cz .tile[aria-pressed="true"]{border-color:var(--green);background:#F1F7F3}
+  .cz .tile .sym{font-family:Fraunces;font-weight:700;font-size:21px;line-height:1}
+  .cz .tile .val{font-size:11.5px;font-weight:700;margin-top:6px}
+  .cz .tile .val2{font-size:10px;color:var(--mute);margin-top:1px}
+  .cz .tile .cat{position:absolute;top:8px;right:8px;width:8px;height:8px;border-radius:50%}
+  .cz .tbl{width:100%;border-collapse:collapse;font-size:12.5px}
+  .cz .tbl th{text-align:left;font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--mute);font-weight:700;border-bottom:1px solid var(--line);padding:6px 7px;position:sticky;top:0;background:#fff;cursor:pointer;white-space:nowrap}
+  .cz .tbl td{border-bottom:1px solid #EFF2EC;padding:5px 7px;vertical-align:top;overflow-wrap:anywhere}
+  .cz .tbl td.n,.cz .tbl th.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .cz .tbl tr.click{cursor:pointer}.tbl tr.click:hover td{background:var(--soft)}
+  .cz .tbl tr.hl td{background:#F1F7F3}
+  .cz .tbl tr.sub td{color:var(--mute);font-size:11.5px;padding-top:2px;padding-bottom:2px}
+  .cz .tbl tr.tot td{font-weight:700;border-top:1px solid var(--line)}
+  .cz .scroll{max-height:420px;overflow:auto}
+  .cz .tag{display:inline-block;font-size:10.5px;font-weight:600;border-radius:6px;padding:1px 6px;background:#EEF0EA;color:var(--mute);white-space:nowrap}
+  .cz .tag.test{background:var(--warnbg);color:var(--warn)}
+  .cz .tdot{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:6px;vertical-align:0}
+  .cz .qual{display:grid;grid-template-columns:1fr auto;gap:5px 12px;font-size:12.5px}
+  .cz .qual .bar{grid-column:1/-1;height:7px;border-radius:5px;background:#EEF0EA;overflow:hidden;display:flex;margin:-1px 0 6px}
+  .cz .qual .bar i{display:block;height:100%}
+  .cz .detail h4{margin:0 0 2px;font-family:Fraunces;font-size:15px;font-weight:600}
+  .cz .footer{font-size:11px;color:var(--mute);margin-top:6px;line-height:1.55}
+  .cz .warnbox{background:var(--warnbg);border:1px solid #EBD7BE;color:var(--warn);border-radius:10px;padding:9px 12px;font-size:12.5px;margin:0 0 14px;line-height:1.5}
+  @media (max-width:1180px){.cz .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.cz .grid2{grid-template-columns:1fr}}
+  @media (max-width:860px){{grid-template-columns:1fr}{border-right:0;border-bottom:1px solid var(--line)}}
 </style>
 </head>
 <body>
@@ -364,8 +454,20 @@ const RECUPERO_COLS = [
   {key:'recupero_pct_min',label:'% recupero scen. min',type:'percent',step:0.1},
   {key:'recupero_pct',label:'% recupero scen. centrale',type:'percent',step:0.1},
   {key:'recupero_pct_max',label:'% recupero scen. max',type:'percent',step:0.1},
-  {key:'descrizione_fasi',label:'Fasi',type:'text',nullable:true},
+  {key:'reagente',label:'Reagente (solo prodotti)',type:'text',nullable:true},
 ];
+// dati del processo nel suo insieme (v10: una riga per processo, le trasformazioni a parte)
+const TESTATA_COLS = [
+  {key:'tecnica',label:'Tecnica',type:'text'},
+  {key:'capex_eur_ton',label:'Capex € per t/anno di capacità',type:'number',step:10},
+  {key:'opex_eur_ton',label:'Opex €/t trattata',type:'number',step:10},
+  {key:'descrizione_fasi',label:'Fasi',type:'text',nullable:true},
+  {key:'taglia_riferimento_t_anno',label:'Taglia di riferimento t/anno (vuota = capex lineare)',type:'number',step:100,nullable:true},
+  {key:'esponente_scala',label:'Esponente di scala capex',type:'number',step:0.05},
+  {key:'vita_utile_anni',label:'Vita utile impianto (anni)',type:'number',step:1},
+];
+const USCITA_DEFAULTS = {tipo_output:'prodotto',prodotto:'Fe',intermedio_output:null,scarto:null,
+  recupero_pct_min:0.9,recupero_pct:0.9,recupero_pct_max:0.9,reagente:null};
 const TABLES = {
   impianti: { url:'impianti', dbTable:'db_impianti', label:'Impianti', pk:['id_imp'],
     columns:[
@@ -380,8 +482,10 @@ const TABLES = {
       {key:'provincia',label:'Provincia',type:'text',nullable:true},
       {key:'lat',label:'Lat',type:'number',step:0.01,nullable:true},
       {key:'lon',label:'Lon',type:'number',step:0.01,nullable:true},
+      {key:'fonte_coordinate',label:'Fonte coordinate (prova = da sostituire)',type:'text',nullable:true},
+      {key:'fonte_anno',label:'Fonte anno dismissione',type:'text',nullable:true},
     ],
-    defaults:()=>({id_imp:'',nome:'',tipologia:'EOLICO',sotto_tecnologia:null,potenza_mw:null,anno_installazione:null,anno_dismissione:2040,regione:null,provincia:null,lat:null,lon:null}),
+    defaults:()=>({id_imp:'',nome:'',tipologia:'EOLICO',sotto_tecnologia:null,potenza_mw:null,anno_installazione:null,anno_dismissione:2040,regione:null,provincia:null,lat:null,lon:null,fonte_coordinate:null,fonte_anno:null}),
   },
   prodotti: { url:'prodotti', dbTable:'db_prodotti', label:'Prodotti', pk:['prodotto'],
     columns:[
@@ -454,25 +558,27 @@ const TABLES = {
     ],
     defaults:()=>({reagente:'',nome:'',formula_chimica:'',peso_molare:null,sale_residuo:null,reagente_sale:null,scarto_residuo:null,descrizione:null}),
   },
-  processi: { url:'processi', dbTable:'db_processi', label:'Processi (materiale → uscita)', pk:['id'],
+  processi: { url:'processi', dbTable:'db_processi', label:'Processi (una riga per processo)', pk:['id_processo'],
+    detail:'processiTrasf', detailLabel:'trasformazioni',
     columns:[
-      {key:'id',label:'ID',type:'text',auto:true},
       {key:'id_processo',label:'ID processo',type:'text'},
       {key:'tipologia',label:'Tipologia',type:'select',options:TIPOLOGIE_DB},
       {key:'sotto_tecnologia',label:'Sotto tecnologia (vuoto = tutte; più valori separati da ;)',type:'text',nullable:true},
       {key:'macro_componente',label:'Macrocomponente',type:'text'},
-      {key:'tecnica',label:'Tecnica',type:'text'},
-      {key:'capex_eur_ton',label:'Capex € per t/anno di capacità',type:'number',step:10},
-      {key:'opex_eur_ton',label:'Opex €/t trattata',type:'number',step:10},
-      {key:'material_id',label:'Materiale in ingresso (ID)',type:'text'},
+      ...TESTATA_COLS,
+    ],
+    defaults:()=>({id_processo:'',tipologia:'EOLICO',sotto_tecnologia:null,macro_componente:'',tecnica:'',capex_eur_ton:100,opex_eur_ton:200,descrizione_fasi:'',taglia_riferimento_t_anno:null,esponente_scala:0.6,vita_utile_anni:15}),
+  },
+  processiTrasf: { url:'processi-trasformazioni', dbTable:'db_processi_trasformazioni', label:'Trasformazioni dei processi (materiale → uscita)', pk:['id'],
+    fk:'id_processo', master:'processi',
+    columns:[
+      {key:'id',label:'ID',type:'text',auto:true},
+      {key:'id_processo',label:'ID processo',type:'text'},
+      {key:'material_id',label:'Materiale in ingresso (ID)',type:'material-input'},
       {key:'assieme_dettaglio',label:'Solo assieme (vuoto = tutti)',type:'text',nullable:true},
       ...RECUPERO_COLS,
-      {key:'reagente',label:'Reagente (solo prodotti)',type:'text',nullable:true},
-      {key:'taglia_riferimento_t_anno',label:'Taglia di riferimento t/anno (vuota = capex lineare)',type:'number',step:100,nullable:true},
-      {key:'esponente_scala',label:'Esponente di scala capex',type:'number',step:0.05},
-      {key:'vita_utile_anni',label:'Vita utile impianto (anni)',type:'number',step:1},
     ],
-    defaults:()=>({id_processo:'',tipologia:'EOLICO',sotto_tecnologia:null,macro_componente:'',tecnica:'',capex_eur_ton:100,opex_eur_ton:200,material_id:'',assieme_dettaglio:null,tipo_output:'prodotto',prodotto:'Fe',intermedio_output:null,scarto:null,recupero_pct_min:0.9,recupero_pct:0.9,recupero_pct_max:0.9,descrizione_fasi:'',reagente:null,taglia_riferimento_t_anno:null,esponente_scala:0.6,vita_utile_anni:15}),
+    defaults:()=>({id_processo:'',material_id:'',assieme_dettaglio:null,...USCITA_DEFAULTS}),
   },
   intermedi: { url:'intermedi', dbTable:'db_intermedi', label:'Intermedi', pk:['intermedio'],
     columns:[
@@ -484,21 +590,23 @@ const TABLES = {
     ],
     defaults:()=>({intermedio:'',nome:'',prezzo_attuale_eur_kg:0,proiezione_prezzo_p1:0.03,proiezione_prezzo_p2:0.05}),
   },
-  sottoprocessi: { url:'sottoprocessi', dbTable:'db_sottoprocessi', label:'Sottoprocessi (intermedio → uscita)', pk:['id'],
+  sottoprocessi: { url:'sottoprocessi', dbTable:'db_sottoprocessi', label:'Sottoprocessi (uno per riga)', pk:['id_sottoprocesso'],
+    detail:'sottoprocessiTrasf', detailLabel:'trasformazioni',
+    columns:[
+      {key:'id_sottoprocesso',label:'ID sottoprocesso',type:'text'},
+      {key:'intermedio',label:'Input (intermedio)',type:'intermedio-select'},
+      ...TESTATA_COLS,
+    ],
+    defaults:()=>({id_sottoprocesso:'',intermedio:intermediAllCache[0]?.intermedio||'',tecnica:'',capex_eur_ton:1000,opex_eur_ton:1000,descrizione_fasi:'',taglia_riferimento_t_anno:null,esponente_scala:0.6,vita_utile_anni:15}),
+  },
+  sottoprocessiTrasf: { url:'sottoprocessi-trasformazioni', dbTable:'db_sottoprocessi_trasformazioni', label:'Trasformazioni dei sottoprocessi (intermedio → uscita)', pk:['id'],
+    fk:'id_sottoprocesso', master:'sottoprocessi',
     columns:[
       {key:'id',label:'ID',type:'text',auto:true},
       {key:'id_sottoprocesso',label:'ID sottoprocesso',type:'text'},
-      {key:'intermedio',label:'Input (intermedio)',type:'intermedio-select'},
-      {key:'tecnica',label:'Tecnica',type:'text'},
-      {key:'capex_eur_ton',label:'Capex € per t/anno di capacità',type:'number',step:10},
-      {key:'opex_eur_ton',label:'Opex €/t',type:'number',step:10},
       ...RECUPERO_COLS,
-      {key:'reagente',label:'Reagente (solo prodotti)',type:'text',nullable:true},
-      {key:'taglia_riferimento_t_anno',label:'Taglia di riferimento t/anno (vuota = capex lineare)',type:'number',step:100,nullable:true},
-      {key:'esponente_scala',label:'Esponente di scala capex',type:'number',step:0.05},
-      {key:'vita_utile_anni',label:'Vita utile impianto (anni)',type:'number',step:1},
     ],
-    defaults:()=>({id_sottoprocesso:'',intermedio:intermediAllCache[0]?.intermedio||'',tecnica:'',capex_eur_ton:1000,opex_eur_ton:1000,tipo_output:'prodotto',prodotto:'Fe',intermedio_output:null,scarto:null,recupero_pct_min:0.3,recupero_pct:0.35,recupero_pct_max:0.4,descrizione_fasi:'',reagente:null,taglia_riferimento_t_anno:null,esponente_scala:0.6,vita_utile_anni:15}),
+    defaults:()=>({id_sottoprocesso:'',...USCITA_DEFAULTS,recupero_pct_min:0.3,recupero_pct:0.35,recupero_pct_max:0.4}),
   },
   indici: { url:'indici-rivalutazione', dbTable:'db_indici_rivalutazione', label:'Indici di rivalutazione costi', pk:['id_indice'],
     columns:[
@@ -516,12 +624,14 @@ const SECTIONS = [
   ['macro','Macro componenti'],
   ['materiali','Materiali'],
   ['processi','Processi'],
+  ['processiTrasf','Trasformazioni processi'],
   ['scarti','Scarti'],
   ['reagenti','Reagenti'],
   ['prodotti','Prodotti'],
   ['storico','Storico prezzi'],
   ['intermedi','Intermedi'],
   ['sottoprocessi','Sottoprocessi'],
+  ['sottoprocessiTrasf','Trasformazioni sottoprocessi'],
   ['indici','Indici rivalutazione'],
 ];
 let section = 'calcolo';
@@ -592,8 +702,29 @@ function initDiretto(){
   return { intermedio:'', sottoprocessoOptions:[], idSottoprocesso:'', massaTon:10, figli:{}, prezzoAcquistoOverride:null };
 }
 
+// i tre pulsanti di modalita' del calcolo (Da impianto / Cruscotto / Intermedio acquistato)
+function modeToggleHtml(s){
+  return `<div class="fgroup"><div class="mode-toggle">
+        <button class="mode-btn ${s.mode==='impianto'?'active':''}" id="btnModeImp">Da impianto</button>
+        <button class="mode-btn ${s.mode==='cruscotto'?'active':''}" id="btnModeCz" title="Cruscotto territoriale: mappa, metalli nel tempo, scenari di recupero">Cruscotto</button>
+        <button class="mode-btn ${s.mode==='intermedio'?'active':''}" id="btnModeInt">Intermedio acquistato</button>
+      </div></div>`;
+}
+function bindModeToggle(s){
+  const vai = m => ()=>{ if(s.mode!==m){ s.mode=m; resetSelection(); renderCalcoloAside(); renderCalcoloMain(); } };
+  document.getElementById('btnModeImp').onclick=vai('impianto');
+  document.getElementById('btnModeCz').onclick=vai('cruscotto');
+  document.getElementById('btnModeInt').onclick=vai('intermedio');
+}
+
 async function renderCalcoloAside(){
   const aside = document.getElementById('aside');
+  if(calcState.mode==='cruscotto'){
+    // il contenuto (filtri del cruscotto) lo scrive Cruscotto.monta, chiamata da renderCalcoloMain
+    aside.innerHTML = modeToggleHtml(calcState) + '<div id="czAsideBox"></div>';
+    bindModeToggle(calcState);
+    return;
+  }
   if(!impiantiCache.length) impiantiCache = await apiGet('/filtri/impianti');
   if(!indiciCache.length) indiciCache = await apiGet('/filtri/indici-rivalutazione');
   if(!prodottiCache.length) prodottiCache = await apiGet('/prodotti');
@@ -614,12 +745,7 @@ async function renderCalcoloAside(){
       : `<span class="dd-lbl">${sel.length===1 ? escAttr(nome1) : sel.length===tot ? `Tutti (${tot} ${plur})` : `${sel.length} di ${tot} ${plur}`}</span>`;
   const nomeImp1 = (impiantiSotto.find(i=>selImp.has(i.id_imp))||{}).nome || '';
   aside.innerHTML = `
-    <div class="fgroup">
-      <div class="mode-toggle">
-        <button class="mode-btn ${s.mode==='impianto'?'active':''}" id="btnModeImp">Da impianto</button>
-        <button class="mode-btn ${s.mode==='intermedio'?'active':''}" id="btnModeInt">Intermedio acquistato</button>
-      </div>
-    </div>
+    ${modeToggleHtml(s)}
     ${s.mode==='impianto' ? `
     <div class="fgroup">
       <div class="h">Tipologia impianto</div>
@@ -702,8 +828,7 @@ async function renderCalcoloAside(){
     </div>
   `;
 
-  document.getElementById('btnModeImp').onclick=()=>{ if(s.mode!=='impianto'){s.mode='impianto';resetSelection();renderCalcoloAside();renderCalcoloMain();} };
-  document.getElementById('btnModeInt').onclick=()=>{ if(s.mode!=='intermedio'){s.mode='intermedio';resetSelection();renderCalcoloAside();renderCalcoloMain();} };
+  bindModeToggle(s);
 
   if(s.mode==='impianto'){
     document.getElementById('typeF').onclick=async e=>{
@@ -916,6 +1041,11 @@ function pathBar(steps){
 let calcRequestId = 0;
 async function renderCalcoloMain(){
   if(calcState.mode==='intermedio') return renderCalcoloMainDiretto();
+  if(calcState.mode==='cruscotto'){
+    const box = document.getElementById('czAsideBox');
+    if(box && window.Cruscotto) return window.Cruscotto.monta(box, document.getElementById('main'));
+    return;
+  }
   const s = calcState;
   const main = document.getElementById('main');
   const imps = s.impianti.map(id=>impiantiCache.find(i=>i.id_imp===id)).filter(Boolean);
@@ -1916,15 +2046,21 @@ function rowKey(cfg, rec){ return cfg.pk.map(k=>rec[k]).join('|'); }
 const TEXTISH = c => c.type==='select'||c.type==='prodotto-select'||c.type==='intermedio-select'||c.type==='scarto-select'||(c.type==='text'&&!c.nullable);
 
 const DB_MAX_ROWS = 300;
-async function renderDbSection(tableKey){
-  const cfg = TABLES[tableKey];
-  const main = document.getElementById('main');
+async function loadDbCaches(){
   if(!prodottiCache.length) prodottiCache = await apiGet('/prodotti');
   if(!intermediAllCache.length) intermediAllCache = await apiGet('/intermedi');
   scartiCache = await apiGet('/scarti');
+}
+async function renderDbSection(tableKey){
+  const cfg = TABLES[tableKey];
+  const main = document.getElementById('main');
+  await loadDbCaches();
   let rows;
   try{ rows = await apiGet('/'+cfg.url); }
   catch(e){ main.innerHTML = `<div class="empty-state">Errore nel caricamento: ${e.message}</div>`; return; }
+  const det = cfg.detail ? TABLES[cfg.detail] : null;
+  const vuoti = det ? rows.filter(r=>!r.n_trasformazioni).length : 0;
+  const nomeM = tableKey==='processi' ? 'processo' : 'sottoprocesso';
 
   main.innerHTML = `
     <div class="panel">
@@ -1935,31 +2071,51 @@ async function renderDbSection(tableKey){
           <button class="btn" id="btnExportThis">⬇ Esporta questa tabella</button>
         </div>
       </div>
+      ${vuoti ? `<p class="db-note" style="color:var(--red);font-weight:600">${vuoti} ${vuoti===1?nomeM:nomeM.slice(0,-1)+'i'} senza trasformazioni: non ${vuoti===1?'compare':'compaiono'} nel calcolo finché non si aggiungono le righe.</p>` : ''}
       <div class="db-table-wrap">
         <table class="dbtable">
-          <thead><tr>${cfg.columns.map(c=>`<th>${c.label}</th>`).join('')}<th></th></tr></thead>
+          <thead><tr>${cfg.columns.map(c=>`<th>${c.label}</th>`).join('')}${det?'<th>Trasformazioni</th>':''}<th></th></tr></thead>
           <tbody id="dbBody"></tbody>
-          <tfoot><tr class="newrow">${cfg.columns.map(c=>`<td></td>`).join('')}<td></td></tr></tfoot>
+          <tfoot><tr class="newrow"></tr></tfoot>
         </table>
       </div>
       <p class="db-note" id="dbShown" style="font-weight:600"></p>
       <p class="db-note">Ogni modifica di cella salva subito su Postgres. Il bordo verde conferma il salvataggio,
       quello rosso segnala un errore (passa il mouse per il dettaglio). Riga in fondo evidenziata per aggiungere un record.
+      ${det ? `Il pulsante nella colonna Trasformazioni apre le righe collegate. Eliminando un ${nomeM} si eliminano anche tutte le sue trasformazioni; dopo averne creato uno nuovo si apre subito la finestra per inserirle.`:''}
+      ${cfg.master ? `Ogni riga appartiene a un ${cfg.master==='processi'?'processo':'sottoprocesso'} (${cfg.fk}) che deve già esistere: crearlo nella sezione ${TABLES[cfg.master].label.split(' (')[0]}.`:''}
       ${tableKey==='prodotti'||tableKey==='intermedi' ? 'Un prodotto/intermedio ancora usato altrove non può essere eliminato: il database lo impedisce.':''}</p>
     </div>
   `;
+  const reload = ()=>renderDbSection(tableKey);
   const draw = ()=>{
     const q = (document.getElementById('dbFilter').value||'').trim().toLowerCase();
     const filtered = q ? rows.filter(r=>cfg.columns.some(c=>String(r[c.key]??'').toLowerCase().includes(q))) : rows;
     const shown = filtered.slice(0, DB_MAX_ROWS);
-    renderDbBody(tableKey, shown);
+    renderDbBody(tableKey, shown, document.getElementById('dbBody'), reload);
     document.getElementById('dbShown').textContent = filtered.length>shown.length
       ? `Mostrate ${shown.length} righe su ${filtered.length}: usa il filtro per restringere.` : (q ? `${filtered.length} righe corrispondono al filtro.` : '');
   };
   let tmr; document.getElementById('dbFilter').oninput = ()=>{ clearTimeout(tmr); tmr=setTimeout(draw, 200); };
   draw();
-  renderNewRowForm(tableKey);
+  // nuovo processo/sottoprocesso: si chiedono subito le trasformazioni
+  renderNewRowForm(tableKey, document.querySelector('#main tfoot tr'), reload, {}, det ? 1 : 0,
+                   det ? rec=>openDetail(tableKey, rec, true) : null);
   document.getElementById('btnExportThis').onclick = ()=>exportTables([cfg.dbTable]);
+}
+
+// colonne mostrate e salvate: quelle "fixed" (es. id_processo nella finestra delle trasformazioni) sono nascoste
+const visibleCols = (cfg, fixed) => cfg.columns.filter(c=>!(c.key in fixed));
+function readRowValues(cfg, tr, fixed){
+  const rec = {...fixed};
+  visibleCols(cfg, fixed).forEach(c=>{
+    if(c.auto) return;
+    const inp = tr.querySelector(`[data-k="${c.key}"]`);
+    let val = TEXTISH(c) ? inp.value : parseCellValue(c, inp.value);
+    if((c.type==='prodotto-select'||c.type==='intermedio-select'||c.type==='scarto-select') && val==='') val = null;
+    rec[c.key] = val;
+  });
+  return rec;
 }
 
 function cellInput(col, rec, extraAttrs=''){
@@ -1981,15 +2137,24 @@ function cellInput(col, rec, extraAttrs=''){
   if(col.type==='percent'){
     return `<input type="number" step="${col.step||0.1}" data-k="${col.key}" value="${fmtCellValue(col,rec[col.key])}" ${extraAttrs}>`;
   }
+  if(col.type==='material-input'){
+    // testo libero con l'elenco dei materiali del macrocomponente (datalist "dlMateriali", se presente)
+    return `<input type="text" list="dlMateriali" data-k="${col.key}" value="${escAttr(rec[col.key]??'')}" ${extraAttrs}>`;
+  }
   return `<input type="text" data-k="${col.key}" value="${escAttr(rec[col.key]??'')}" ${extraAttrs}>`;
 }
 
-function renderDbBody(tableKey, rows){
+// body: <tbody> in cui disegnare; reload: ridisegna dopo una cancellazione; fixed: valori fissi nascosti
+function renderDbBody(tableKey, rows, body, reload, fixed={}){
   const cfg = TABLES[tableKey];
-  const body = document.getElementById('dbBody');
+  const cols = visibleCols(cfg, fixed);
+  const det = cfg.detail ? TABLES[cfg.detail] : null;
+  const byKey = new Map(rows.map(r=>[String(rowKey(cfg,r)), r]));
   body.innerHTML = rows.map(rec => `
-    <tr data-key="${rowKey(cfg,rec)}">
-      ${cfg.columns.map(col=>`<td>${cellInput(col, rec, (cfg.pk.includes(col.key)||col.auto) ? 'disabled title="Chiave non modificabile: elimina e ricrea il record"' : '')}</td>`).join('')}
+    <tr data-key="${escAttr(rowKey(cfg,rec))}">
+      ${cols.map(col=>`<td>${cellInput(col, rec, (cfg.pk.includes(col.key)||col.auto) ? 'disabled title="Chiave non modificabile: elimina e ricrea il record"' : '')}</td>`).join('')}
+      ${det ? `<td><button class="btn rowdet" style="padding:4px 9px;font-size:11px;white-space:nowrap;${rec.n_trasformazioni?'':'border-color:var(--red);color:var(--red)'}"
+        title="Apri le trasformazioni">${rec.n_trasformazioni||0} righe ▸</button></td>` : ''}
       <td class="actions"><button class="rowdel" title="Elimina record">✕</button></td>
     </tr>
   `).join('');
@@ -2000,13 +2165,7 @@ function renderDbBody(tableKey, rows){
       if(el.disabled) return;
       el.addEventListener('change', async e=>{
         const key = e.target.dataset.k;
-        const current = {}; cfg.columns.forEach(c=>{
-          if(c.auto) return;
-          const inp = tr.querySelector(`[data-k="${c.key}"]`);
-          let val = TEXTISH(c) ? inp.value : parseCellValue(c, inp.value);
-          if((c.type==='prodotto-select'||c.type==='intermedio-select'||c.type==='scarto-select') && val==='') val = null;
-          current[c.key] = val;
-        });
+        const current = readRowValues(cfg, tr, fixed);
         cfg.pk.forEach((pk,i)=>{ current[pk] = pkValues[i]; });
         e.target.classList.remove('saved','error');
         try{
@@ -2022,15 +2181,25 @@ function renderDbBody(tableKey, rows){
       });
     });
   });
+  body.querySelectorAll('.rowdet').forEach(btn=>{
+    btn.addEventListener('click', e=>{
+      openDetail(tableKey, byKey.get(e.target.closest('tr').dataset.key), false);
+    });
+  });
   body.querySelectorAll('.rowdel').forEach(btn=>{
     btn.addEventListener('click', async e=>{
       const tr = e.target.closest('tr');
       const pkValues = tr.dataset.key.split('|');
-      if(!confirm('Eliminare questo record?')) return;
+      const n = det ? (byKey.get(tr.dataset.key)?.n_trasformazioni||0) : 0;
+      const msg = det
+        ? `Eliminare ${tableKey==='processi'?'il processo':'il sottoprocesso'} ${pkValues[0]}?` +
+          (n ? `\n\nVerranno eliminate anche le sue ${n} trasformazioni.` : '')
+        : 'Eliminare questo record?';
+      if(!confirm(msg)) return;
       try{
         const path = '/'+cfg.url+'/'+pkValues.map(encodeURIComponent).join('/');
         await apiSend('DELETE', path);
-        renderDbSection(tableKey);
+        await reload();
       }catch(err){
         alert('Impossibile eliminare: '+err.message);
       }
@@ -2038,31 +2207,75 @@ function renderDbBody(tableKey, rows){
   });
 }
 
-function renderNewRowForm(tableKey){
+// tr: riga <tr> del modulo; fixed: valori fissi (chiave del processo); extraCells: celle vuote prima del
+// pulsante; onCreated(rec): chiamata dopo la creazione (oltre a reload)
+function renderNewRowForm(tableKey, tr, reload, fixed={}, extraCells=0, onCreated=null){
   const cfg = TABLES[tableKey];
-  const tr = document.querySelector('#main tfoot tr');
-  const draft = cfg.defaults();
-  tr.innerHTML = cfg.columns.map(col=>`<td>${cellInput(col, draft, col.auto ? 'disabled placeholder="auto"' : '')}</td>`).join('') +
-    `<td class="actions"><button class="btn primary" id="btnAddRow" style="padding:5px 9px;font-size:11px">+ Agg.</button></td>`;
-  document.getElementById('btnAddRow').onclick = async ()=>{
-    const rec = {};
-    cfg.columns.forEach(c=>{
-      if(c.auto) return;
-      const inp = tr.querySelector(`[data-k="${c.key}"]`);
-      let val = TEXTISH(c) ? inp.value : parseCellValue(c, inp.value);
-      if((c.type==='prodotto-select'||c.type==='intermedio-select'||c.type==='scarto-select') && val==='') val = null;
-      rec[c.key] = val;
-    });
+  const draft = {...cfg.defaults(), ...fixed};
+  tr.innerHTML = visibleCols(cfg, fixed).map(col=>`<td>${cellInput(col, draft, col.auto ? 'disabled placeholder="auto"' : '')}</td>`).join('') +
+    '<td></td>'.repeat(extraCells) +
+    `<td class="actions"><button class="btn primary btnAddRow" style="padding:5px 9px;font-size:11px">+ Agg.</button></td>`;
+  tr.querySelector('.btnAddRow').onclick = async ()=>{
+    const rec = readRowValues(cfg, tr, fixed);
     const missingPk = cfg.pk.filter(k=>{
       const col = cfg.columns.find(c=>c.key===k);
       return !col?.auto && !String(rec[k]||'').trim();
     });
     if(missingPk.length){ alert('Compila la chiave: '+missingPk.join(', ')); return; }
     try{
-      await apiSend('POST', '/'+cfg.url, rec);
-      await renderDbSection(tableKey);
+      const creato = await apiSend('POST', '/'+cfg.url, rec);
+      await reload();
+      if(onCreated) onCreated(creato||rec);
     }catch(err){ alert('Errore creazione: '+err.message); }
   };
+}
+
+// Finestra delle trasformazioni di un processo o sottoprocesso (relazione 1 → N).
+// nuovo=true: appena creato, si invita a inserire le righe.
+async function openDetail(masterKey, master, nuovo){
+  const mcfg = TABLES[masterKey], dkey = mcfg.detail, dcfg = TABLES[dkey];
+  const id = master[mcfg.pk[0]];
+  const fixed = {[dcfg.fk]: id};
+  const nome = masterKey==='processi' ? 'processo' : 'sottoprocesso';
+  const sub = masterKey==='processi'
+    ? `${master.tipologia} · ${escAttr(master.macro_componente)}${master.sotto_tecnologia?' · '+escAttr(master.sotto_tecnologia):''} · ${escAttr(master.tecnica)}`
+    : `intermedio ${escAttr(master.intermedio)} · ${escAttr(master.tecnica)}`;
+  const ov = showModal(`
+    <h3>Trasformazioni del ${nome} ${escAttr(id)}</h3>
+    <p class="sub" style="margin-top:-8px">${sub} · capex ${master.capex_eur_ton} € per t/anno · opex ${master.opex_eur_ton} €/t</p>
+    ${nuovo ? `<p class="db-note" style="color:var(--green);font-weight:600">${nome[0].toUpperCase()+nome.slice(1)} creato. Inserire ora le trasformazioni:
+      ${masterKey==='processi' ? 'per ogni materiale in ingresso una riga per ciascuna uscita (prodotto, impurità, scarto o intermedio)' : 'una riga per ciascuna uscita'}, con le tre rese.
+      Finché non ha righe il ${nome} non compare nel calcolo.</p>` : ''}
+    <div class="db-table-wrap" style="max-height:55vh">
+      <table class="dbtable">
+        <thead><tr>${visibleCols(dcfg, fixed).map(c=>`<th>${c.label}</th>`).join('')}<th></th></tr></thead>
+        <tbody class="detBody"></tbody>
+        <tfoot><tr class="newrow detNew"></tr></tfoot>
+      </table>
+    </div>
+    <p class="db-note detCnt"></p>
+    ${masterKey==='processi' ? '<datalist id="dlMateriali"></datalist>' : ''}
+    <div class="modal-close"><button class="btn primary detClose">Chiudi</button></div>`);
+  const box = ov.querySelector('.modal');
+  box.classList.add('wide'); box.style.maxWidth = '96vw'; box.style.maxHeight = '90vh';
+  if(masterKey==='processi'){
+    apiGet('/filtri/materiali-macro', {tipologia:master.tipologia, macro_componente:master.macro_componente})
+      .then(ms=>{ const dl = ov.querySelector('#dlMateriali'); if(dl) dl.innerHTML = ms.map(m=>
+        `<option value="${escAttr(m.material_id)}">${escAttr(m.material||'')} · ${fmt(m.massa_kg/1000,1)} t · ${m.n_impianti} impianti</option>`).join(''); })
+      .catch(()=>{});
+  }
+  const draw = async ()=>{
+    const rows = await apiGet('/'+dcfg.url, fixed);
+    renderDbBody(dkey, rows, ov.querySelector('.detBody'), draw, fixed);
+    ov.querySelector('.detCnt').textContent = rows.length
+      ? `${rows.length} righe. Ogni modifica di cella salva subito.` : 'Nessuna trasformazione: aggiungere almeno una riga.';
+  };
+  await draw();
+  renderNewRowForm(dkey, ov.querySelector('.detNew'), draw, fixed);
+  // alla chiusura si aggiorna il conteggio delle righe nella tabella dei processi
+  const chiudi = ()=>{ ov.remove(); if(section===masterKey) renderDbSection(masterKey); };
+  ov.querySelector('.detClose').onclick = chiudi;
+  ov.addEventListener('click', e=>{ if(e.target===ov) chiudi(); });
 }
 
 // ============================================================
@@ -2071,8 +2284,8 @@ function renderNewRowForm(tableKey){
 const TABLE_LABELS = {
   db_impianti:'Impianti', db_prodotti:'Prodotti', db_prodotti_storico:'Storico prezzi',
   db_materiali:'Materiali e composizione', db_scarti:'Scarti',
-  db_macro:'Macro componenti', db_processi:'Processi',
-  db_intermedi:'Intermedi', db_sottoprocessi:'Sottoprocessi',
+  db_macro:'Macro componenti', db_processi:'Processi', db_processi_trasformazioni:'Trasformazioni processi',
+  db_intermedi:'Intermedi', db_sottoprocessi:'Sottoprocessi', db_sottoprocessi_trasformazioni:'Trasformazioni sottoprocessi',
   db_indici_rivalutazione:'Indici rivalutazione',
 };
 
@@ -2237,5 +2450,6 @@ renderNav();
 checkHealth();
 renderSection();
 </script>
+<script src="/assets/cruscotto.js"></script>
 </body>
 </html>

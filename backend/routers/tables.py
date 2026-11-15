@@ -1,10 +1,11 @@
 """Route CRUD generiche, parametrizzate sul nome della tabella. Un unico
 router serve tutte le tabelle grazie alla configurazione in crud.TABLES."""
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, ValidationError
 import crud
 from schemas import (Impianto, Prodotto, ProdottoStorico, Materiale, Macro, Scarto, Processo,
-                     IndiceRivalutazione, Intermedio, Sottoprocesso, Reagente)
+                     ProcessoTrasformazione, IndiceRivalutazione, Intermedio, Sottoprocesso,
+                     SottoprocessoTrasformazione, Reagente)
 
 router = APIRouter(prefix="/api", tags=["crud"])
 
@@ -16,9 +17,11 @@ MODELS: dict[str, type[BaseModel]] = {
     "db_scarti": Scarto,
     "db_macro": Macro,
     "db_processi": Processo,
+    "db_processi_trasformazioni": ProcessoTrasformazione,
     "db_indici_rivalutazione": IndiceRivalutazione,
     "db_intermedi": Intermedio,
     "db_sottoprocessi": Sottoprocesso,
+    "db_sottoprocessi_trasformazioni": SottoprocessoTrasformazione,
     "db_reagenti": Reagente,
 }
 
@@ -31,10 +34,15 @@ URL_NAMES = {
     "db_scarti": "scarti",
     "db_macro": "macro",
     "db_processi": "processi",
+    "db_processi_trasformazioni": "processi-trasformazioni",
     "db_indici_rivalutazione": "indici-rivalutazione",
     "db_intermedi": "intermedi",
     "db_sottoprocessi": "sottoprocessi",
+    "db_sottoprocessi_trasformazioni": "sottoprocessi-trasformazioni",
 }
+
+# tabelle con la colonna "scarto" (agganciata a db_scarti o creata)
+CON_SCARTO = ("db_processi_trasformazioni", "db_sottoprocessi_trasformazioni")
 
 
 def _pk_from_path(table: str, pk1: str, pk2: str | None) -> list[str]:
@@ -63,15 +71,23 @@ def register_table_routes(table: str):
     path_single = f"/{url}/{{pk1}}" if not composite else f"/{url}/{{pk1}}/{{pk2}}"
 
     @router.get(f"/{url}", name=f"list_{table}")
-    def list_(table=table):
-        return crud.list_rows(table)
+    def list_(request: Request, table=table):
+        # filtro facoltativo per colonna, es. /processi-trasformazioni?id_processo=P_X
+        rows = crud.list_rows(table, filtro=dict(request.query_params))
+        if crud.TABLES[table].get("detail"):
+            # testata: numero di trasformazioni di ogni processo (0 = processo non utilizzabile)
+            n = crud.conta_dettaglio(table)
+            pk = crud.TABLES[table]["pk"][0]
+            for r in rows:
+                r["n_trasformazioni"] = n.get(r[pk], 0)
+        return rows
 
     @router.post(f"/{url}", status_code=201, name=f"create_{table}")
     def create_(body: dict, table=table, model=model):
         validated = _validate(model, body)
         try:
             data = validated.model_dump()
-            if table in ("db_processi", "db_sottoprocessi"):
+            if table in CON_SCARTO:
                 data = crud.normalizza_scarto(data)
             return crud.create_row(table, data)
         except Exception as e:
@@ -86,7 +102,7 @@ def register_table_routes(table: str):
             raise HTTPException(404, "Record non trovato")
         try:
             data = validated.model_dump()
-            if table in ("db_processi", "db_sottoprocessi"):
+            if table in CON_SCARTO:
                 data = crud.normalizza_scarto(data)
             return crud.update_row(table, pk_values, data)
         except Exception as e:

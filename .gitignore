@@ -5,3 +5,4 @@ __pycache__/
 *.xlsx
 *.rar
 deploy/
+!db/migrazione_*.sql

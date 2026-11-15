@@ -1,4 +1,4 @@
-"""Modelli Pydantic per le tabelle (schema v8). Un solo modello per tabella,
+"""Modelli Pydantic per le tabelle (schema v10: processi e sottoprocessi in testata + trasformazioni). Un solo modello per tabella,
 usato sia in lettura che in scrittura (CRUD e import Excel)."""
 from typing import Literal
 from pydantic import BaseModel, Field, field_validator, model_validator
@@ -28,6 +28,13 @@ class Impianto(BaseModel):
     provincia: str | None = None
     lat: float | None = None
     lon: float | None = None
+    fonte_coordinate: str | None = None   # v10.1: es. "prova" = posizione di prova da sostituire
+    fonte_anno: str | None = None         # v10.1: da dove viene l'anno di dismissione
+
+    @field_validator("fonte_coordinate", "fonte_anno", "sotto_tecnologia", mode="before")
+    @classmethod
+    def _vuoti(cls, v):
+        return _vuoto_a_none(v)
 
 
 class Prodotto(BaseModel):
@@ -139,9 +146,9 @@ class Reagente(BaseModel):
         return self
 
 
-class _ConRecuperi(BaseModel):
-    """tipo_output: prodotto / impurità (nel prodotto indicato) / scarto /
-    intermedio. Tre scenari di recupero (0..1), usati cosi' come sono: la somma per
+class _Uscita(BaseModel):
+    """Riga di trasformazione (v10): tipo_output prodotto / impurità (nel prodotto indicato) /
+    scarto / intermedio. Tre scenari di recupero (0..1), usati cosi' come sono: la somma per
     materiale puo' superare 1 (la massa in piu' e' quella dei reagenti).
     reagente (v9, solo per i prodotti): reagente che fornisce gli elementi della
     formula diversi dall'elemento di confronto."""
@@ -152,23 +159,7 @@ class _ConRecuperi(BaseModel):
     recupero_pct_min: float = Field(ge=0, le=1)
     recupero_pct: float = Field(ge=0, le=1)
     recupero_pct_max: float = Field(ge=0, le=1)
-    descrizione_fasi: str | None = None
     reagente: str | None = None
-    # capex e taglia (v9.1): capex_eur_ton = EUR per t/anno di capacita'
-    taglia_riferimento_t_anno: float | None = Field(default=None, gt=0)   # vuota = capex lineare con la taglia
-    esponente_scala: float = Field(default=0.6, gt=0, le=1)
-    vita_utile_anni: float = Field(default=15, gt=0)
-
-    @field_validator("taglia_riferimento_t_anno", mode="before")
-    @classmethod
-    def _tr(cls, v):
-        return _vuoto_a_none(v)
-
-    @field_validator("esponente_scala", "vita_utile_anni", mode="before")
-    @classmethod
-    def _def(cls, v, info):
-        v = _vuoto_a_none(v)
-        return v if v is not None else {"esponente_scala": 0.6, "vita_utile_anni": 15}[info.field_name]
 
     @field_validator("reagente", mode="before")
     @classmethod
@@ -213,15 +204,44 @@ class _ConRecuperi(BaseModel):
         return self
 
 
-class Processo(_ConRecuperi):
-    id: int | None = None
+class _Testata(BaseModel):
+    """Dati del processo/sottoprocesso nel suo insieme (v10: una riga per processo).
+    capex_eur_ton = EUR per t/anno di capacita' (v9.1), opex_eur_ton = EUR per t trattata."""
+    tecnica: str
+    capex_eur_ton: float = Field(ge=0)
+    opex_eur_ton: float = Field(ge=0)
+    descrizione_fasi: str | None = None
+    taglia_riferimento_t_anno: float | None = Field(default=None, gt=0)   # vuota = capex lineare con la taglia
+    esponente_scala: float = Field(default=0.6, gt=0, le=1)
+    vita_utile_anni: float = Field(default=15, gt=0)
+
+    @field_validator("taglia_riferimento_t_anno", "descrizione_fasi", mode="before")
+    @classmethod
+    def _tr(cls, v):
+        return _vuoto_a_none(v)
+
+    @field_validator("esponente_scala", "vita_utile_anni", mode="before")
+    @classmethod
+    def _def(cls, v, info):
+        v = _vuoto_a_none(v)
+        return v if v is not None else {"esponente_scala": 0.6, "vita_utile_anni": 15}[info.field_name]
+
+
+class Processo(_Testata):
     id_processo: str
     tipologia: Tipologia
     sotto_tecnologia: str | None = None
     macro_componente: str
-    tecnica: str
-    capex_eur_ton: float = Field(ge=0)
-    opex_eur_ton: float = Field(ge=0)
+
+    @field_validator("sotto_tecnologia", mode="before")
+    @classmethod
+    def _v(cls, v):
+        return _vuoto_a_none(v)
+
+
+class ProcessoTrasformazione(_Uscita):
+    id: int | None = None
+    id_processo: str
     material_id: str
     assieme_dettaglio: str | None = None
 
@@ -232,7 +252,7 @@ class Processo(_ConRecuperi):
             d = {**d, "material_id": d["material"]}   # colonna "material" del file utente
         return d
 
-    @field_validator("sotto_tecnologia", "assieme_dettaglio", mode="before")
+    @field_validator("assieme_dettaglio", mode="before")
     @classmethod
     def _v(cls, v):
         return _vuoto_a_none(v)
@@ -252,10 +272,11 @@ class Intermedio(BaseModel):
     proiezione_prezzo_p2: float = Field(ge=0, le=1)
 
 
-class Sottoprocesso(_ConRecuperi):
-    id: int | None = None
+class Sottoprocesso(_Testata):
     id_sottoprocesso: str
     intermedio: str
-    tecnica: str
-    capex_eur_ton: float = Field(ge=0)
-    opex_eur_ton: float = Field(ge=0)
+
+
+class SottoprocessoTrasformazione(_Uscita):
+    id: int | None = None
+    id_sottoprocesso: str

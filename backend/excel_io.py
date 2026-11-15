@@ -16,7 +16,8 @@ from openpyxl.styles import Font, PatternFill
 
 import crud
 from schemas import (Impianto, Prodotto, ProdottoStorico, Materiale, Macro, Scarto, Processo,
-                     IndiceRivalutazione, Intermedio, Sottoprocesso, Reagente)
+                     ProcessoTrasformazione, IndiceRivalutazione, Intermedio, Sottoprocesso,
+                     SottoprocessoTrasformazione, Reagente)
 
 SHEET_NAMES = {
     "db_reagenti": "reagenti",
@@ -27,9 +28,11 @@ SHEET_NAMES = {
     "db_scarti": "scarti",
     "db_macro": "macro",
     "db_processi": "processi",
+    "db_processi_trasformazioni": "processi_trasformazioni",
     "db_indici_rivalutazione": "indici_rivalutazione",
     "db_intermedi": "intermedi",
     "db_sottoprocessi": "sottoprocessi",
+    "db_sottoprocessi_trasformazioni": "sottoprocessi_trasformazioni",
 }
 TABLE_BY_SHEET = {v: k for k, v in SHEET_NAMES.items()}
 
@@ -41,15 +44,19 @@ MODELS = {
     "db_scarti": Scarto,
     "db_macro": Macro,
     "db_processi": Processo,
+    "db_processi_trasformazioni": ProcessoTrasformazione,
     "db_indici_rivalutazione": IndiceRivalutazione,
     "db_intermedi": Intermedio,
     "db_sottoprocessi": Sottoprocesso,
+    "db_sottoprocessi_trasformazioni": SottoprocessoTrasformazione,
     "db_reagenti": Reagente,
 }
+CON_SCARTO = ("db_processi_trasformazioni", "db_sottoprocessi_trasformazioni")
 
 # rispetta le FK: le tabelle referenziate prima di chi le referenzia
 IMPORT_ORDER = ["db_prodotti", "db_prodotti_storico", "db_intermedi", "db_scarti", "db_reagenti", "db_impianti",
-                "db_indici_rivalutazione", "db_materiali", "db_macro", "db_processi", "db_sottoprocessi"]
+                "db_indici_rivalutazione", "db_materiali", "db_macro", "db_processi", "db_processi_trasformazioni",
+                "db_sottoprocessi", "db_sottoprocessi_trasformazioni"]
 
 PERCENT_COLUMNS = {
     "proiezione_prezzo_p1", "proiezione_prezzo_p2",
@@ -158,6 +165,11 @@ def import_workbook(file_bytes: bytes, dry_run: bool = False, replace: bool = Fa
         report["_testi_riparati"] = {"celle": len(riparati),
                                      "esempi": sorted({str(v)[:60] for v in riparati})[:5]}
 
+    for testata, det, segno in (("db_processi", "db_processi_trasformazioni", "material_id"),
+                                ("db_sottoprocessi", "db_sottoprocessi_trasformazioni", "tipo_output")):
+        if _dividi_formato_v9(sheets_by_table, testata, det, segno):
+            report.setdefault("_formato_v9_diviso", []).append(SHEET_NAMES[testata])
+
     if "db_reagenti" in sheets_by_table:
         # i reagenti usati come reagente_sale (es. H2SO4) vanno creati prima di chi li cita
         sheets_by_table["db_reagenti"].sort(key=lambda r: bool(r.get("reagente_sale")))
@@ -186,7 +198,7 @@ def import_workbook(file_bytes: bytes, dry_run: bool = False, replace: bool = Fa
                     validi.append((i, model(**clean).model_dump()))
                 except Exception as e:  # noqa: BLE001
                     errors.append(f"riga {i}: {e}")
-            if table in ("db_processi", "db_sottoprocessi") and not dry_run:
+            if table in CON_SCARTO and not dry_run:
                 validi = _normalizza_scarti(cur, validi)
 
             # chiave auto-generata (es. "id" seriale) lasciata vuota nel foglio: si crea sempre.
@@ -215,6 +227,28 @@ def import_workbook(file_bytes: bytes, dry_run: bool = False, replace: bool = Fa
         if not dry_run:
             _riallinea_sequenze(cur)
     return report
+
+
+def _dividi_formato_v9(sheets: dict, testata: str, det: str, segno: str) -> bool:
+    """File delle versioni precedenti (un solo foglio "processi"/"sottoprocessi" con una riga per
+    trasformazione e i dati del processo ripetuti): si divide in testata + trasformazioni. La testata
+    prende i valori della prima riga di ogni processo, come faceva il calcolo."""
+    righe = sheets.get(testata)
+    if not righe or det in sheets:
+        return False
+    if not any(segno in r or (segno == "material_id" and "material" in r) for r in righe):
+        return False
+    chiave = crud.TABLES[testata]["pk"][0]
+    col_t = crud.TABLES[testata]["columns"]
+    col_d = crud.TABLES[det]["columns"] + ["material"]
+    teste = {}
+    for r in righe:
+        k = r.get(chiave)
+        if k is not None and k not in teste:
+            teste[k] = {c: r.get(c) for c in col_t}
+    sheets[testata] = list(teste.values())
+    sheets[det] = [{c: r.get(c) for c in col_d if c in r} for r in righe]
+    return True
 
 
 def _svuota_tabelle(cur) -> dict[str, int]:

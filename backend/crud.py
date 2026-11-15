@@ -1,4 +1,4 @@
-"""CRUD generico per le 10 tabelle, basato sulla configurazione TABLES.
+"""CRUD generico per le tabelle, basato sulla configurazione TABLES.
 Ogni tabella ha una chiave primaria (singola o composita) usata per
 identificare la riga da aggiornare/cancellare nelle route REST."""
 from typing import Any
@@ -9,7 +9,8 @@ TABLES: dict[str, dict[str, Any]] = {
     "db_impianti": {
         "pk": ["id_imp"],
         "columns": ["id_imp", "nome", "tipologia", "sotto_tecnologia", "potenza_mw",
-                    "anno_installazione", "anno_dismissione", "regione", "provincia", "lat", "lon"],
+                    "anno_installazione", "anno_dismissione", "regione", "provincia", "lat", "lon",
+                    "fonte_coordinate", "fonte_anno"],
         "order": "tipologia, nome",
     },
     "db_prodotti": {
@@ -36,12 +37,21 @@ TABLES: dict[str, dict[str, Any]] = {
         "pk": ["scarto"],
         "columns": ["scarto", "descrizione", "costo_smaltimento_eur_ton"],
     },
+    # v10: una riga per processo (testata) + N trasformazioni (ON DELETE CASCADE)
     "db_processi": {
+        "pk": ["id_processo"],
+        "columns": ["id_processo", "tipologia", "sotto_tecnologia", "macro_componente", "tecnica",
+                    "capex_eur_ton", "opex_eur_ton", "descrizione_fasi",
+                    "taglia_riferimento_t_anno", "esponente_scala", "vita_utile_anni"],
+        "order": "tipologia, macro_componente, id_processo",
+        "detail": "db_processi_trasformazioni",
+    },
+    "db_processi_trasformazioni": {
         "pk": ["id"],
-        "columns": ["id", "id_processo", "tipologia", "sotto_tecnologia", "macro_componente", "tecnica",
-                    "capex_eur_ton", "opex_eur_ton", "material_id", "assieme_dettaglio", "tipo_output", "prodotto",
-                    "intermedio_output", "scarto", "recupero_pct_min", "recupero_pct", "recupero_pct_max",
-                    "descrizione_fasi", "reagente", "taglia_riferimento_t_anno", "esponente_scala", "vita_utile_anni"],
+        "fk": "id_processo",
+        "columns": ["id", "id_processo", "material_id", "assieme_dettaglio", "tipo_output", "prodotto",
+                    "intermedio_output", "scarto", "recupero_pct_min", "recupero_pct", "recupero_pct_max", "reagente"],
+        "order": "id_processo, id",
     },
     "db_reagenti": {
         "pk": ["reagente"],
@@ -60,11 +70,18 @@ TABLES: dict[str, dict[str, Any]] = {
                     "proiezione_prezzo_p1", "proiezione_prezzo_p2"],
     },
     "db_sottoprocessi": {
-        "pk": ["id"],
-        "columns": ["id", "id_sottoprocesso", "intermedio", "tecnica", "capex_eur_ton", "opex_eur_ton",
-                    "tipo_output", "prodotto", "intermedio_output", "scarto",
-                    "recupero_pct_min", "recupero_pct", "recupero_pct_max", "descrizione_fasi", "reagente",
+        "pk": ["id_sottoprocesso"],
+        "columns": ["id_sottoprocesso", "intermedio", "tecnica", "capex_eur_ton", "opex_eur_ton", "descrizione_fasi",
                     "taglia_riferimento_t_anno", "esponente_scala", "vita_utile_anni"],
+        "order": "intermedio, id_sottoprocesso",
+        "detail": "db_sottoprocessi_trasformazioni",
+    },
+    "db_sottoprocessi_trasformazioni": {
+        "pk": ["id"],
+        "fk": "id_sottoprocesso",
+        "columns": ["id", "id_sottoprocesso", "tipo_output", "prodotto", "intermedio_output", "scarto",
+                    "recupero_pct_min", "recupero_pct", "recupero_pct_max", "reagente"],
+        "order": "id_sottoprocesso, id",
     },
 }
 
@@ -90,13 +107,28 @@ def normalizza_scarto(data: dict) -> dict:
     return {**data, "scarto": nome}
 
 
-def list_rows(table: str, order_by: str | None = None) -> list[dict]:
+def list_rows(table: str, order_by: str | None = None, filtro: dict | None = None) -> list[dict]:
+    """filtro: {colonna: valore} (es. le trasformazioni di un processo: {"id_processo": "P_X"})."""
     cfg = TABLES[table]
     order = order_by or cfg.get("order") or cfg["pk"][0]
+    filtro = {k: v for k, v in (filtro or {}).items() if k in cfg["columns"]}
+    where = (" WHERE " + " AND ".join(f"{k} = :{k}" for k in filtro)) if filtro else ""
     with ENGINE.connect() as conn:
         conn.exec_driver_sql(f"SET search_path TO {SCHEMA}")
-        rows = conn.execute(text(f"SELECT {','.join(cfg['columns'])} FROM {SCHEMA}.{table} ORDER BY {order}"))
+        rows = conn.execute(text(f"SELECT {','.join(cfg['columns'])} FROM {SCHEMA}.{table}{where} ORDER BY {order}"),
+                            filtro)
         return [dict(r._mapping) for r in rows]
+
+
+def conta_dettaglio(table: str) -> dict[str, int]:
+    """Numero di trasformazioni per ogni processo/sottoprocesso (tabella di testata)."""
+    det = TABLES[table].get("detail")
+    if not det:
+        return {}
+    fk = TABLES[det]["fk"]
+    with ENGINE.connect() as conn:
+        rows = conn.execute(text(f"SELECT {fk}, COUNT(*) FROM {SCHEMA}.{det} GROUP BY {fk}"))
+        return {r[0]: r[1] for r in rows}
 
 
 def get_row(table: str, pk_values: list[str]) -> dict | None:
@@ -151,7 +183,7 @@ def delete_row(table: str, pk_values: list[str]) -> None:
 # ordine di cancellazione sicuro per le chiavi esterne: le tabelle che
 # referenziano le altre vengono svuotate per prime (l'esatto contrario
 # dell'ordine di import, che invece crea prima le tabelle referenziate)
-WIPE_ORDER = ["db_sottoprocessi", "db_processi", "db_reagenti", "db_macro", "db_materiali", "db_scarti",
+WIPE_ORDER = ["db_sottoprocessi_trasformazioni", "db_sottoprocessi", "db_processi_trasformazioni", "db_processi", "db_reagenti", "db_macro", "db_materiali", "db_scarti",
               "db_prodotti_storico", "db_indici_rivalutazione", "db_impianti", "db_intermedi", "db_prodotti"]
 
 

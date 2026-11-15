@@ -116,6 +116,19 @@ def r_materiali_componente_post(body: MaterialiComponenteInput):
     return calc.materiali_componente_dettaglio(ids, body.macro_componente, body.assieme, body.escludi_assiemi)
 
 
+@router.get("/cruscotto/dati")
+def r_cruscotto():
+    """Dati per il cruscotto territoriale, tutti dal database (calcolo nel browser)."""
+    import cruscotto
+    return cruscotto.dati()
+
+
+@router.get("/filtri/materiali-macro")
+def r_materiali_macro(tipologia: str, macro_componente: str):
+    """Materiali del macrocomponente su tutti gli impianti della tipologia (per le trasformazioni)."""
+    return calc.materiali_macro(tipologia, macro_componente)
+
+
 @router.get("/filtri/sottoprocessi")
 def r_sottoprocessi(intermedio: str):
     return calc.sottoprocessi_disponibili(intermedio)

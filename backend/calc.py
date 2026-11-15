@@ -138,17 +138,30 @@ def _sotto_ok(sotto_proc, sotto_imp):
     return not proc or not sotto_imp or sotto_imp.strip().upper() in proc
 
 
+def _testata_e_righe(conn, tabella: str, chiave: str, valore: str):
+    """v10: testata del processo/sottoprocesso e sue trasformazioni (in ordine di id).
+    Ogni riga porta anche i campi della testata (costi, taglia, tecnica...), come
+    nella tabella unica delle versioni precedenti, cosi' il bilancio resta invariato."""
+    testa = _rows(conn, f"SELECT * FROM {tabella} WHERE {chiave}=:v", v=valore)
+    if not testa:
+        return None, []
+    righe = _rows(conn, f"SELECT * FROM {tabella}_trasformazioni WHERE {chiave}=:v ORDER BY id", v=valore)
+    return testa[0], [{**testa[0], **r} for r in righe]
+
+
 def processi_disponibili(tipologia: str, macro: str, id_imps=None) -> list[dict]:
     """Processi per (tipologia, macrocomponente). Con uno o piu' impianti, solo quelli
     compatibili con la sotto-tecnologia di TUTTI gli impianti e che trattano almeno
     un materiale presente nel macrocomponente (somma sugli impianti)."""
     with _conn() as conn:
+        # v10: una riga per processo; solo i processi con almeno una trasformazione
         procs = _rows(conn,
-                      "SELECT id_processo, MIN(tecnica) AS tecnica, MIN(sotto_tecnologia) AS sotto_tecnologia, "
-                      "MIN(capex_eur_ton) AS capex_eur_ton, MIN(opex_eur_ton) AS opex_eur_ton, "
-                      "MIN(descrizione_fasi) AS descrizione_fasi "
-                      "FROM db_processi WHERE tipologia=:t AND macro_componente=:m "
-                      "GROUP BY id_processo ORDER BY MIN(id)", t=tipologia, m=macro)
+                      "SELECT p.id_processo, p.tecnica, p.sotto_tecnologia, p.capex_eur_ton, p.opex_eur_ton, "
+                      "p.descrizione_fasi FROM db_processi p "
+                      "WHERE p.tipologia=:t AND p.macro_componente=:m AND EXISTS "
+                      "(SELECT 1 FROM db_processi_trasformazioni x WHERE x.id_processo=p.id_processo) "
+                      "ORDER BY (SELECT MIN(x.id) FROM db_processi_trasformazioni x WHERE x.id_processo=p.id_processo), "
+                      "p.id_processo", t=tipologia, m=macro)
         ids = _ids(id_imps)
         if not ids:
             return procs
@@ -160,7 +173,7 @@ def processi_disponibili(tipologia: str, macro: str, id_imps=None) -> list[dict]
             r = _rows(conn,
                       "SELECT COALESCE(SUM(m.massa_kg),0) AS massa, COUNT(DISTINCT m.material_id) AS n FROM db_macro m "
                       "WHERE m.id_macro = ANY(:i) AND m.macro_componente=:mc AND m.massa_kg > 0 AND m.material_id IN "
-                      "(SELECT material_id FROM db_processi WHERE id_processo=:p)",
+                      "(SELECT material_id FROM db_processi_trasformazioni WHERE id_processo=:p)",
                       i=ids, mc=macro, p=p["id_processo"])[0]
             if r["n"] > 0:
                 p["massa_trattabile_kg"] = float(r["massa"])
@@ -207,11 +220,25 @@ def macro_componenti(id_imps) -> list[dict]:
     return out
 
 
+def materiali_macro(tipologia: str, macro_componente: str) -> list[dict]:
+    """Materiali presenti nel macrocomponente (tutti gli impianti della tipologia), con massa
+    totale e numero di impianti: elenco di scelta per le trasformazioni dei processi."""
+    with _conn() as conn:
+        return _rows(conn,
+                     "SELECT material_id, MIN(material) AS material, SUM(massa_kg) AS massa_kg, "
+                     "COUNT(DISTINCT id_macro) AS n_impianti FROM db_macro "
+                     "WHERE tipologia=:t AND macro_componente=:m GROUP BY material_id ORDER BY SUM(massa_kg) DESC",
+                     t=tipologia, m=macro_componente)
+
+
 def sottoprocessi_disponibili(intermedio: str) -> list[dict]:
     with _conn() as conn:
         return _rows(conn,
-                     "SELECT id_sottoprocesso, MIN(tecnica) AS tecnica FROM db_sottoprocessi "
-                     "WHERE intermedio=:s GROUP BY id_sottoprocesso ORDER BY MIN(id)", s=intermedio)
+                     "SELECT s.id_sottoprocesso, s.tecnica FROM db_sottoprocessi s "
+                     "WHERE s.intermedio=:s AND EXISTS "
+                     "(SELECT 1 FROM db_sottoprocessi_trasformazioni x WHERE x.id_sottoprocesso=s.id_sottoprocesso) "
+                     "ORDER BY (SELECT MIN(x.id) FROM db_sottoprocessi_trasformazioni x "
+                     "WHERE x.id_sottoprocesso=s.id_sottoprocesso), s.id_sottoprocesso", s=intermedio)
 
 
 def prodotti_lista() -> list[dict]:
@@ -844,10 +871,12 @@ def calcola_ramo_sottoprocesso(cache: _Cache, intermedio: str, massa_in: list, c
     sottoprocesso e' dimensionato per trattarlo nello stesso tempo.
     capex_anno: (anno di costruzione, fattore) dell'impianto a monte, usato anche qui;
     senza, il capex e' rivalutato come gli opex."""
-    righe = _rows(cache.conn, "SELECT * FROM db_sottoprocessi WHERE id_sottoprocesso=:i ORDER BY id", i=id_sottoprocesso)
-    if not righe:
+    testa, righe = _testata_e_righe(cache.conn, "db_sottoprocessi", "id_sottoprocesso", id_sottoprocesso)
+    if not testa:
         return {"error": f"sottoprocesso_non_trovato: {id_sottoprocesso}"}
-    if righe[0]["intermedio"] != intermedio:
+    if not righe:
+        return {"error": f"il sottoprocesso {id_sottoprocesso} non ha trasformazioni"}
+    if testa["intermedio"] != intermedio:
         return {"error": f"il sottoprocesso {id_sottoprocesso} non lavora l'intermedio {intermedio}"}
     for r in righe:
         r["chiave_ingresso"] = intermedio
@@ -899,9 +928,11 @@ def calcola_componente(cache: _Cache, imps, macro: str, id_processo: str,
     imp = imps[0]
     etichetta = {"macro_componente": macro, "assieme": assieme, "escludi_assiemi": escludi_assiemi or []}
     righe_m = _filtra_assiemi(_righe_macro(conn, [i["id_imp"] for i in imps], macro), assieme, escludi_assiemi)
-    righe = _rows(conn, "SELECT * FROM db_processi WHERE id_processo=:p ORDER BY id", p=id_processo)
-    if not righe:
+    testa, righe = _testata_e_righe(conn, "db_processi", "id_processo", id_processo)
+    if not testa:
         return {**etichetta, "error": f"processo_non_trovato: {id_processo}"}
+    if not righe:
+        return {**etichetta, "error": f"il processo {id_processo} non ha trasformazioni"}
     if righe[0]["tipologia"] != imp["tipologia"] or righe[0]["macro_componente"] != macro:
         return {**etichetta, "error": f"il processo {id_processo} non si applica a {macro}"}
     fuori = [i["nome"] for i in imps if not _sotto_ok(righe[0]["sotto_tecnologia"], i["sotto_tecnologia"])]
