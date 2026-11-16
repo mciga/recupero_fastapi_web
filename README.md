@@ -57,6 +57,13 @@ psql "<connessione>" -v ON_ERROR_STOP=1 -c "SET search_path TO recupero_novembre
 Migrazione v10.1 (fonte delle coordinate e dell'anno di dismissione in `db_impianti`):
 `db/migrazione_v10_1_impianti_fonti.sql`.
 
+Migrazione v10.2 (opex specifico per materiale, colonna `opex_spec` in `db_processi_trasformazioni`):
+`db/migrazione_v10_2_opex_spec.sql`. Se `opex_spec` (EUR/t) è compilato su una riga, la massa di quel
+materiale (o di quel materiale nell'assieme indicato) paga `opex_spec` al posto dell'opex del processo:
+opex = (massa trattata − massa dei materiali con opex_spec) × opex_eur_ton + Σ massa × opex_spec.
+Il capex non cambia. Se un materiale ha più righe basta compilarne una; con valori diversi vale la prima riga.
+I sottoprocessi non hanno questa colonna.
+
 ## Cruscotto territoriale
 
 Nella sezione Calcolo economico il pulsante "Cruscotto" (tra "Da impianto" e "Intermedio acquistato")

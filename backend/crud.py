@@ -50,7 +50,8 @@ TABLES: dict[str, dict[str, Any]] = {
         "pk": ["id"],
         "fk": "id_processo",
         "columns": ["id", "id_processo", "material_id", "assieme_dettaglio", "tipo_output", "prodotto",
-                    "intermedio_output", "scarto", "recupero_pct_min", "recupero_pct", "recupero_pct_max", "reagente"],
+                    "intermedio_output", "scarto", "recupero_pct_min", "recupero_pct", "recupero_pct_max", "reagente",
+                    "opex_spec"],
         "order": "id_processo, id",
     },
     "db_reagenti": {

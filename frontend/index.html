@@ -577,8 +577,9 @@ const TABLES = {
       {key:'material_id',label:'Materiale in ingresso (ID)',type:'material-input'},
       {key:'assieme_dettaglio',label:'Solo assieme (vuoto = tutti)',type:'text',nullable:true},
       ...RECUPERO_COLS,
+      {key:'opex_spec',label:'Opex specifico €/t del materiale (vuoto = opex del processo)',type:'number',step:10,nullable:true},
     ],
-    defaults:()=>({id_processo:'',material_id:'',assieme_dettaglio:null,...USCITA_DEFAULTS}),
+    defaults:()=>({id_processo:'',material_id:'',assieme_dettaglio:null,...USCITA_DEFAULTS,opex_spec:null}),
   },
   intermedi: { url:'intermedi', dbTable:'db_intermedi', label:'Intermedi', pk:['intermedio'],
     columns:[
@@ -1168,6 +1169,7 @@ function renderLane(cd){
         </select>` : `<div class="lane-node-title">${nice(proc.tecnica)}</div>`}
       ${tagliaHtml(lane, proc, true)}
       <div class="lane-node-cost">Capex attribuito ${eur(proc.capex_eur).join(' ')} · Opex ${eur(proc.opex_eur).join(' ')}</div>
+      ${opexSpecHtml(proc, cd.avvisi)}
       ${proc.smaltimento_eur>0 ? `<div class="lane-node-cost">Smaltimento scarti ${eur(proc.smaltimento_eur).join(' ')}</div>` : ''}
       <div class="lane-node-costo-tot">Costo: ${eur(proc.costo_eur).join(' ')}</div>
       ${proc.sotto_tecnologia ? `<div class="lane-node-fasi">sotto-tecnologia ${proc.sotto_tecnologia}</div>` : ''}
@@ -1274,6 +1276,16 @@ function avvisiHtml(u){
     h += `<div class="nv-tag" title="${escAttr(t)}">≈ non verificabile</div>`;
   }
   return h;
+}
+// v10.2: materiali con opex specifico (le loro masse non pagano l'opex del processo)
+function opexSpecHtml(proc, avvisi){
+  const l = proc.opex_specifici||[];
+  if(!l.length) return '';
+  const t = [`Opex del processo ${proc.opex_eur_ton} €/t su ${massStr(proc.massa_opex_processo_kg)}`]
+    .concat(l.map(x=>`${x.nome}: ${x.opex_spec_eur_ton} €/t su ${massStr(x.massa_kg)} → ${eur(x.opex_eur).join(' ')}`))
+    .concat((avvisi||[]).filter(a=>a.tipo==='opex_spec_diversi')
+      .map(a=>`⚠ ${a.material_id}: opex_spec diversi tra le righe, usato ${a.opex_spec_eur_ton} €/t`));
+  return `<div class="lane-node-fasi" title="${escAttr(t.join('\n'))}">di cui opex specifico su ${l.length} material${l.length>1?'i':'e'} (${massStr(proc.massa_opex_spec_kg)})</div>`;
 }
 function raccogliAvvisi(uscite, out, contesto){
   (uscite||[]).forEach(u=>{

@@ -244,6 +244,8 @@ class ProcessoTrasformazione(_Uscita):
     id_processo: str
     material_id: str
     assieme_dettaglio: str | None = None
+    # v10.2: opex specifico del materiale (EUR/t trattata); vuoto = opex del processo
+    opex_spec: float | None = Field(default=None, ge=0)
 
     @model_validator(mode="before")
     @classmethod
@@ -252,7 +254,7 @@ class ProcessoTrasformazione(_Uscita):
             d = {**d, "material_id": d["material"]}   # colonna "material" del file utente
         return d
 
-    @field_validator("assieme_dettaglio", mode="before")
+    @field_validator("assieme_dettaglio", "opex_spec", mode="before")
     @classmethod
     def _v(cls, v):
         return _vuoto_a_none(v)

@@ -756,6 +756,24 @@ def _fattore_pesato(voci, fattori_ingresso, default):
     return num / den if den > EPS else default
 
 
+def _opex_spec_ingressi(righe: list[dict], avvisi: list) -> dict:
+    """v10.2: opex specifico (EUR/t) per ingresso (materiale, o materiale + assieme), dalle righe
+    con opex_spec compilato. Piu' righe dello stesso ingresso: vale la prima (id minimo); se i
+    valori sono diversi si segnala."""
+    out = {}
+    for r in righe:
+        v = r.get("opex_spec")
+        if v is None:
+            continue
+        k, v = r["chiave_ingresso"], float(v)
+        if k not in out:
+            out[k] = v
+        elif abs(out[k] - v) > 1e-9:
+            avvisi.append({"tipo": "opex_spec_diversi", "ingresso": k, "material_id": r["material_id"],
+                           "opex_spec_eur_ton": out[k], "scartato_eur_ton": v})
+    return out
+
+
 def _capex_taglia(riga: dict, taglia_t_anno, massa_t: float, fattore: float, anno_costruzione=None) -> dict:
     """Capex dipendente dalla taglia dell'impianto (v9.1).
     capex_eur_ton = capex specifico in EUR per t/anno di capacita'.
@@ -983,7 +1001,19 @@ def calcola_componente(cache: _Cache, imps, macro: str, id_processo: str,
     anno_c, f_capex = capex_anno if capex_anno else (None, fattore_medio)
     cx = _capex_taglia(righe[0], taglia_t_anno, massa_trattata / 1000, f_capex, anno_c)
     capex = cx["capex_eur"]
-    opex = float(righe[0]["opex_eur_ton"]) * massa_x_fattore / 1000
+    # opex (v10.2): la massa dei materiali con opex_spec paga opex_spec, il resto l'opex del processo
+    #   opex = (massa trattata - massa con opex_spec) x opex_eur_ton + somma(massa x opex_spec)
+    opex_proc = float(righe[0]["opex_eur_ton"])
+    spec_ing, opex_specifici = _opex_spec_ingressi(righe, avvisi), []
+    opex = 0.0
+    for k in trattati:
+        m, f = ingressi[k]["massa"][1], fattori[k]
+        o = spec_ing.get(k)
+        opex += (opex_proc if o is None else o) * m * f / 1000
+        if o is not None:
+            opex_specifici.append({"ingresso": k, "material_id": ingressi[k]["material_id"], "nome": ingressi[k]["nome"],
+                                   "massa_kg": m, "opex_spec_eur_ton": o, "opex_eur": o * m * f / 1000})
+    massa_spec = sum(x["massa_kg"] for x in opex_specifici)
     lista, ricavo, costo_extra, ha_override = _valorizza_uscite(
         cache, uscite, prezzi_prodotti_override, prezzi_intermedi_override, figli_processo, fattore_medio, fattori,
         tempo_anni=cx["tempo_anni"] or 1.0, capex_anno=capex_anno)
@@ -1008,7 +1038,9 @@ def calcola_componente(cache: _Cache, imps, macro: str, id_processo: str,
                      "capex_eur_ton": float(righe[0]["capex_eur_ton"]), "opex_eur_ton": float(righe[0]["opex_eur_ton"]),
                      "descrizione_fasi": righe[0]["descrizione_fasi"], **cx,
                      "capex_eur": capex, "opex_eur": opex, "smaltimento_eur": costo_sm,
-                     "costo_eur": capex + opex + costo_sm},
+                     "costo_eur": capex + opex + costo_sm,
+                     "opex_specifici": opex_specifici, "massa_opex_spec_kg": massa_spec,
+                     "massa_opex_processo_kg": massa_trattata - massa_spec},
         "uscite": lista, "scarti": scarti_l, "avvisi": avvisi,
         # materiali in ingresso al processo (masse centrali), usati dal report del bilancio di massa
         "ingressi": [{"ingresso": k, "material_id": ing["material_id"], "nome": ing["nome"],

@@ -140,6 +140,11 @@ def workbook(result: dict, richiesta: dict | None = None) -> bytes:
         for col in "CDEF":
             ws[f"{col}{ws.max_row}"].number_format = F_EUR
         ws[f"I{ws.max_row}"].number_format = F_KG
+        # v10.2: materiali con opex specifico (compresi nell'opex della fase)
+        for x in p.get("opex_specifici") or []:
+            r(macro, f"  di cui opex specifico: {x['nome']} ({x['massa_kg']:,.0f} kg)", None, x["opex_eur"],
+              None, None, None, x["opex_spec_eur_ton"])
+            ws[f"D{ws.max_row}"].number_format = F_EUR
 
     # ------------------------------------------------------- Dettaglio flussi
     wd = _foglio(wb, "Dettaglio flussi", [
