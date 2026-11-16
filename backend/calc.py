@@ -131,10 +131,19 @@ def _sotto_tecnologie(valore) -> set[str]:
     return {v.strip().upper() for v in (valore or "").split(";") if v.strip()}
 
 
+# Per ora i processi si applicano a tutti gli impianti della tipologia, qualunque sia la
+# sotto-tecnologia: la colonna resta nel database per un uso futuro. True = filtro attivo
+# (insieme a USA_SOTTO_TECNOLOGIA in frontend/index.html e FILTRO_SOTTO in frontend/cruscotto.js).
+FILTRO_SOTTO_TECNOLOGIA = False
+
+
 def _sotto_ok(sotto_proc, sotto_imp):
     """Un processo senza sotto-tecnologia vale per tutti gli impianti; altrimenti per gli
-    impianti senza sotto-tecnologia o con una di quelle indicate (piu' valori separati da ';')."""
-    proc = _sotto_tecnologie(sotto_proc)
+    impianti senza sotto-tecnologia o con una di quelle indicate (piu' valori separati da ';').
+    Con FILTRO_SOTTO_TECNOLOGIA = False vale sempre."""
+    if not FILTRO_SOTTO_TECNOLOGIA:
+        return True
+    proc =_sotto_tecnologie(sotto_proc)
     return not proc or not sotto_imp or sotto_imp.strip().upper() in proc
 
 

@@ -288,7 +288,32 @@
   .chart-note{font-size:11px;color:var(--mute);margin:0 0 6px}
   .chart-warn{font-size:11.5px;color:var(--copper);background:#FBF2E7;border:1px solid #EBD7BE;border-radius:8px;padding:6px 10px;margin-bottom:10px;font-weight:600}
   .chart-empty{font-size:11px;color:var(--mute);padding:30px 0;text-align:center}
-  .lane-card-toggle{max-width:220px}
+  .lane-card-toggle{max-width:300px}
+  /* card del macrocomponente: elenco dei materiali in ingresso (come Esplora_Materiali_DB) */
+  .lane-card-toggle.con-mat{width:290px;min-width:290px}
+  .lane-card-toggle.con-mat > div{flex:1;min-width:0}
+  .mlist{list-style:none;margin:7px 0 0;padding:0;display:flex;flex-direction:column;font-size:11.5px}
+  .mlist li{display:grid;grid-template-columns:8px 1fr auto;gap:7px;align-items:baseline;padding:3px 0;border-top:1px dashed var(--line)}
+  .mlist li:first-child{border-top:0}
+  .mlist .dot{width:8px;height:8px;border-radius:2px;align-self:center;background:var(--green)}
+  .mlist .dot.none{background:var(--mute);opacity:.45}
+  .mlist .n{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink)}
+  .mlist li.none .n{color:var(--mute)}
+  .mlist .v{font-variant-numeric:tabular-nums;color:var(--mute);white-space:nowrap}
+  .mlist.scrolly{max-height:150px;overflow-y:auto;overscroll-behavior:contain;padding-right:6px;scrollbar-width:thin;border-bottom:1px solid var(--line)}
+  .scrollhint{font-size:10.5px;color:var(--mute);margin-top:4px}
+  .comp-clic{font-size:10.5px;color:var(--green);font-weight:600;margin-top:5px}
+  /* card del processo larga, informazioni su due colonne */
+  .lane-node.wide{min-width:560px;max-width:none;flex:1 1 560px}
+  .lane-node.wide .node-cols{display:grid;grid-template-columns:1fr 1fr;gap:4px 16px;align-items:start}
+  .lane-node.wide .node-cols .taglia-box{margin-top:2px}
+  @media (max-width:900px){.lane-node.wide{min-width:0}.lane-node.wide .node-cols{grid-template-columns:1fr}}
+  /* composizione per elementi */
+  .el-bar{display:flex;height:14px;border-radius:5px;overflow:hidden;margin:6px 0 10px;background:var(--line)}
+  .el-bar i{display:block;height:100%}
+  .el-sw{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:6px;vertical-align:baseline}
+  details.mat-dett{margin-top:14px}
+  details.mat-dett summary{cursor:pointer;font-weight:700;font-size:13px;color:var(--ink);margin-bottom:6px}
   .output-card .nm{white-space:nowrap}
   @media (max-width:700px){.chart-row{grid-template-columns:1fr}}
   @media (max-width:1080px){.wrap{grid-template-columns:1fr}aside{border-right:0;border-bottom:1px solid var(--line)}.kpis{grid-template-columns:repeat(2,1fr)}}
@@ -683,6 +708,9 @@ const sottoLabel = c => c ? (SOTTO_TECNOLOGIE[c] ? `${c} · ${SOTTO_TECNOLOGIE[c
 const SENZA_SOTTO = '__NESSUNA__';   // valore del menu per gli impianti senza sotto-tecnologia
 const sottoDi = i => i.sotto_tecnologia || SENZA_SOTTO;
 const TUTTI = '__TUTTI__';
+// Per ora niente scelta della sotto-tecnologia: tutti gli impianti della tipologia, processi applicati a tutti
+// (la colonna resta nel database; true = menu di nuovo attivo, insieme a FILTRO_SOTTO_TECNOLOGIA in calc.py)
+const USA_SOTTO_TECNOLOGIA = false;
 
 // Da impianto: tipologia -> sotto-tecnologia -> impianti (uno o piu') -> macrocomponenti (uno o piu').
 // Le masse dei materiali di ogni macrocomponente sono SOMMATE sugli impianti scelti e il processo
@@ -735,7 +763,7 @@ async function renderCalcoloAside(){
 
   const impiantiTip = impiantiCache.filter(i=>i.tipologia===s.tipologia);
   const sottoTip = [...new Set(impiantiTip.map(sottoDi))].sort((a,b)=>(a===SENZA_SOTTO)-(b===SENZA_SOTTO) || a.localeCompare(b));
-  const impiantiSotto = s.sotto ? impiantiTip.filter(i=>sottoDi(i)===s.sotto) : [];
+  const impiantiSotto = s.sotto ? impiantiTip.filter(i=>s.sotto===TUTTI || sottoDi(i)===s.sotto) : [];
   const selImp = new Set(s.impianti), selMac = new Set(s.macroSel);
   const macroOpts = s.macroDisponibili;
   const anniSel = impiantiSotto.filter(i=>selImp.has(i.id_imp)).map(i=>i.anno_dismissione);
@@ -754,16 +782,16 @@ async function renderCalcoloAside(){
         ${tipologie.map(t=>{const ic=TIPO_ICONS[t]||['●','#888',t];return `<button data-t="${t}" aria-pressed="${s.tipologia===t}"><span class="ic" style="background:${ic[1]}">${ic[0]}</span>${ic[2]}</button>`;}).join('')}
       </div>
     </div>
-    <div class="fgroup">
+    ${USA_SOTTO_TECNOLOGIA ? `<div class="fgroup">
       <div class="h">Sotto-tecnologia</div>
       <select id="selSotto" ${!s.tipologia?'disabled':''}>
         <option value="">${s.tipologia?'Seleziona sotto-tecnologia...':'Scegli prima la tipologia'}</option>
         ${sottoTip.map(k=>`<option value="${escAttr(k)}" ${s.sotto===k?'selected':''}>${escAttr(sottoLabel(k===SENZA_SOTTO?'':k))} (${impiantiTip.filter(i=>sottoDi(i)===k).length})</option>`).join('')}
       </select>
-    </div>
+    </div>` : ''}
     <div class="fgroup">
       <div class="h">Impianti</div>
-      ${!s.sotto ? `<div class="chip">● scegli prima la sotto-tecnologia</div>` : `
+      ${!s.sotto ? `<div class="chip">● scegli prima la ${USA_SOTTO_TECNOLOGIA?'sotto-tecnologia':'tipologia'}</div>` : `
       <div class="dd ${ddAperto==='imp'?'open':''}" data-dd="imp">
         <button type="button" class="dd-btn">${ddLabel(s.impianti, impiantiSotto.length, nomeImp1, 'Seleziona impianti...', 'impianti')}<span class="dd-car">▼</span></button>
         <div class="dd-panel">
@@ -836,9 +864,11 @@ async function renderCalcoloAside(){
       const b=e.target.closest('button'); if(!b) return;
       if(s.tipologia===b.dataset.t) return;
       resetSelection(); s.tipologia=b.dataset.t;
+      if(!USA_SOTTO_TECNOLOGIA) s.sotto = TUTTI;   // tutti gli impianti della tipologia
       await renderCalcoloAside(); renderCalcoloMain();
     };
-    document.getElementById('selSotto').onchange=async e=>{
+    const selSotto = document.getElementById('selSotto');
+    if(selSotto) selSotto.onchange=async e=>{
       const t = s.tipologia; resetSelection(); s.tipologia = t; s.sotto = e.target.value;
       // un solo impianto in questa sotto-tecnologia: selezionato subito
       const imps = impiantiCache.filter(i=>i.tipologia===t && sottoDi(i)===s.sotto);
@@ -1056,7 +1086,7 @@ async function renderCalcoloMain(){
   const anni = imps.map(i=>i.anno_dismissione);
   const pathHtml = pathBar([
     ['Tipologia', TIPO_ICONS[s.tipologia]?.[2]||''],
-    ['Sotto-tecnologia', s.sotto ? (s.sotto===SENZA_SOTTO ? 'nessuna' : s.sotto) : ''],
+    ...(USA_SOTTO_TECNOLOGIA ? [['Sotto-tecnologia', s.sotto ? (s.sotto===SENZA_SOTTO ? 'nessuna' : s.sotto) : '']] : []),
     ['Impianti', imps.length===1 ? imps[0].nome : imps.length ? `${imps.length} impianti` : ''],
     ['Macrocomponenti', !nMacro ? '' : (nMacro===1 ? Object.values(s.componenti)[0].macro : `${nMacro} macrocomponenti`)
       + (nSep ? ` + ${nSep} assiem${nSep>1?'i':'e'} separat${nSep>1?'i':'o'}` : '')],
@@ -1138,6 +1168,19 @@ function renderSchemaProcesso(data){
 }
 
 const cdKey = cd => laneKey(cd.macro_componente, cd.assieme);
+// materiali in ingresso al macrocomponente (dal calcolo): verde = trattati dal processo, grigio = non trattati
+function materialiCardHtml(cd){
+  const m = {};
+  (cd.ingressi||[]).forEach(x=>{
+    const r = m[x.material_id] ||= {id:x.material_id, nome:x.nome.replace(/ \[[^\]]*\]$/,''), kg:0, tratt:false};
+    r.kg += x.massa_kg; r.tratt = r.tratt || x.trattato;
+  });
+  const l = Object.values(m).sort((a,b)=>b.kg-a.kg);
+  if(!l.length) return '';
+  const lungo = l.length>6;
+  return `<ul class="mlist${lungo?' scrolly':''}" aria-label="Materiali in ingresso">${l.map(x=>`<li class="${x.tratt?'':'none'}" title="${escAttr(x.id+' · '+x.nome+(x.tratt?'':' (non trattato dal processo)'))}"><span class="dot ${x.tratt?'':'none'}"></span><span class="n">${x.nome}</span><span class="v">${massStr(x.kg)}</span></li>`).join('')}</ul>`
+    + (lungo ? `<div class="scrollhint">${l.length} materiali · scorri l'elenco</div>` : '');
+}
 function renderLane(cd){
   const lane = cdKey(cd);
   const c = calcState.componenti[lane];
@@ -1147,7 +1190,7 @@ function renderLane(cd){
   const nSep = (calcState.separati[cd.macro_componente]||[]).length;
   const cardMacro = `
     <div class="comp-col">
-    <button class="lane-card-toggle active" data-materiali-macro="${escAttr(lane)}" title="Vedi i materiali${cd.assieme?' di questo assieme':' del macrocomponente'}">
+    <button class="lane-card-toggle active con-mat" data-materiali-macro="${escAttr(lane)}" title="Clicca per la composizione per elementi${cd.assieme?' di questo assieme':' del macrocomponente'}">
       <span class="ic">${componentIcon(cd.macro_componente)}</span>
       <div>
         <div class="comp-name">${cd.macro_componente}</div>
@@ -1156,24 +1199,30 @@ function renderLane(cd){
         <div class="comp-mass-row tratt"><span class="lbl" title="Somma dei materiali che il processo selezionato tratta (in verde nella tabella dei materiali)">trattata</span><span class="comp-mass-val">${massStr(cd.massa_trattata_kg)}</span></div>
         <div class="price-tag">${cd.n_materiali} materiali · ${cd.massa_componente_kg ? fmt(cd.massa_trattata_kg/cd.massa_componente_kg*100,1) : '0'}% trattato dal processo</div>
         ${(cd.impianti||[]).length>1 ? `<div class="price-tag">da ${cd.impianti.length} impianti</div>` : ''}
+        ${materialiCardHtml(cd)}
+        <div class="comp-clic">composizione per elementi ▸</div>
       </div>
     </button>
     ${cd.assieme ? `<button class="btn-assiemi" data-riunisci="${escAttr(lane)}">✕ riunisci al macrocomponente</button>`
       : nAss>1 ? `<button class="btn-assiemi" data-separa="${escAttr(cd.macro_componente)}">Separa assiemi (${nAss}) ▸</button>` : ''}
     </div>`;
   const procNode = `
-    <div class="lane-node">
+    <div class="lane-node wide">
       ${c.processoOptions.length>1 ? `
         <select class="sel-processo" data-macro="${escAttr(lane)}">
           ${c.processoOptions.map(p=>`<option value="${p.id_processo}" ${p.id_processo===c.idProcesso?'selected':''}>${nice(p.tecnica)}</option>`).join('')}
         </select>` : `<div class="lane-node-title">${nice(proc.tecnica)}</div>`}
-      ${tagliaHtml(lane, proc, true)}
-      <div class="lane-node-cost">Capex attribuito ${eur(proc.capex_eur).join(' ')} · Opex ${eur(proc.opex_eur).join(' ')}</div>
-      ${opexSpecHtml(proc, cd.avvisi)}
-      ${proc.smaltimento_eur>0 ? `<div class="lane-node-cost">Smaltimento scarti ${eur(proc.smaltimento_eur).join(' ')}</div>` : ''}
-      <div class="lane-node-costo-tot">Costo: ${eur(proc.costo_eur).join(' ')}</div>
-      ${proc.sotto_tecnologia ? `<div class="lane-node-fasi">sotto-tecnologia ${proc.sotto_tecnologia}</div>` : ''}
-      ${reagentiNodeHtml(cd.reagenti)}
+      <div class="node-cols">
+        <div>${tagliaHtml(lane, proc, true)}</div>
+        <div>
+          <div class="lane-node-cost">Capex attribuito ${eur(proc.capex_eur).join(' ')} · Opex ${eur(proc.opex_eur).join(' ')}</div>
+          ${opexSpecHtml(proc, cd.avvisi)}
+          ${proc.smaltimento_eur>0 ? `<div class="lane-node-cost">Smaltimento scarti ${eur(proc.smaltimento_eur).join(' ')}</div>` : ''}
+          <div class="lane-node-costo-tot">Costo: ${eur(proc.costo_eur).join(' ')}</div>
+          ${proc.sotto_tecnologia ? `<div class="lane-node-fasi">sotto-tecnologia ${proc.sotto_tecnologia}</div>` : ''}
+          ${reagentiNodeHtml(cd.reagenti)}
+        </div>
+      </div>
       <div class="lane-node-fasi">${fasiCompact(proc.descrizione_fasi)}</div>
     </div>`;
   return `<div class="lane ${cd.assieme?'lane-sep':''}"><div class="lane-row">
@@ -1562,7 +1611,7 @@ function openSeparaAssiemi(macro){
 async function openMaterialiModal(lane){
   const c = calcState.componenti[lane];
   const titolo = c.macro + (c.assieme ? ' › '+c.assieme : '');
-  const ov = showModal(`<h3>Materiali — ${titolo}</h3><p class="sub">Caricamento…</p>`);
+  const ov = showModal(`<h3>Composizione per elementi — ${titolo}</h3><p class="sub">Caricamento…</p>`);
   ov.querySelector('.modal').classList.add('wide');
   let mats;
   try{ mats = await apiSend('POST', '/filtri/materiali-componente', {id_imps:calcState.impianti, macro_componente:c.macro,
@@ -1585,11 +1634,24 @@ async function openMaterialiModal(lane){
     const nd = m.massa_kg*Math.max(0, 1 - somma*k/100);
     if(nd>1e-9) elTratt[ND_LABEL] = (elTratt[ND_LABEL]||0) + nd;
   });
-  const elRows = Object.entries(elTratt).sort((a,b)=>(a[0]===ND_LABEL)-(b[0]===ND_LABEL) || b[1]-a[1]);
-  const tabElTratt = !elRows.length ? '<p class="sub"><i>Nessun materiale trattato.</i></p>' : `
-    <table><thead><tr><th>Elemento</th><th>Massa</th><th>% sulla massa trattata</th></tr></thead>
-    <tbody>${elRows.map(([e,v])=>`<tr><td class="name" style="${e===ND_LABEL?'font-style:italic':'font-weight:600;color:var(--ink)'}">${e===ND_LABEL?'composizione non disponibile':e}</td><td>${massStr(v)}</td><td>${fmt(v/massaTratt*100, v/massaTratt<0.001?3:2)}%</td></tr>`).join('')}
-      <tr><td class="name" style="font-weight:700">Totale</td><td style="font-weight:700">${massStr(massaTratt)}</td><td></td></tr></tbody></table>`;
+  // elementi contenuti in tutti i materiali del macrocomponente (massa x composizione), con la quota trattata
+  const elTot = {};
+  mats.forEach(m=>{
+    const somma = m.composizione.reduce((a,x)=>a+x.frazione_pct,0);
+    const k = somma>100 ? 100/somma : 1;
+    m.composizione.forEach(x=>{ elTot[x.elemento] = (elTot[x.elemento]||0) + m.massa_kg*x.frazione_pct/100*k; });
+    const nd = m.massa_kg*Math.max(0, 1 - somma*k/100);
+    if(nd>1e-9) elTot[ND_LABEL] = (elTot[ND_LABEL]||0) + nd;
+  });
+  const elRows = Object.entries(elTot).sort((a,b)=>(a[0]===ND_LABEL)-(b[0]===ND_LABEL) || b[1]-a[1]);
+  const EL_COL = ['#1F5A43','#B5651D','#3E7CB1','#8E5BA8','#C9A227','#4F9D69','#D1495B','#2E8B8B','#7A6C5D','#E07A5F','#5C6F91','#9C6644'];
+  const colEl = (e,i) => e===ND_LABEL ? '#D9D6CC' : (EL_COL[i] || '#A9A9A9');
+  const barEl = `<div class="el-bar">${elRows.map(([e,v],i)=>`<i style="width:${tot?v/tot*100:0}%;background:${colEl(e,i)}" title="${e===ND_LABEL?'composizione non disponibile':e} ${massStr(v)}"></i>`).join('')}</div>`;
+  const tabEl = !elRows.length ? '<p class="sub"><i>Composizione non disponibile.</i></p>' : `
+    <table><thead><tr><th>Elemento</th><th>Massa</th><th>% sul totale</th><th>di cui nei materiali trattati</th></tr></thead>
+    <tbody>${elRows.map(([e,v],i)=>`<tr><td class="name" style="${e===ND_LABEL?'font-style:italic':'font-weight:600;color:var(--ink)'}"><span class="el-sw" style="background:${colEl(e,i)}"></span>${e===ND_LABEL?'composizione non disponibile':e}</td>
+      <td>${massStr(v)}</td><td>${fmt(v/tot*100, v/tot<0.001?3:2)}%</td><td style="color:var(--green)">${elTratt[e] ? massStr(elTratt[e]) : '—'}</td></tr>`).join('')}
+      <tr><td class="name" style="font-weight:700">Totale</td><td style="font-weight:700">${massStr(tot)}</td><td></td><td style="font-weight:700;color:var(--green)">${massStr(massaTratt)}</td></tr></tbody></table>`;
   const multi = calcState.impianti.length > 1;
   // contributo di ogni impianto al macrocomponente (somma dei materiali)
   const perImp = {};
@@ -1604,9 +1666,13 @@ async function openMaterialiModal(lane){
     <tbody>${Object.values(perImp).sort((a,b)=>b.tot-a.tot).map(r=>`<tr><td class="name">${r.nome}</td><td>${massStr(r.tot)}</td>
       <td>${fmt(r.tot/tot*100,1)}%</td><td style="color:var(--green)">${massStr(r.tratt)}</td></tr>`).join('')}</tbody></table>`;
   ov.querySelector('.modal').innerHTML = `
-    <h3>Materiali — ${titolo}</h3>
-    <p class="sub">${mats.length} materiali, massa totale <b>${massStr(tot)}</b>${multi?` da <b>${calcState.impianti.length} impianti</b>`:''}, di cui <b style="color:var(--green)">${massStr(massaTratt)} trattati</b> dal processo selezionato (${tot?fmt(massaTratt/tot*100,1):0}%, materiali in verde). Materiali uguali sommati su ${multi?'impianti e ':''}assiemi: clicca su una riga per il dettaglio per ${multi?'impianto e ':''}assieme.</p>
+    <h3>Composizione per elementi — ${titolo}</h3>
+    <p class="sub">${mats.length} materiali, massa totale <b>${massStr(tot)}</b>${multi?` da <b>${calcState.impianti.length} impianti</b>`:''}, di cui <b style="color:var(--green)">${massStr(massaTratt)} trattati</b> dal processo selezionato (${tot?fmt(massaTratt/tot*100,1):0}%). Massa di ogni elemento = massa del materiale × frazione della sua composizione, sommata sui materiali.</p>
+    ${barEl}
+    ${tabEl}
     ${tabImp}
+    <details class="mat-dett"><summary>Dettaglio per materiale (${mats.length})</summary>
+    <p class="sub">Materiali in verde: trattati dal processo selezionato. Materiali uguali sommati su ${multi?'impianti e ':''}assiemi: clicca su una riga per il dettaglio per ${multi?'impianto e ':''}assieme.</p>
     <table><thead><tr><th>Materiale</th><th>Massa</th><th>%</th>${multi?'<th>Impianti</th>':''}<th>Assiemi</th><th style="text-align:left">Composizione (% in massa)</th></tr></thead>
     <tbody>${mats.map((m,i)=>`<tr class="mat-row" data-i="${i}" style="cursor:pointer">
       <td class="name" style="white-space:normal;${trattati.has(m.material_id)?'color:var(--green);font-weight:600':''}">${m.material}<div style="font-size:10px;color:var(--mute);font-weight:400">${m.material_id}</div></td>
@@ -1619,9 +1685,7 @@ async function openMaterialiModal(lane){
       ${Object.entries(m.assiemi.reduce((o,a)=>{ o[a.assieme] = (o[a.assieme]||0) + a.massa_kg; return o; }, {}))
           .sort((a,b)=>b[1]-a[1]).map(([a,kg])=>rigaDet(a||'<i>livello 1</i>', massStr(kg))).join('')}
     </td></tr>`).join('')}</tbody></table>
-    <h4 class="mh">Elementi contenuti nei materiali trattati (${massStr(massaTratt)})</h4>
-    <p class="sub">Massa di ogni elemento = massa del materiale × frazione della sua composizione, sommata sui soli materiali in verde.</p>
-    ${tabElTratt}
+    </details>
     <div class="modal-close"><button class="btn" id="btnCloseModal">Chiudi</button></div>`;
   ov.querySelectorAll('.mat-row').forEach(r=>{ r.onclick = ()=>{ const d = ov.querySelector(`.mat-det[data-i="${r.dataset.i}"]`); d.hidden = !d.hidden; }; });
   document.getElementById('btnCloseModal').onclick=()=>ov.remove();

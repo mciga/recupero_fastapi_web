@@ -5,6 +5,8 @@
    composizioni, trasformazioni dei processi, prodotti.
    Generato da build_cz.py a partire da cruscotto_template.html; codice isolato in una funzione
    per non toccare i nomi globali della dashboard. Espone solo window.Cruscotto. */
+// sotto-tecnologia: per ora i processi valgono per tutti gli impianti della tipologia (come nel calcolo)
+const FILTRO_SOTTO=false;
 (function(){
 "use strict";
 const $=s=>document.querySelector(s);
@@ -68,7 +70,7 @@ function plantRes(idm){
   const byMacro=new Map(); for(const r of pm.rows){ let a=byMacro.get(r.macro_componente); if(!a){a=[];byMacro.set(r.macro_componente,a);} a.push(r); }
   for(const [macro,rows] of byMacro){
     const K=ENG.proc.get(pm.tip+'|'+macro);
-    const Ps=K?[...K.values()].filter(P=>!pm.sub||!P.sub||P.sub===pm.sub):[];
+    const Ps=K?[...K.values()].filter(P=>!FILTRO_SOTTO||!pm.sub||!P.sub||P.sub===pm.sub):[];
     const acc=new Map();
     for(const r of rows){
       const cm=ENG.comp.get(r.material_id), src=ENG.fonte.get(r.material_id);
