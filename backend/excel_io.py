@@ -53,6 +53,16 @@ MODELS = {
 }
 CON_SCARTO = ("db_processi_trasformazioni", "db_sottoprocessi_trasformazioni")
 
+# tabelle con id seriale: campi che identificano la riga quando nel foglio la cella "id" e' vuota.
+# Una riga senza id che corrisponde a UNA riga esistente la aggiorna (prende il suo id); solo una
+# riga davvero nuova riceve l'id successivo. Prima ogni riga senza id diventava una riga nuova.
+CHIAVI_NATURALI = {
+    "db_processi_trasformazioni": ["id_processo", "material_id", "assieme_dettaglio", "tipo_output",
+                                   "prodotto", "intermedio_output", "scarto"],
+    "db_sottoprocessi_trasformazioni": ["id_sottoprocesso", "tipo_output", "prodotto", "intermedio_output", "scarto"],
+    "db_macro": ["id_macro", "macro_componente", "assieme_dettaglio", "material_id"],
+}
+
 # rispetta le FK: le tabelle referenziate prima di chi le referenzia
 IMPORT_ORDER = ["db_prodotti", "db_prodotti_storico", "db_intermedi", "db_scarti", "db_reagenti", "db_impianti",
                 "db_indici_rivalutazione", "db_materiali", "db_macro", "db_processi", "db_processi_trasformazioni",
@@ -238,6 +248,10 @@ def import_workbook(file_bytes: bytes, dry_run: bool = False, replace: bool = Fa
                     errors.append(f"riga {i}: {e}")
             if table in CON_SCARTO:
                 validi = _normalizza_scarti(cur, validi)
+            riconosciute, ambigue = 0, []
+            if table in CHIAVI_NATURALI:
+                validi, riconosciute, ambigue = _riconosci_senza_id(cur, table, validi)
+                errors += ambigue
 
             # esito di ogni riga: "c" creata, "u" aggiornata (almeno un valore diverso),
             # "=" invariata (nessuna scrittura), "d" chiave ripetuta nel foglio (vale l'ultima)
@@ -245,7 +259,8 @@ def import_workbook(file_bytes: bytes, dry_run: bool = False, replace: bool = Fa
             errors += errori_db
             conta = {s: sum(1 for v in esito.values() if v == s) for s in ("c", "u", "=", "d")}
             report[table] = {"creati": conta["c"], "aggiornati": conta["u"], "invariati": conta["="],
-                             "duplicati": conta["d"], "errori": errors,
+                             "duplicati": conta["d"], "senza_id_riconosciute": riconosciute,
+                             "senza_id_ambigue": ambigue, "errori": errors,
                              "totale_foglio": len(sheets_by_table[table])}
 
         _riallinea_sequenze(cur)
@@ -283,6 +298,49 @@ def _svuota_tabelle(cur) -> dict[str, int]:
         cur.execute(f"DELETE FROM {SCHEMA}.{table}")
         counts[table] = cur.rowcount
     return counts
+
+
+def _chiave_nat(d: dict, campi: list) -> tuple:
+    out = []
+    for c in campi:
+        v = d.get(c)
+        if isinstance(v, str):
+            v = v.strip() or None
+            if c == "tipo_output" and v == "impurità":
+                v = "impurita"
+        out.append(None if v is None else str(v))
+    return tuple(out)
+
+
+def _riconosci_senza_id(cur, table: str, validi: list):
+    """Righe del foglio con la cella "id" vuota: se i campi chiave (CHIAVI_NATURALI) corrispondono a
+    una sola riga del database, la riga prende quell'id e la aggiorna. Con piu' righe uguali nel
+    database (ambigua) o nessuna, resta senza id e viene creata con l'id successivo.
+    Restituisce (validi, quante riconosciute, numeri di riga ambigui)."""
+    from db import SCHEMA
+    campi = CHIAVI_NATURALI[table]
+    if not any(d.get("id") is None for _, d in validi):
+        return validi, 0, []
+    cur.execute(f"SELECT id, {', '.join(campi)} FROM {SCHEMA}.{table}")
+    per_chiave = {}
+    for r in cur.fetchall():
+        per_chiave.setdefault(_chiave_nat(dict(zip(campi, r[1:])), campi), []).append(r[0])
+    usati = {d["id"] for _, d in validi if d.get("id") is not None}
+    out, n, ambigue = [], 0, []
+    for i, d in validi:
+        if d.get("id") is None:
+            ids = [x for x in per_chiave.get(_chiave_nat(d, campi), []) if x not in usati]
+            if len(ids) == 1:
+                d = {**d, "id": ids[0]}
+                usati.add(ids[0])
+                n += 1
+            elif len(ids) > 1:
+                # piu' righe uguali nel database: non si crea un altro doppione, la riga va in errore
+                ambigue.append(f"riga {i}: id vuoto e {len(ids)} righe uguali nel database "
+                               f"(id {', '.join(map(str, sorted(ids)[:6]))}): indicare l'id della riga da aggiornare")
+                continue
+        out.append((i, d))
+    return out, n, ambigue
 
 
 def _normalizza_scarti(cur, validi: list) -> list:

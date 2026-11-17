@@ -95,7 +95,11 @@ simulazione. `db/dati_v10_4_bess_rack.sql` (solo in locale) porta i processi BES
 nota sul capex (base "ingresso al rack", 24 240 t/anno).
 
 Import Excel: le celle con testo vuoto o spazi valgono come celle vuote e, nei campi numerici, i numeri scritti
-come testo (anche all'italiana, "7,5" o "1.234,5") diventano numeri.
+come testo (anche all'italiana, "7,5" o "1.234,5") diventano numeri. Nei fogli con la colonna `id`
+(`macro`, `processi_trasformazioni`, `sottoprocessi_trasformazioni`) una riga con l'id vuoto viene riconosciuta
+dai campi che la identificano (es. processo, materiale, assieme, tipo di uscita, prodotto/intermedio/scarto):
+se corrisponde a una riga esistente la aggiorna, se non corrisponde a nessuna viene creata con l'id successivo,
+se corrisponde a più righe uguali va in errore (va indicato l'id).
 
 ## Cruscotto territoriale
 
