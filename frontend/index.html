@@ -2514,8 +2514,7 @@ function renderImportReport(payload, committed, replace){
           <span class="modal-badge ok">${v.creati} creati</span>
           <span class="modal-badge ok">${v.aggiornati} aggiornati</span>
           ${v.invariati!=null?`<span class="modal-badge" title="Righe uguali a quelle già nel database: non vengono riscritte">${v.invariati} invariati</span>`:''}
-          ${v.duplicati?`<span class="modal-badge warn" title="Chiave ripetuta nel foglio: vale l'ultima riga">${v.duplicati} chiavi ripetute</span>`:''}
-          ${v.senza_id_riconosciute?`<span class="modal-badge" title="Righe con la cella id vuota riconosciute dai campi chiave e aggiornate al posto di crearne di nuove">${v.senza_id_riconosciute} senza id riconosciute</span>`:''}          ${v.errori.length?`<span class="modal-badge warn">${v.errori.length} errori</span>`:''}
+          ${v.duplicati?`<span class="modal-badge warn" title="Chiave ripetuta nel foglio: vale l'ultima riga">${v.duplicati} chiavi ripetute</span>`:''}          ${v.errori.length?`<span class="modal-badge warn">${v.errori.length} errori</span>`:''}
         </span>
       </div>
       ${v.errori.length?`<ul class="modal-errs">${v.errori.slice(0,8).map(e=>`<li>${e}</li>`).join('')}${v.errori.length>8?`<li>… e altri ${v.errori.length-8}</li>`:''}</ul>`:''}

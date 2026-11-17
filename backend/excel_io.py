@@ -53,9 +53,9 @@ MODELS = {
 }
 CON_SCARTO = ("db_processi_trasformazioni", "db_sottoprocessi_trasformazioni")
 
-# tabelle con id seriale: campi che identificano la riga quando nel foglio la cella "id" e' vuota.
-# Una riga senza id che corrisponde a UNA riga esistente la aggiorna (prende il suo id); solo una
-# riga davvero nuova riceve l'id successivo. Prima ogni riga senza id diventava una riga nuova.
+# tabelle con id seriale: l'id non si esporta e non si importa (generava doppioni); la riga si
+# riconosce da questi campi (unici nel database dalla v10.5). Una riga che corrisponde a una riga
+# esistente la aggiorna; una riga nuova riceve l'id successivo.
 CHIAVI_NATURALI = {
     "db_processi_trasformazioni": ["id_processo", "material_id", "assieme_dettaglio", "tipo_output",
                                    "prodotto", "intermedio_output", "scarto"],
@@ -112,7 +112,8 @@ def export_workbook(tables: list[str] | None = None) -> bytes:
     for table in tables:
         cfg = crud.TABLES[table]
         ws = wb.create_sheet(SHEET_NAMES[table])
-        cols = cfg["columns"]
+        # l'id seriale non va nel file: la riga si riconosce dai campi chiave (CHIAVI_NATURALI)
+        cols = [c for c in cfg["columns"] if not (table in CHIAVI_NATURALI and c == "id")]
         ws.append(cols)
         for c in range(1, len(cols) + 1):
             cell = ws.cell(row=1, column=c)
@@ -248,19 +249,20 @@ def import_workbook(file_bytes: bytes, dry_run: bool = False, replace: bool = Fa
                     errors.append(f"riga {i}: {e}")
             if table in CON_SCARTO:
                 validi = _normalizza_scarti(cur, validi)
-            riconosciute, ambigue = 0, []
+            ripetute = []
             if table in CHIAVI_NATURALI:
-                validi, riconosciute, ambigue = _riconosci_senza_id(cur, table, validi)
+                validi, ripetute, ambigue = _riconosci_da_chiave(cur, table, validi)
                 errors += ambigue
 
             # esito di ogni riga: "c" creata, "u" aggiornata (almeno un valore diverso),
             # "=" invariata (nessuna scrittura), "d" chiave ripetuta nel foglio (vale l'ultima)
             esito, errori_db = _scrivi(cur, table, validi)
+            for i in ripetute:
+                esito[i] = "d"
             errors += errori_db
             conta = {s: sum(1 for v in esito.values() if v == s) for s in ("c", "u", "=", "d")}
             report[table] = {"creati": conta["c"], "aggiornati": conta["u"], "invariati": conta["="],
-                             "duplicati": conta["d"], "senza_id_riconosciute": riconosciute,
-                             "senza_id_ambigue": ambigue, "errori": errors,
+                             "duplicati": conta["d"], "errori": errors,
                              "totale_foglio": len(sheets_by_table[table])}
 
         _riallinea_sequenze(cur)
@@ -312,35 +314,37 @@ def _chiave_nat(d: dict, campi: list) -> tuple:
     return tuple(out)
 
 
-def _riconosci_senza_id(cur, table: str, validi: list):
-    """Righe del foglio con la cella "id" vuota: se i campi chiave (CHIAVI_NATURALI) corrispondono a
-    una sola riga del database, la riga prende quell'id e la aggiorna. Con piu' righe uguali nel
-    database (ambigua) o nessuna, resta senza id e viene creata con l'id successivo.
-    Restituisce (validi, quante riconosciute, numeri di riga ambigui)."""
+def _riconosci_da_chiave(cur, table: str, validi: list):
+    """Tabelle con id seriale (macro, trasformazioni): l'id non e' nel file e, se c'e', si ignora.
+    Ogni riga si riconosce dai campi chiave (CHIAVI_NATURALI): se corrisponde a una riga del database
+    ne prende l'id e la aggiorna, altrimenti e' una riga nuova (id successivo). Righe con gli stessi
+    campi chiave ripetute nel foglio: vale l'ultima, le altre si contano come chiavi ripetute.
+    Restituisce (validi, numeri di riga ripetuti, errori per righe ambigue)."""
     from db import SCHEMA
     campi = CHIAVI_NATURALI[table]
-    if not any(d.get("id") is None for _, d in validi):
-        return validi, 0, []
     cur.execute(f"SELECT id, {', '.join(campi)} FROM {SCHEMA}.{table}")
     per_chiave = {}
     for r in cur.fetchall():
         per_chiave.setdefault(_chiave_nat(dict(zip(campi, r[1:])), campi), []).append(r[0])
-    usati = {d["id"] for _, d in validi if d.get("id") is not None}
-    out, n, ambigue = [], 0, []
+    ultima = {}   # chiave -> (numero riga, dati), vale l'ultima occorrenza nel foglio
+    ripetute = []
     for i, d in validi:
-        if d.get("id") is None:
-            ids = [x for x in per_chiave.get(_chiave_nat(d, campi), []) if x not in usati]
-            if len(ids) == 1:
-                d = {**d, "id": ids[0]}
-                usati.add(ids[0])
-                n += 1
-            elif len(ids) > 1:
-                # piu' righe uguali nel database: non si crea un altro doppione, la riga va in errore
-                ambigue.append(f"riga {i}: id vuoto e {len(ids)} righe uguali nel database "
-                               f"(id {', '.join(map(str, sorted(ids)[:6]))}): indicare l'id della riga da aggiornare")
-                continue
+        k = _chiave_nat(d, campi)
+        if k in ultima:
+            ripetute.append(ultima[k][0])
+        ultima[k] = (i, {**d, "id": None})
+    out, ambigue = [], []
+    for k, (i, d) in ultima.items():
+        ids = per_chiave.get(k, [])
+        if len(ids) == 1:
+            d["id"] = ids[0]
+        elif len(ids) > 1:
+            # piu' righe uguali nel database (non dovrebbe succedere: vincolo di unicita' v10.5)
+            ambigue.append(f"riga {i}: {len(ids)} righe uguali nel database (id {', '.join(map(str, sorted(ids)[:6]))})")
+            continue
         out.append((i, d))
-    return out, n, ambigue
+    out.sort(key=lambda x: x[0])
+    return out, ripetute, ambigue
 
 
 def _normalizza_scarti(cur, validi: list) -> list:
