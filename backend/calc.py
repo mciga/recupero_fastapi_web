@@ -837,6 +837,9 @@ def _capex_taglia(riga: dict, taglia_t_anno, massa_t: float, fattore: float, ann
 def _valorizza_uscite(cache, uscite, prezzi_prodotti_override, prezzi_intermedi_override,
                       figli_scelte, fattore_rivalutazione, fattori_ingresso=None, tempo_anni=1.0,
                       capex_anno=None):
+    """v10.6: i prezzi (del database o scritti a mano) sono prezzi di oggi; il ricavo e' rivalutato
+    all'anno di trattamento (anno di dismissione) con lo stesso indice dei costi, come opex e
+    smaltimento: fattore dell'uscita pesato sulle masse che le arrivano dai singoli impianti."""
     lista = []
     ricavo = T()
     costo_extra = 0.0
@@ -858,11 +861,13 @@ def _valorizza_uscite(cache, uscite, prezzi_prodotti_override, prezzi_intermedi_
             ov = (prezzi_prodotti_override or {}).get(codice)
             prezzo = float(ov) if ov is not None else default
             ha_override |= ov is not None
-            r = [x * prezzo for x in massa]
+            f_u = _fattore_pesato(u["contributi"] + u["impurita_da"], fattori_ingresso, fattore_rivalutazione)
+            r = [x * prezzo * f_u for x in massa]
             ricavo = [a + b for a, b in zip(ricavo, r)]
             lista.append({**base, "nome": info.get("nome"), "categoria": info.get("categoria"),
                           "formula_chimica": info.get("formula_chimica"),
                           "prezzo_default_eur_kg": default, "prezzo_eur_kg": prezzo,
+                          "fattore_ricavo": f_u, "prezzo_rivalutato_eur_kg": prezzo * f_u,
                           "prezzo_personalizzato": ov is not None, **_tdict("ricavo_eur", r), "ramo": None})
             continue
         info = cache.intermedio(codice)
@@ -887,10 +892,12 @@ def _valorizza_uscite(cache, uscite, prezzi_prodotti_override, prezzi_intermedi_
             ov = (prezzi_intermedi_override or {}).get(codice)
             prezzo = float(ov) if ov is not None else default
             ha_override |= ov is not None
-            r = [x * prezzo for x in massa]
+            f_u = _fattore_pesato(u["contributi"] + u["impurita_da"], fattori_ingresso, fattore_rivalutazione)
+            r = [x * prezzo * f_u for x in massa]
             ricavo = [a + b for a, b in zip(ricavo, r)]
             lista.append({**base, "nome": info.get("nome"), "categoria": None, "trasformato": False, "ramo": None,
                           "prezzo_default_eur_kg": default, "prezzo_eur_kg": prezzo,
+                          "fattore_ricavo": f_u, "prezzo_rivalutato_eur_kg": prezzo * f_u,
                           "prezzo_personalizzato": ov is not None, **_tdict("ricavo_eur", r)})
     return lista, ricavo, costo_extra, ha_override
 
@@ -967,7 +974,8 @@ def calcola_componente(cache: _Cache, imps, macro: str, id_processo: str,
                        prezzi_intermedi_override: dict | None = None, figli_processo: dict | None = None,
                        assieme: str | None = None, escludi_assiemi: list[str] | None = None,
                        taglia_t_anno: float | None = None, capex_anno: tuple | None = None,
-                       gate_fee_eur_ton: float | None = None) -> dict:
+                       gate_fee_eur_ton: float | None = None, gate_fee_eur_ton_min: float | None = None,
+                       gate_fee_eur_ton_max: float | None = None) -> dict:
     """Applica un processo al macrocomponente di uno o piu' impianti: le masse dello stesso
     materiale sono SOMMATE sugli impianti (e sugli assiemi) e il processo lavora sul totale.
     fattori_impianto: {id_imp: fattore di rivalutazione dei costi} (o un solo numero). Ogni
@@ -976,7 +984,7 @@ def calcola_componente(cache: _Cache, imps, macro: str, id_processo: str,
     rivalutato al proprio anno di dismissione.
     v10.4: capex, opex e gate fee si calcolano sulla massa totale del macrocomponente in
     ingresso (compresi i materiali che il processo non tratta).
-    gate_fee_eur_ton: gate fee personalizzato (None = valore del processo)."""
+    gate_fee_eur_ton(_min/_max): gate fee personalizzato e suo intervallo (None = valori del processo)."""
     conn = cache.conn
     if isinstance(imps, dict):
         imps = [imps]
@@ -1060,7 +1068,18 @@ def calcola_componente(cache: _Cache, imps, macro: str, id_processo: str,
     # l'impianto: ricavo), rivalutato come gli opex
     gf_default = float(righe[0].get("gate_fee_eur_ton") or 0)
     gf = float(gate_fee_eur_ton) if gate_fee_eur_ton is not None else gf_default
-    gate_fee = gf * massa_comp / 1000 * fattore_ingresso
+    # v10.7: intervallo min/max (vuoto = uguale al centrale); con un centrale personalizzato fuori
+    # dall'intervallo del processo, l'intervallo si allarga fino a comprenderlo
+    db_min = righe[0].get("gate_fee_eur_ton_min")
+    db_max = righe[0].get("gate_fee_eur_ton_max")
+    gf_min_def = float(db_min) if db_min is not None else gf_default
+    gf_max_def = float(db_max) if db_max is not None else gf_default
+    gf_min = min(float(gate_fee_eur_ton_min) if gate_fee_eur_ton_min is not None else gf_min_def, gf)
+    gf_max = max(float(gate_fee_eur_ton_max) if gate_fee_eur_ton_max is not None else gf_max_def, gf)
+    gf3 = [gf_min, gf, gf_max]
+    gate_fee3 = [g * massa_comp / 1000 * fattore_ingresso for g in gf3]
+    gate_fee = gate_fee3[1]
+    gf_pers = any(x is not None for x in (gate_fee_eur_ton, gate_fee_eur_ton_min, gate_fee_eur_ton_max))
     lista, ricavo, costo_extra, ha_override = _valorizza_uscite(
         cache, uscite, prezzi_prodotti_override, prezzi_intermedi_override, figli_processo, fattore_medio, fattori,
         tempo_anni=cx["tempo_anni"] or 1.0, capex_anno=capex_anno)
@@ -1089,7 +1108,9 @@ def calcola_componente(cache: _Cache, imps, macro: str, id_processo: str,
                      "opex_specifici": opex_specifici, "massa_opex_spec_kg": massa_spec,
                      "massa_opex_processo_kg": massa_comp - massa_spec, "massa_costi_kg": massa_comp,
                      "gate_fee_eur_ton": gf, "gate_fee_default_eur_ton": gf_default,
-                     "gate_fee_personalizzato": gate_fee_eur_ton is not None, "gate_fee_eur": gate_fee,
+                     "gate_fee_eur_ton_min": gf_min, "gate_fee_eur_ton_max": gf_max,
+                     "gate_fee_default_eur_ton_min": gf_min_def, "gate_fee_default_eur_ton_max": gf_max_def,
+                     "gate_fee_personalizzato": gf_pers, **_tdict("gate_fee_eur", gate_fee3),
                      "fattore_rivalutazione_ingresso": fattore_ingresso},
         "uscite": lista, "scarti": scarti_l, "avvisi": avvisi,
         # materiali in ingresso al processo (masse centrali), usati dal report del bilancio di massa
@@ -1100,8 +1121,8 @@ def calcola_componente(cache: _Cache, imps, macro: str, id_processo: str,
         "bilancio_massa_centrale_kg": bilancio_c,
         "reagenti": _reagenti_lista(cache, reag_info), "bilancio": bil,
         "costo_totale_eur": capex + opex + costo_sm + costo_extra,
-        **_tdict("ricavo_eur", ricavo), "gate_fee_eur": gate_fee,
-        "ha_override": ha_override or gate_fee_eur_ton is not None,
+        **_tdict("ricavo_eur", ricavo), **_tdict("gate_fee_eur", gate_fee3),
+        "ha_override": ha_override or gf_pers,
     }
 
 
@@ -1139,13 +1160,13 @@ def calcola_gruppo(id_imps, componenti: list[dict], anno_dismissione: int | None
                                # anno di costruzione dell'impianto (vuoto = anno corrente, nessuna rivalutazione)
                                (int(c.get("anno_costruzione") or anno_corrente),
                                 (1 + tasso) ** max(int(c.get("anno_costruzione") or anno_corrente) - anno_corrente, 0)),
-                               c.get("gate_fee_eur_ton"))
+                               c.get("gate_fee_eur_ton"), c.get("gate_fee_eur_ton_min"), c.get("gate_fee_eur_ton_max"))
             for c in componenti
         ]
     ok = [r for r in risultati if "error" not in r]
     costo = sum(r["costo_totale_eur"] for r in ok)
     ric = [sum(r["ricavo_eur_min"] for r in ok), sum(r["ricavo_eur"] for r in ok), sum(r["ricavo_eur_max"] for r in ok)]
-    gate_fee = sum(r["gate_fee_eur"] for r in ok)
+    gf = [sum(r["gate_fee_eur_min"] for r in ok), sum(r["gate_fee_eur"] for r in ok), sum(r["gate_fee_eur_max"] for r in ok)]
     # margine (v10.4) = ricavi dai prodotti + gate fee - costi
     m_tratt = sum(r["massa_trattata_kg"] for r in ok)
     fattore = (sum(r["massa_trattata_kg"] * r["fattore_rivalutazione_medio"] for r in ok) / m_tratt
@@ -1167,9 +1188,10 @@ def calcola_gruppo(id_imps, componenti: list[dict], anno_dismissione: int | None
             "chiude": all(r["bilancio"]["chiude"] for r in ok),
             "solo_reagenti_indicati": all(r["bilancio"]["solo_reagenti_indicati"] for r in ok)},
         "fattore_rivalutazione_costi": fattore, "tasso_costi_annuo": tasso,
-        "costo_totale_eur": costo, **_tdict("ricavo_eur", ric), "gate_fee_eur": gate_fee,
-        "margine_eur_min": ric[0] + gate_fee - costo, "margine_eur": ric[1] + gate_fee - costo,
-        "margine_eur_max": ric[2] + gate_fee - costo,
+        "costo_totale_eur": costo, **_tdict("ricavo_eur", ric), **_tdict("gate_fee_eur", gf),
+        # v10.7: scenario minimo = ricavi minimi + gate fee minimo, massimo = ricavi massimi + gate fee massimo
+        "margine_eur_min": ric[0] + gf[0] - costo, "margine_eur": ric[1] + gf[1] - costo,
+        "margine_eur_max": ric[2] + gf[2] - costo,
         "ha_prezzi_personalizzati": any(r["ha_override"] for r in ok),
         "componenti": risultati,
     }
@@ -1195,7 +1217,7 @@ def calcola_da_intermedio(intermedio: str, massa_ton: float, id_sottoprocesso: s
             return {"error": "intermedio_non_trovato"}
         default = float(info.get("prezzo_attuale_eur_kg") or 0)
         prezzo = float(prezzo_acquisto_override) if prezzo_acquisto_override is not None else default
-        costo_acquisto = massa_kg * prezzo
+        costo_acquisto = massa_kg * prezzo * fattore   # v10.6: prezzo di oggi rivalutato all'anno di trattamento
         ramo = calcola_ramo_sottoprocesso(cache, intermedio, T(massa_kg), {ND: 1.0}, id_sottoprocesso, fattore,
                                           prezzi_prodotti_override, prezzi_intermedi_override, figli_sottoprocesso,
                                           tempo, taglia_t_anno=taglia_t_anno)
@@ -1205,7 +1227,7 @@ def calcola_da_intermedio(intermedio: str, massa_ton: float, id_sottoprocesso: s
     ric = [ramo["ricavo_eur_min"], ramo["ricavo_eur"], ramo["ricavo_eur_max"]]
     return {
         "intermedio": intermedio, "nome": info.get("nome"), "massa_input_kg": massa_kg,
-        "acquisto": {"prezzo_default_eur_kg": default, "prezzo_eur_kg": prezzo,
+        "acquisto": {"prezzo_default_eur_kg": default, "prezzo_eur_kg": prezzo, "prezzo_rivalutato_eur_kg": prezzo * fattore,
                      "prezzo_personalizzato": prezzo_acquisto_override is not None, "costo_eur": costo_acquisto},
         "sottoprocesso": ramo["sottoprocesso"], "uscite": ramo["uscite"], "scarti": ramo["scarti"],
         "avvisi": ramo["avvisi"], "reagenti": ramo["reagenti"], "bilancio": ramo["bilancio"],

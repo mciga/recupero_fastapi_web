@@ -16,7 +16,7 @@ TABLES: dict[str, dict[str, Any]] = {
     "db_prodotti": {
         "pk": ["prodotto"],
         "columns": ["prodotto", "nome", "categoria", "formula_chimica", "peso_molare", "elemento_confronto",
-                    "parametro_equivalenza", "prezzo_attuale_eur_kg", "proiezione_prezzo_p1", "proiezione_prezzo_p2"],
+                    "parametro_equivalenza", "prezzo_attuale_eur_kg"],
     },
     "db_prodotti_storico": {
         "pk": ["prodotto", "anno"],
@@ -43,7 +43,8 @@ TABLES: dict[str, dict[str, Any]] = {
         "columns": ["id_processo", "tipologia", "sotto_tecnologia", "macro_componente", "tecnica",
                     "capex_eur_ton", "opex_eur_ton", "descrizione_fasi",
                     "taglia_riferimento_t_anno", "esponente_scala", "vita_utile_anni",
-                    "tasso_sconto", "taglia_minima_t_anno", "gate_fee_eur_ton"],
+                    "tasso_sconto", "taglia_minima_t_anno", "gate_fee_eur_ton",
+                    "gate_fee_eur_ton_min", "gate_fee_eur_ton_max"],
         "order": "tipologia, macro_componente, id_processo",
         "detail": "db_processi_trasformazioni",
     },

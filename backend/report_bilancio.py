@@ -109,10 +109,12 @@ def workbook(result: dict, richiesta: dict | None = None) -> bytes:
     r("Tipologia", result.get("tipologia"))
     r("Indice di rivalutazione dei costi", (richiesta or {}).get("id_indice_costi"),
       f"tasso annuo {result.get('tasso_costi_annuo', 0):.2%}")
-    r("Ricavi", "massa PURA del prodotto x prezzo; le impurita' non sono valorizzate")
+    r("Ricavi", "massa PURA del prodotto x prezzo; le impurita' non sono valorizzate. Il prezzo e' quello di oggi "
+                "rivalutato all'anno di trattamento (anno di dismissione) con l'indice dei costi, come opex e gate fee")
     r("Gate fee", "EUR/t x massa del macrocomponente consegnato; > 0 il proprietario paga l'impianto (ricavo), "
                   "< 0 l'impianto paga il materiale (costo)")
-    r("Margine", "ricavi + gate fee - costi; capex, opex e gate fee sulla massa totale del macrocomponente")
+    r("Margine", "ricavi + gate fee - costi; capex, opex e gate fee sulla massa totale del macrocomponente; "
+                 "margine minimo/massimo = ricavi e gate fee minimi/massimi")
     r()
     r("Impianto", "Sotto-tecnologia", "Anno dismissione (calcolo)", "Fattore rivalutazione costi", bold=True)
     for i in result.get("impianti", []):
@@ -139,13 +141,15 @@ def workbook(result: dict, richiesta: dict | None = None) -> bytes:
     r()
     r("Costi per fase", "Fase", "Capex attribuito (EUR)", "Opex (EUR)", "Smaltimento scarti (EUR)", "Costo fase (EUR)",
       "Capex specifico (EUR per t/anno)", "Opex specifico (EUR/t)", "Taglia (t/anno)", "Massa base dei costi (kg)",
-      "Gate fee (EUR/t)", "Gate fee (EUR)", bold=True)
+      "Gate fee (EUR/t)", "Gate fee (EUR)", "Gate fee min (EUR/t)", "Gate fee max (EUR/t)",
+      "Gate fee min (EUR)", "Gate fee max (EUR)", bold=True)
     for macro, fase, nodo, _ in _nodi(result):
         p = nodo.get("processo") or nodo["sottoprocesso"]
         r(macro, fase, p["capex_eur"], p["opex_eur"], p["smaltimento_eur"], p["costo_eur"],
           p["capex_eur_ton"], p["opex_eur_ton"], p.get("taglia_t_anno"), p.get("massa_costi_kg"),
-          p.get("gate_fee_eur_ton"), p.get("gate_fee_eur"))
-        for col in "CDEFL":
+          p.get("gate_fee_eur_ton"), p.get("gate_fee_eur"), p.get("gate_fee_eur_ton_min"), p.get("gate_fee_eur_ton_max"),
+          p.get("gate_fee_eur_min"), p.get("gate_fee_eur_max"))
+        for col in "CDEFLOP":
             ws[f"{col}{ws.max_row}"].number_format = F_EUR
         for col in "IJ":
             ws[f"{col}{ws.max_row}"].number_format = F_KG
@@ -161,13 +165,13 @@ def workbook(result: dict, richiesta: dict | None = None) -> bytes:
         ("Materiale in ingresso", 44, None), ("Massa in ingresso (kg)", 16, F_KG),
         ("Destinazione", 18, None), ("Uscita (codice)", 22, None), ("Uscita (nome)", 34, None),
         ("Resa da processo", 12, F_PCT), ("Massa in uscita (kg)", 16, F_KG), ("Resa effettiva", 12, F_PCT),
-        ("Valorizzata", 11, None), ("Prezzo (EUR/kg)", 12, F_PREZZO), ("Ricavo (EUR)", 15, F_EUR),
+        ("Valorizzata", 11, None), ("Prezzo all'anno di trattamento (EUR/kg)", 14, F_PREZZO), ("Ricavo (EUR)", 15, F_EUR),
         ("Costo smaltimento (EUR)", 15, F_EUR), ("Note", 50, None)])
     wu = _foglio(wb, "Uscite", [
         ("Macrocomponente", 30, None), ("Fase", 34, None), ("Tipo", 13, None), ("Codice", 22, None),
         ("Nome", 36, None), ("Categoria", 12, None), ("Massa totale (kg)", 16, F_KG), ("di cui pura (kg)", 16, F_KG),
         ("di cui impurita' (kg)", 16, F_KG), ("Quota impurita'", 11, F_PCT), ("Pura min (kg)", 15, F_KG),
-        ("Pura max (kg)", 15, F_KG), ("Prezzo (EUR/kg)", 12, F_PREZZO), ("Ricavo (EUR) = pura x prezzo", 17, F_EUR),
+        ("Pura max (kg)", 15, F_KG), ("Prezzo all'anno di trattamento (EUR/kg)", 14, F_PREZZO), ("Ricavo (EUR) = pura x prezzo", 17, F_EUR),
         ("Elementi forniti dai reagenti (kg)", 40, None), ("Note", 40, None)])
     wsc = _foglio(wb, "Scarti", [
         ("Macrocomponente", 30, None), ("Fase", 34, None), ("Scarto", 38, None), ("Massa (kg)", 16, F_KG),
@@ -210,9 +214,11 @@ def workbook(result: dict, richiesta: dict | None = None) -> bytes:
         for u in nodo["uscite"]:
             trasf = bool(u.get("ramo"))
             tipo = "prodotto" if u["tipo"] == "prodotto" else ("intermedio (trasformato)" if trasf else "intermedio")
-            prezzo = None if trasf else u.get("prezzo_eur_kg")
+            prezzo = None if trasf else u.get("prezzo_rivalutato_eur_kg", u.get("prezzo_eur_kg"))
             tot = u["massa_kg"] + u["impurita_kg"]
             note = []
+            if not trasf and u.get("prezzo_eur_kg") is not None and abs((u.get("fattore_ricavo") or 1) - 1) > 1e-9:
+                note.append(f"prezzo di oggi {u['prezzo_eur_kg']:.4g} EUR/kg x rivalutazione {u['fattore_ricavo']:.4f}")
             if u.get("prezzo_personalizzato"):
                 note.append("prezzo personalizzato")
             if trasf:

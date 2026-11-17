@@ -194,6 +194,17 @@
   table.dbtable input[type=text]{min-width:110px}
   table.dbtable input.saved{border-color:var(--green)!important;background:#F1F7F3}
   table.dbtable input.error,table.dbtable select.error{border-color:var(--red)!important;background:#FDF3F1}
+  /* colonne ridimensionabili: larghezze in <colgroup>, intestazioni a capo, caselle larghe quanto la colonna */
+  table.dbtable.ridim{table-layout:fixed;min-width:0}
+  table.dbtable.ridim th{position:relative;white-space:normal;overflow:hidden;overflow-wrap:anywhere;vertical-align:bottom;line-height:1.25}
+  table.dbtable.ridim td{overflow:hidden}
+  table.dbtable.ridim input,table.dbtable.ridim select{width:100%;min-width:0;box-sizing:border-box}
+  table.dbtable.ridim thead th{position:sticky;top:0;z-index:2}
+  .col-grip{position:absolute;top:0;right:0;width:8px;height:100%;cursor:col-resize;user-select:none;z-index:3}
+  .col-grip:hover,.col-grip.on{background:rgba(31,90,67,.25)}
+  body.col-resizing,body.col-resizing *{cursor:col-resize!important;user-select:none!important}
+  .ridim-bar{display:flex;gap:6px;justify-content:flex-end;margin:0 0 6px}
+  .ridim-bar .btn{padding:4px 9px;font-size:11px}
   .rowdel{border:none;background:transparent;color:var(--mute);cursor:pointer;font-size:15px;border-radius:6px;padding:4px 7px}
   .rowdel:hover{color:var(--red);background:#FDF3F1}
   .db-note{font-size:12px;color:var(--mute);margin-top:12px;line-height:1.6}
@@ -528,10 +539,8 @@ const TABLES = {
       {key:'elemento_confronto',label:'Elemento da controllare (vuoto = dai reagenti)',type:'prodotto-select'},
       {key:'parametro_equivalenza',label:'Parametro equivalenza (info)',type:'number',step:0.5,nullable:true},
       {key:'prezzo_attuale_eur_kg',label:'Prezzo €/kg',type:'number',step:0.1},
-      {key:'proiezione_prezzo_p1',label:'Crescita P1 %/anno',type:'percent',step:0.1},
-      {key:'proiezione_prezzo_p2',label:'Crescita P2 %/anno',type:'percent',step:0.1},
     ],
-    defaults:()=>({prodotto:'',nome:'',categoria:'critico',formula_chimica:null,peso_molare:null,elemento_confronto:null,parametro_equivalenza:null,prezzo_attuale_eur_kg:0,proiezione_prezzo_p1:0.03,proiezione_prezzo_p2:0.05}),
+    defaults:()=>({prodotto:'',nome:'',categoria:'critico',formula_chimica:null,peso_molare:null,elemento_confronto:null,parametro_equivalenza:null,prezzo_attuale_eur_kg:0}),
   },
   storico: { url:'prodotti-storico', dbTable:'db_prodotti_storico', label:'Storico prezzi e mercato (grafici)', pk:['prodotto','anno'],
     columns:[
@@ -598,8 +607,10 @@ const TABLES = {
       {key:'macro_componente',label:'Macrocomponente',type:'text'},
       ...TESTATA_COLS,
       {key:'gate_fee_eur_ton',label:'Gate fee €/t consegnata (+ il proprietario paga l’impianto, − l’impianto paga)',type:'number',step:10},
+      {key:'gate_fee_eur_ton_min',label:'Gate fee minimo €/t (vuoto = come il gate fee)',type:'number',step:10,nullable:true},
+      {key:'gate_fee_eur_ton_max',label:'Gate fee massimo €/t (vuoto = come il gate fee)',type:'number',step:10,nullable:true},
     ],
-    defaults:()=>({id_processo:'',tipologia:'EOLICO',sotto_tecnologia:null,macro_componente:'',tecnica:'',capex_eur_ton:100,opex_eur_ton:200,descrizione_fasi:'',taglia_riferimento_t_anno:null,esponente_scala:0.6,vita_utile_anni:15,tasso_sconto:0.08,taglia_minima_t_anno:null,gate_fee_eur_ton:0}),
+    defaults:()=>({id_processo:'',tipologia:'EOLICO',sotto_tecnologia:null,macro_componente:'',tecnica:'',capex_eur_ton:100,opex_eur_ton:200,descrizione_fasi:'',taglia_riferimento_t_anno:null,esponente_scala:0.6,vita_utile_anni:15,tasso_sconto:0.08,taglia_minima_t_anno:null,gate_fee_eur_ton:0,gate_fee_eur_ton_min:null,gate_fee_eur_ton_max:null}),
   },
   processiTrasf: { url:'processi-trasformazioni', dbTable:'db_processi_trasformazioni', label:'Trasformazioni dei processi (materiale → uscita)', pk:['id'],
     fk:'id_processo', master:'processi',
@@ -1085,13 +1096,17 @@ function costiNodoHtml(p, extra=''){
     ${sm ? `<div class="lane-node-cost">Smaltimento scarti ${e.voci[2]}</div>` : ''}
     <div class="lane-node-costo-tot">Costo: ${e.totale}${sm ? ' (capex + opex + smaltimento)' : ' (capex + opex)'}</div>`;
 }
-// gate fee (v10.4): EUR/t x massa consegnata, con segno; al clic si personalizza per la simulazione
+// gate fee (v10.4): EUR/t x massa consegnata, con segno; al clic si personalizza per la simulazione.
+// v10.7: intervallo minimo-massimo, usato nei margini minimo e massimo
+const gfRange = p => p.gate_fee_eur_ton_min!=null && p.gate_fee_eur_ton_max!=null
+  && (p.gate_fee_eur_ton_min!==p.gate_fee_eur_ton || p.gate_fee_eur_ton_max!==p.gate_fee_eur_ton);
 function gateFeeHtml(lane, p){
   const gf = p.gate_fee_eur_ton||0, v = p.gate_fee_eur||0;
   const segno = v>0 ? 'ricavo: il proprietario paga l’impianto' : v<0 ? 'costo: l’impianto paga il materiale' : 'nessun corrispettivo';
   return `<div class="lane-node-cost gate-fee ${p.gate_fee_personalizzato?'custom':''}" data-gate-fee="${escAttr(lane)}"
       title="Gate fee: €/t × massa del macrocomponente consegnato (${segno}). Clicca per modificarlo in questa simulazione.">
     Gate fee ${fmt(gf,0)} €/t × ${massStr(p.massa_costi_kg)}${Math.abs((p.fattore_rivalutazione_ingresso||1)-1)>1e-6 ? ` × riv. ${fmt(p.fattore_rivalutazione_ingresso,3)}` : ''} = <b>${v>0?'+':''}${eur(v).join(' ')}</b>${p.gate_fee_personalizzato?' ✎':''}
+    ${gfRange(p) ? `<span class="gf-nota">intervallo ${fmt(p.gate_fee_eur_ton_min,0)} – ${fmt(p.gate_fee_eur_ton_max,0)} €/t: ${eur(p.gate_fee_eur_min).join(' ')} – ${eur(p.gate_fee_eur_max).join(' ')}</span>` : ''}
     <span class="gf-nota">${segno}</span></div>`;
 }
 function componentIcon(name){ return name.replace(/[_/]/g,' ').split(' ').filter(Boolean).map(w=>w[0]).slice(0,2).join('').toUpperCase(); }
@@ -1153,6 +1168,8 @@ async function renderCalcoloMain(){
         taglia_t_anno: c.taglia || null,
         anno_costruzione: c.annoCostr || null,
         gate_fee_eur_ton: c.gateFee ?? null,
+        gate_fee_eur_ton_min: c.gateFeeMin ?? null,
+        gate_fee_eur_ton_max: c.gateFeeMax ?? null,
       };
     }),
   };
@@ -1454,6 +1471,12 @@ function massaUscitaHtml(massa, imp, impDa, contr){
       <div class="imp-tag" title="Impurità (${pct(imp/tot)} del totale, non valorizzate)${da?' provenienti da:\n'+escAttr(da):''}">impurità ${massStr(imp)} (${quota})</div>`;
 }
 
+// v10.6: prezzo di oggi e prezzo rivalutato all'anno di trattamento (stesso indice dei costi)
+function prezzoRivHtml(u){
+  if(u.prezzo_eur_kg==null) return '';
+  const f = u.fattore_ricavo||1;
+  return `<div class="price-tag" title="Prezzo di oggi ${fmt(u.prezzo_eur_kg,2)} €/kg, rivalutato all'anno di trattamento con l'indice dei costi (×${fmt(f,3)})">${fmt(u.prezzo_eur_kg,2)}${Math.abs(f-1)>1e-6 ? ` → ${fmt(u.prezzo_rivalutato_eur_kg,2)}` : ''} €/kg</div>`;
+}
 function renderUscitaCard(macro, path, u){
   const range = `${massStr(u.massa_kg_min)} – ${massStr(u.massa_kg_max)}`;
   if(u.tipo==='prodotto'){
@@ -1463,6 +1486,7 @@ function renderUscitaCard(macro, path, u){
       <div class="sym ${u.codice.length>7?'sym-long':''}" title="${escAttr(u.codice)}">${u.codice}</div><div class="nm">${u.nome||''}</div>
       ${massaUscitaHtml(u.massa_kg, u.impurita_kg, u.impurita_da, u.contributi)}
       <div class="vv">${eur(u.ricavo_eur).join(' ')}${u.prezzo_personalizzato?' ✎':''}</div>
+      ${prezzoRivHtml(u)}
       ${(u.elementi_da_reagenti||[]).length ? `<div class="nv-tag" title="${escAttr('Elementi della formula non presenti nei materiali: si assumono dai reagenti aggiunti (nessun controllo):\n'+u.elementi_da_reagenti.map(e=>e.elemento+' '+massStr(e.massa_kg)).join('\n'))}">+ reagenti: ${u.elementi_da_reagenti.slice(0,2).map(e=>e.elemento).join(', ')}</div>` : ''}
       ${avvisiHtml(u)}
     </div>`;
@@ -1496,6 +1520,7 @@ function renderUscitaCard(macro, path, u){
       ${massaUscitaHtml(u.massa_kg, u.impurita_kg, u.impurita_da, u.contributi)}
       ${compTop(u.composizione) ? `<div class="el-tag">${compTop(u.composizione)}</div>` : ''}
       <div class="vv">${eur(u.ricavo_eur).join(' ')}${u.prezzo_personalizzato?' ✎':''}</div>
+      ${prezzoRivHtml(u)}
     </div>
     <button class="btn-trasforma" data-trasforma-macro="${escAttr(macro)}" data-path="${escAttr(childPath.join('>'))}">Trasforma ▸</button>
   </div>`;
@@ -1525,7 +1550,7 @@ function trovaNodo(macro, path){
 
 function wireSchemaProcesso(){
   document.querySelectorAll('.sel-processo').forEach(sel=>{
-    sel.onchange = ()=>{ const c=calcState.componenti[sel.dataset.macro]; c.idProcesso=sel.value; c.figli={}; c.taglia=null; delete c.gateFee; renderCalcoloMain(); };
+    sel.onchange = ()=>{ const c=calcState.componenti[sel.dataset.macro]; c.idProcesso=sel.value; c.figli={}; c.taglia=null; delete c.gateFee; delete c.gateFeeMin; delete c.gateFeeMax; renderCalcoloMain(); };
   });
   document.querySelectorAll('.inp-taglia').forEach(inp=>{
     inp.onchange = ()=>{
@@ -1797,7 +1822,7 @@ function renderSchemaDiretto(data, d){
         <div class="nm">acquistato</div>
         <div class="val">${massStr(data.massa_input_kg)}</div>
         <div class="vv">− ${eur(acq.costo_eur).join(' ')}</div>
-        <div class="price-tag">${fmt(acq.prezzo_eur_kg,2)} €/kg${acq.prezzo_personalizzato?' ✎':''}</div>
+        <div class="price-tag" title="Prezzo di oggi → prezzo all'anno di trattamento">${fmt(acq.prezzo_eur_kg,2)}${acq.prezzo_rivalutato_eur_kg && Math.abs(acq.prezzo_rivalutato_eur_kg-acq.prezzo_eur_kg)>1e-9 ? ` → ${fmt(acq.prezzo_rivalutato_eur_kg,2)}` : ''} €/kg${acq.prezzo_personalizzato?' ✎':''}</div>
       </div>
       <span class="lane-arrow">→</span>
       <div class="lane-node">
@@ -1893,27 +1918,39 @@ function openGateFeeModal(lane){
   const cd = (lastCalc?.componenti||[]).find(x=>cdKey(x)===lane);
   if(!c || !cd) return;
   const p = cd.processo, def = p.gate_fee_default_eur_ton||0;
+  const defMin = p.gate_fee_default_eur_ton_min ?? def, defMax = p.gate_fee_default_eur_ton_max ?? def;
+  const campo = (id, lbl, v) => `<div class="field" style="flex:1"><label class="comp-mini-label">${lbl}</label>
+      <input type="number" id="${id}" value="${v}" step="10"
+        style="width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:8px;font-family:Inter;font-size:14px"></div>`;
   const overlay = showModal(`
     <h3>Gate fee — ${nice(p.tecnica)}</h3>
     <p class="sub">Corrispettivo per il ritiro, in € per t di macrocomponente consegnato (${massStr(p.massa_costi_kg)}).
       Positivo: il proprietario (o il produttore) paga l’impianto di riciclo, ricavo per l’impianto.
-      Negativo: l’impianto paga il materiale. Valore del processo nel database: <b>${fmt(def,0)} €/t</b>.
+      Negativo: l’impianto paga il materiale. Valori del processo nel database: <b>${fmt(defMin,0)} / ${fmt(def,0)} / ${fmt(defMax,0)} €/t</b>
+      (minimo / centrale / massimo). Il minimo entra nel margine minimo, il massimo nel margine massimo.
       La modifica vale solo per questa simulazione.</p>
-    <div class="field">
-      <label class="comp-mini-label">Gate fee (€/t)</label>
-      <input type="number" id="modalGateFee" value="${c.gateFee ?? def}" step="10"
-        style="width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:8px;font-family:Inter;font-size:14px">
+    <div style="display:flex;gap:10px">
+      ${campo('modalGateFeeMin','Minimo (€/t)', c.gateFeeMin ?? defMin)}
+      ${campo('modalGateFee','Centrale (€/t)', c.gateFee ?? def)}
+      ${campo('modalGateFeeMax','Massimo (€/t)', c.gateFeeMax ?? defMax)}
     </div>
+    <p class="sub" id="gfErr" style="color:var(--red);display:none">Serve minimo ≤ centrale ≤ massimo.</p>
     <div class="modal-close">
       <button class="btn primary" id="btnConfirmGf">Conferma</button>
       <button class="btn" id="btnResetGf">Valore del processo</button>
       <button class="btn" id="btnCloseModal">Annulla</button>
     </div>`);
   document.getElementById('btnCloseModal').onclick=()=>overlay.remove();
-  document.getElementById('btnResetGf').onclick=()=>{ delete c.gateFee; overlay.remove(); renderCalcoloMain(); };
+  document.getElementById('btnResetGf').onclick=()=>{ delete c.gateFee; delete c.gateFeeMin; delete c.gateFeeMax; overlay.remove(); renderCalcoloMain(); };
   document.getElementById('btnConfirmGf').onclick=()=>{
     const v = parseFloat(document.getElementById('modalGateFee').value);
-    if(!isNaN(v)){ if(v===def) delete c.gateFee; else c.gateFee=v; overlay.remove(); renderCalcoloMain(); }
+    const vMin = parseFloat(document.getElementById('modalGateFeeMin').value);
+    const vMax = parseFloat(document.getElementById('modalGateFeeMax').value);
+    if([v,vMin,vMax].some(isNaN) || vMin>v || vMax<v){ document.getElementById('gfErr').style.display='block'; return; }
+    if(v===def) delete c.gateFee; else c.gateFee=v;
+    if(vMin===defMin) delete c.gateFeeMin; else c.gateFeeMin=vMin;
+    if(vMax===defMax) delete c.gateFeeMax; else c.gateFeeMax=vMax;
+    overlay.remove(); renderCalcoloMain();
   };
 }
 function wirePriceTiles(){
@@ -2133,6 +2170,7 @@ function renderMaterialeRecuperatoPanel(componenti){
       const a = aggr[r.codice] ||= {codice:r.codice, nome:r.nome, categoria:r.categoria, massa:0, imp:0, ricavo:0, personalizzato:false, prezzo:r.prezzo_eur_kg};
       a.massa += r.massa_kg; a.imp += r.impurita_kg; a.ricavo += r.ricavo_eur;
       if(r.prezzo_personalizzato) a.personalizzato = true;
+      a.fatt = (a.fatt||0) + r.massa_kg*(r.fattore_ricavo||1);
     });
   });
   const rows = Object.values(aggr).sort((a,b)=>b.ricavo-a.ricavo);
@@ -2140,7 +2178,7 @@ function renderMaterialeRecuperatoPanel(componenti){
   return `
   <div class="panel">
     <h3>Materiale recuperato</h3>
-    <p class="sub">Valori centrali. In grande la massa totale in uscita; dove ci sono impurità, sotto sono separate la parte pura (la sola valorizzata) e le impurità. Prezzo corrente di mercato, applicato automaticamente: clicca su una card per vedere l'andamento di mercato e rivalutarlo.</p>
+    <p class="sub">Valori centrali. In grande la massa totale in uscita; dove ci sono impurità, sotto sono separate la parte pura (la sola valorizzata) e le impurità. Prezzo corrente di mercato rivalutato all'anno di trattamento (anno di dismissione) con lo stesso indice dei costi (prezzo di oggi → prezzo rivalutato): clicca su una card per vedere l'andamento di mercato e cambiare il prezzo di oggi.</p>
     <div class="tiles">
       ${rows.map(r=>{
         const [kv,ku]=mass(r.massa + r.imp);   // totale: puro + impurità
@@ -2150,7 +2188,7 @@ function renderMaterialeRecuperatoPanel(componenti){
           <div class="val">${kv} <span style="color:var(--mute);font-weight:600">${ku}</span></div>
           ${r.imp>0?`<div class="pure-tag" title="Parte pura: è la sola massa valorizzata">puro ${massStr(r.massa)}</div><div class="imp-tag" title="Impurità (non valorizzate)">impurità ${massStr(r.imp)} (${(q=>fmt(q, q<0.1?3:q<10?2:1))(r.imp/(r.massa+r.imp)*100)}%)</div>`:''}
           <div class="vv">${eur(r.ricavo).join(' ')}</div>
-          <div class="price-tag">${fmt(r.prezzo,2)} €/kg${r.personalizzato?' ✎':''}</div>
+          <div class="price-tag" title="Prezzo di oggi → prezzo all'anno di trattamento (indice dei costi)">${fmt(r.prezzo,2)}${r.massa>0 && Math.abs(r.fatt/r.massa-1)>1e-6 ? ` → ${fmt(r.prezzo*r.fatt/r.massa,2)}` : ''} €/kg${r.personalizzato?' ✎':''}</div>
         </div>`;
       }).join('')}
     </div>
@@ -2181,12 +2219,12 @@ function renderEconomicSummary(data, massaLabel, massaKg, massaSub){
       <div class="kpi"><div class="k">${massaLabel}</div><div class="v">${mv} <small>${mu}</small></div><div class="s">${massaSub||''}</div></div>
       <div class="kpi copper"><div class="k">Costo totale rivalutato</div><div class="v">${cv} <small>${cu}</small></div><div class="s">fattore ×${fmt(data.fattore_rivalutazione_costi,3)}</div></div>
       <div class="kpi"><div class="k">Ricavo stimato (centrale)</div><div class="v">${rv} <small>${ru}</small></div><div class="s">range ${eur(data.ricavo_eur_min).join(' ')} – ${eur(data.ricavo_eur_max).join(' ')}</div></div>
-      ${gf ? `<div class="kpi"><div class="k">Gate fee</div><div class="v ${gf>=0?'pos':'neg'}">${gf>0?'+':''}${gv} <small>${gu}</small></div><div class="s">${gf>0?'pagato dal proprietario all’impianto':'pagato dall’impianto per il materiale'}</div></div>` : ''}
+      ${(gf || data.gate_fee_eur_min || data.gate_fee_eur_max) ? `<div class="kpi"><div class="k">Gate fee (centrale)</div><div class="v ${gf>=0?'pos':'neg'}">${gf>0?'+':''}${gv} <small>${gu}</small></div><div class="s">${Math.abs((data.gate_fee_eur_max||0)-(data.gate_fee_eur_min||0))>0.5 ? `range ${eur(data.gate_fee_eur_min).join(' ')} – ${eur(data.gate_fee_eur_max).join(' ')}` : (gf>0?'pagato dal proprietario all’impianto':'pagato dall’impianto per il materiale')}</div></div>` : ''}
       <div class="kpi net"><div class="k">Margine (${data.anno_dismissione_min!=null
         ? (data.anno_dismissione_min===data.anno_dismissione_max ? data.anno_dismissione_min : `${data.anno_dismissione_min}–${data.anno_dismissione_max}`)
         : calcState.annoDismissione})</div><div class="v ${data.margine_eur>=0?'pos':'neg'}">${nv} <small>${nu}</small></div><div class="s">range ${eur(data.margine_eur_min).join(' ')} – ${eur(data.margine_eur_max).join(' ')}</div></div>
     </div>
-    <p class="sub" style="margin-top:8px">Margine = ricavi dai prodotti${gf ? ' + gate fee' : ''} − costi (capex, opex, smaltimento). Capex, opex e gate fee sono calcolati sulla massa totale dei macrocomponenti consegnati.</p>
+    <p class="sub" style="margin-top:8px">Margine = ricavi dai prodotti${gf ? ' + gate fee' : ''} − costi (capex, opex, smaltimento); il range del margine combina ricavi e gate fee minimi con i minimi e massimi con i massimi. Capex, opex e gate fee sono calcolati sulla massa totale dei macrocomponenti consegnati. Costi, gate fee e ricavi sono espressi all'anno di trattamento: i prezzi di oggi sono rivalutati con l'indice dei costi (×${fmt(data.fattore_rivalutazione_costi||1,3)}).</p>
   </div>`;
 }
 
@@ -2230,8 +2268,9 @@ async function renderDbSection(tableKey){
         </div>
       </div>
       ${vuoti ? `<p class="db-note" style="color:var(--red);font-weight:600">${vuoti} ${vuoti===1?nomeM:nomeM.slice(0,-1)+'i'} senza trasformazioni: non ${vuoti===1?'compare':'compaiono'} nel calcolo finché non si aggiungono le righe.</p>` : ''}
-      <div class="db-table-wrap">
-        <table class="dbtable">
+      <div class="ridim-bar" id="dbRidim"></div>
+      <div class="db-table-wrap" style="max-height:72vh">
+        <table class="dbtable" id="dbTable">
           <thead><tr>${cfg.columns.map(c=>`<th>${c.label}</th>`).join('')}${det?'<th>Trasformazioni</th>':''}<th></th></tr></thead>
           <tbody id="dbBody"></tbody>
           <tfoot><tr class="newrow"></tr></tfoot>
@@ -2256,10 +2295,85 @@ async function renderDbSection(tableKey){
   };
   let tmr; document.getElementById('dbFilter').oninput = ()=>{ clearTimeout(tmr); tmr=setTimeout(draw, 200); };
   draw();
+  rendiRidimensionabile(document.getElementById('dbTable'), tableKey, cfg.columns, det ? [100, 40] : [40],
+                        document.getElementById('dbRidim'));
   // nuovo processo/sottoprocesso: si chiedono subito le trasformazioni
   renderNewRowForm(tableKey, document.querySelector('#main tfoot tr'), reload, {}, det ? 1 : 0,
                    det ? rec=>openDetail(tableKey, rec, true) : null);
   document.getElementById('btnExportThis').onclick = ()=>exportTables([cfg.dbTable]);
+}
+
+// ---- colonne ridimensionabili delle tabelle del database ----
+// Larghezze in un <colgroup>, ricordate per tabella nel browser (localStorage, se disponibile).
+// Trascina il bordo destro di un'intestazione; doppio clic = larghezza iniziale.
+// "Adatta colonne" stringe tutte le colonne in proporzione alla larghezza disponibile.
+const COLW_MIN = 44;
+function colwDefault(col){
+  if(!col) return 40;
+  if(col.auto) return 70;
+  if(col.type==='number'||col.type==='percent') return 100;
+  if(col.type==='select') return 120;
+  if(col.type==='prodotto-select'||col.type==='intermedio-select'||col.type==='scarto-select') return 170;
+  return 160;
+}
+function colwLeggi(chiave){ try{ return JSON.parse(localStorage.getItem('mactee_colw_'+chiave)||'null'); }catch(e){ return null; } }
+function colwSalva(chiave, w){ try{ localStorage.setItem('mactee_colw_'+chiave, JSON.stringify(w)); }catch(e){} }
+function colwCancella(chiave){ try{ localStorage.removeItem('mactee_colw_'+chiave); }catch(e){} }
+// table: <table class="dbtable">; chiave: nome per ricordare le larghezze; cols: colonne visibili;
+// extra: larghezze delle colonne in piu' in fondo (es. "Trasformazioni" e il pulsante elimina);
+// barra: elemento per i pulsanti "Adatta colonne" e "Larghezze iniziali"
+function rendiRidimensionabile(table, chiave, cols, extra=[], barra=null){
+  const ths = [...table.querySelectorAll('thead th')];
+  const iniziali = ths.map((th,i)=> i<cols.length ? colwDefault(cols[i]) : (extra[i-cols.length] ?? 40));
+  const salvate = colwLeggi(chiave);
+  let w = (salvate && salvate.length===ths.length) ? salvate : iniziali.slice();
+  table.querySelector('colgroup')?.remove();
+  const cg = document.createElement('colgroup');
+  ths.forEach(()=>cg.appendChild(document.createElement('col')));
+  table.insertBefore(cg, table.firstChild);
+  table.classList.add('ridim');
+  const applica = ()=>{
+    [...cg.children].forEach((c,i)=>{ c.style.width = w[i]+'px'; });
+    table.style.width = w.reduce((a,b)=>a+b,0)+'px';
+  };
+  applica();
+  ths.forEach((th,i)=>{
+    th.title = th.textContent.trim();
+    if(i===ths.length-1 && !th.textContent.trim()) return;   // ultima colonna dei pulsanti: fissa
+    const g = document.createElement('span');
+    g.className = 'col-grip';
+    g.title = 'Trascina per allargare o stringere · doppio clic: larghezza iniziale';
+    th.appendChild(g);
+    g.addEventListener('mousedown', e=>{
+      e.preventDefault(); e.stopPropagation();
+      const x0 = e.clientX, w0 = w[i];
+      g.classList.add('on'); document.body.classList.add('col-resizing');
+      const muovi = ev=>{ w[i] = Math.max(COLW_MIN, Math.round(w0 + ev.clientX - x0)); applica(); };
+      const fine = ()=>{ g.classList.remove('on'); document.body.classList.remove('col-resizing');
+        document.removeEventListener('mousemove', muovi); document.removeEventListener('mouseup', fine); colwSalva(chiave, w); };
+      document.addEventListener('mousemove', muovi); document.addEventListener('mouseup', fine);
+    });
+    g.addEventListener('dblclick', e=>{ e.stopPropagation(); w[i] = iniziali[i]; applica(); colwSalva(chiave, w); });
+  });
+  if(barra){
+    barra.innerHTML = '<button class="btn" type="button" data-adatta title="Stringe tutte le colonne in proporzione per farle entrare nella larghezza della pagina">↔ Adatta colonne</button>'
+      + '<button class="btn" type="button" data-iniziali title="Torna alle larghezze iniziali di questa tabella">Larghezze iniziali</button>';
+    barra.querySelector('[data-adatta]').onclick = ()=>{
+      const disp = table.parentElement.clientWidth - 2, tot = w.reduce((a,b)=>a+b,0);
+      if(tot <= disp) return;
+      const k = disp / tot;
+      w = w.map(x=>Math.max(COLW_MIN, Math.floor(x*k)));
+      // i minimi possono lasciare qualche pixel in eccesso: si toglie dalle colonne piu' larghe
+      let ecc = w.reduce((a,b)=>a+b,0) - disp;
+      while(ecc > 0){
+        const i = w.indexOf(Math.max(...w));
+        if(w[i] <= COLW_MIN) break;
+        const d = Math.min(ecc, w[i] - COLW_MIN, 10); w[i] -= d; ecc -= d;
+      }
+      applica(); colwSalva(chiave, w);
+    };
+    barra.querySelector('[data-iniziali]').onclick = ()=>{ w = iniziali.slice(); applica(); colwCancella(chiave); };
+  }
 }
 
 // colonne mostrate e salvate: quelle "fixed" (es. id_processo nella finestra delle trasformazioni) sono nascoste
@@ -2404,8 +2518,9 @@ async function openDetail(masterKey, master, nuovo){
     ${nuovo ? `<p class="db-note" style="color:var(--green);font-weight:600">${nome[0].toUpperCase()+nome.slice(1)} creato. Inserire ora le trasformazioni:
       ${masterKey==='processi' ? 'per ogni materiale in ingresso una riga per ciascuna uscita (prodotto, impurità, scarto o intermedio)' : 'una riga per ciascuna uscita'}, con le tre rese.
       Finché non ha righe il ${nome} non compare nel calcolo.</p>` : ''}
+    <div class="ridim-bar detRidim"></div>
     <div class="db-table-wrap" style="max-height:55vh">
-      <table class="dbtable">
+      <table class="dbtable detTable">
         <thead><tr>${visibleCols(dcfg, fixed).map(c=>`<th>${c.label}</th>`).join('')}<th></th></tr></thead>
         <tbody class="detBody"></tbody>
         <tfoot><tr class="newrow detNew"></tr></tfoot>
@@ -2430,6 +2545,7 @@ async function openDetail(masterKey, master, nuovo){
   };
   await draw();
   renderNewRowForm(dkey, ov.querySelector('.detNew'), draw, fixed);
+  rendiRidimensionabile(ov.querySelector('.detTable'), dkey, visibleCols(dcfg, fixed), [40], ov.querySelector('.detRidim'));
   // alla chiusura si aggiorna il conteggio delle righe nella tabella dei processi
   const chiudi = ()=>{ ov.remove(); if(section===masterKey) renderDbSection(masterKey); };
   ov.querySelector('.detClose').onclick = chiudi;

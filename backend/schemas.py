@@ -50,8 +50,6 @@ class Prodotto(BaseModel):
     elemento_confronto: str | None = None
     parametro_equivalenza: float | None = Field(default=None, gt=0)
     prezzo_attuale_eur_kg: float = Field(ge=0)
-    proiezione_prezzo_p1: float = Field(ge=0, le=1)
-    proiezione_prezzo_p2: float = Field(ge=0, le=1)
 
     @field_validator("formula_chimica", "elemento_confronto", mode="before")
     @classmethod
@@ -238,12 +236,28 @@ class Processo(_Testata):
     macro_componente: str
     # v10.4: EUR per t di macrocomponente consegnato, con segno (> 0 il proprietario paga l'impianto)
     gate_fee_eur_ton: float = 0.0
+    # v10.7: campo di variazione del gate fee (vuoto = uguale al centrale)
+    gate_fee_eur_ton_min: float | None = None
+    gate_fee_eur_ton_max: float | None = None
 
     @field_validator("gate_fee_eur_ton", mode="before")
     @classmethod
     def _gf(cls, v):
         v = _vuoto_a_none(v)
         return 0.0 if v is None else v
+
+    @field_validator("gate_fee_eur_ton_min", "gate_fee_eur_ton_max", mode="before")
+    @classmethod
+    def _gf_mm(cls, v):
+        return _vuoto_a_none(v)
+
+    @model_validator(mode="after")
+    def _gf_intervallo(self):
+        if self.gate_fee_eur_ton_min is not None and self.gate_fee_eur_ton_min > self.gate_fee_eur_ton:
+            raise ValueError("gate_fee_eur_ton_min deve essere <= gate_fee_eur_ton")
+        if self.gate_fee_eur_ton_max is not None and self.gate_fee_eur_ton_max < self.gate_fee_eur_ton:
+            raise ValueError("gate_fee_eur_ton_max deve essere >= gate_fee_eur_ton")
+        return self
 
     @field_validator("sotto_tecnologia", mode="before")
     @classmethod

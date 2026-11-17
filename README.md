@@ -112,6 +112,24 @@ successivo; righe ripetute nel foglio: vale l'ultima. Per cambiare un campo chia
 si cancella la riga vecchia e se ne crea una nuova. La migrazione v10.5 (`db/migrazione_v10_5_trasformazioni_uniche.sql`)
 impedisce nel database due trasformazioni con gli stessi campi chiave.
 
+Migrazione v10.8: `db/migrazione_v10_8_prodotti_senza_crescita.sql` toglie da `db_prodotti` le colonne di
+crescita del prezzo P1/P2, non usate nel calcolo (gli intermedi le conservano).
+
+Tabelle del database nella dashboard: le colonne si allargano o stringono trascinando il bordo destro
+dell'intestazione (doppio clic = larghezza iniziale); "Adatta colonne" le fa entrare tutte nella larghezza della
+pagina, "Larghezze iniziali" le ripristina. Le larghezze sono ricordate per tabella nel browser.
+
+Migrazione v10.7 (campo di variazione del gate fee): `db/migrazione_v10_7_gate_fee_min_max.sql` aggiunge
+`gate_fee_eur_ton_min` e `gate_fee_eur_ton_max` (vuoti = uguali al gate fee; vincolo minimo ≤ centrale ≤ massimo).
+Il margine minimo usa ricavi minimi e gate fee minimo, il massimo ricavi massimi e gate fee massimo; nella
+pagina del calcolo i tre valori si modificano per la singola simulazione.
+
+Rivalutazione all'anno di trattamento (v10.6): costi (capex, opex, smaltimento), gate fee e ricavi sono espressi
+all'anno di dismissione, che è l'anno in cui il macrocomponente viene trattato. I prezzi dei prodotti e degli
+intermedi (del database o scritti a mano nella simulazione) sono prezzi di oggi e vengono rivalutati con lo
+stesso indice dei costi scelto nel menu (ISTAT di default); lo stesso vale per il prezzo d'acquisto
+dell'intermedio. Le colonne di crescita P1/P2 dei prodotti non sono usate nel calcolo.
+
 ## Cruscotto territoriale
 
 Nella sezione Calcolo economico il pulsante "Cruscotto" (tra "Da impianto" e "Intermedio acquistato")
