@@ -2426,7 +2426,7 @@ function chooseImportModeHtml(){
     <div style="display:flex;flex-direction:column;gap:10px;margin:14px 0">
       <button class="btn primary" id="btnModeAppend" style="text-align:left;padding:13px 15px;white-space:normal">
         <div style="font-weight:700">Aggiungi / Aggiorna</div>
-        <div style="font-weight:400;font-size:11.5px;color:rgba(255,255,255,.85);margin-top:3px">Le righe con la stessa chiave vengono aggiornate, le altre vengono aggiunte in coda. Non cancella nulla di esistente.</div>
+        <div style="font-weight:400;font-size:11.5px;color:rgba(255,255,255,.85);margin-top:3px">Le righe con la stessa chiave vengono aggiornate solo se cambia almeno un valore, le altre vengono aggiunte in coda. Non cancella nulla di esistente.</div>
       </button>
       <button class="btn" id="btnModeReplace" style="text-align:left;padding:13px 15px;white-space:normal;border-color:var(--red);color:var(--red)">
         <div style="font-weight:700">Sostituisci tutto</div>
@@ -2451,6 +2451,8 @@ function renderImportReport(payload, committed, replace){
         <span>
           <span class="modal-badge ok">${v.creati} creati</span>
           <span class="modal-badge ok">${v.aggiornati} aggiornati</span>
+          ${v.invariati!=null?`<span class="modal-badge" title="Righe uguali a quelle già nel database: non vengono riscritte">${v.invariati} invariati</span>`:''}
+          ${v.duplicati?`<span class="modal-badge warn" title="Chiave ripetuta nel foglio: vale l'ultima riga">${v.duplicati} chiavi ripetute</span>`:''}
           ${v.errori.length?`<span class="modal-badge warn">${v.errori.length} errori</span>`:''}
         </span>
       </div>

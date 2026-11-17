@@ -177,11 +177,18 @@ def import_workbook(file_bytes: bytes, dry_run: bool = False, replace: bool = Fa
     # Tutto l'import usa una sola connessione e una sola transazione e scrive a blocchi:
     # con il database in rete (Neon) ogni scambio costa decine di millisecondi, e la
     # vecchia scrittura riga per riga (3-4 scambi a riga) superava il tempo massimo.
+    # Anteprima (dry_run): l'import si esegue davvero dentro un savepoint che alla fine si
+    # annulla, cosi' i conteggi (creati, aggiornati, invariati, errori del database) sono
+    # quelli reali e nel database non resta nulla.
     from db import ENGINE
     with ENGINE.begin() as conn:
         cur = conn.connection.cursor()
-        if replace and not dry_run:
-            report["_cancellati"] = _svuota_tabelle(cur)
+        if dry_run:
+            cur.execute("SAVEPOINT anteprima")
+        if replace:
+            cancellati = _svuota_tabelle(cur)
+            if not dry_run:
+                report["_cancellati"] = cancellati
 
         for table in IMPORT_ORDER:
             if table not in sheets_by_table:
@@ -198,34 +205,21 @@ def import_workbook(file_bytes: bytes, dry_run: bool = False, replace: bool = Fa
                     validi.append((i, model(**clean).model_dump()))
                 except Exception as e:  # noqa: BLE001
                     errors.append(f"riga {i}: {e}")
-            if table in CON_SCARTO and not dry_run:
+            if table in CON_SCARTO:
                 validi = _normalizza_scarti(cur, validi)
 
-            # chiave auto-generata (es. "id" seriale) lasciata vuota nel foglio: si crea sempre.
-            # In modalita' "sostituisci tutto" ogni riga e' una creazione (la cancellazione
-            # avviene prima, o e' simulata in anteprima).
-            esistenti = set() if replace else _chiavi_esistenti(cur, table)
-            visti = set()
-            esito = {}   # numero riga -> "c" (creata) / "u" (aggiornata)
-            for i, data in validi:
-                if any(data.get(k) is None for k in cfg["pk"]):
-                    esito[i] = "c"
-                    continue
-                chiave = tuple(str(data[k]) for k in cfg["pk"])
-                esito[i] = "u" if (chiave in esistenti or chiave in visti) else "c"
-                visti.add(chiave)
-            if not dry_run:
-                falliti, errori_db = _scrivi(cur, table, validi)
-                errors += errori_db
-                for i in falliti:
-                    esito.pop(i, None)
-            created = sum(1 for v in esito.values() if v == "c")
-            updated = len(esito) - created
-            report[table] = {"creati": created, "aggiornati": updated, "errori": errors,
+            # esito di ogni riga: "c" creata, "u" aggiornata (almeno un valore diverso),
+            # "=" invariata (nessuna scrittura), "d" chiave ripetuta nel foglio (vale l'ultima)
+            esito, errori_db = _scrivi(cur, table, validi)
+            errors += errori_db
+            conta = {s: sum(1 for v in esito.values() if v == s) for s in ("c", "u", "=", "d")}
+            report[table] = {"creati": conta["c"], "aggiornati": conta["u"], "invariati": conta["="],
+                             "duplicati": conta["d"], "errori": errors,
                              "totale_foglio": len(sheets_by_table[table])}
 
-        if not dry_run:
-            _riallinea_sequenze(cur)
+        _riallinea_sequenze(cur)
+        if dry_run:
+            cur.execute("ROLLBACK TO SAVEPOINT anteprima")
     return report
 
 
@@ -260,13 +254,6 @@ def _svuota_tabelle(cur) -> dict[str, int]:
     return counts
 
 
-def _chiavi_esistenti(cur, table: str) -> set:
-    from db import SCHEMA
-    pk = crud.TABLES[table]["pk"]
-    cur.execute(f"SELECT {','.join(pk)} FROM {SCHEMA}.{table}")
-    return {tuple(str(v) for v in r) for r in cur.fetchall()}
-
-
 def _normalizza_scarti(cur, validi: list) -> list:
     """Come crud.normalizza_scarto, ma per tutte le righe insieme: lo scarto citato si aggancia
     (maiuscole/minuscole indifferenti) a quello esistente, altrimenti si crea con costo 0."""
@@ -288,51 +275,74 @@ def _normalizza_scarti(cur, validi: list) -> list:
     return out
 
 
-def _scrivi(cur, table: str, validi: list, blocco: int = 1000) -> tuple[list[int], list[str]]:
-    """Inserisce o aggiorna (upsert sulla chiave primaria) a blocchi. Se il database rifiuta
-    un blocco, quel blocco viene ripreso riga per riga per indicare le righe con errore."""
+def _scrivi(cur, table: str, validi: list, blocco: int = 1000) -> tuple[dict, list[str]]:
+    """Inserisce o aggiorna (upsert sulla chiave primaria) a blocchi, scrivendo solo cio' che cambia:
+    una riga esistente si aggiorna solo se almeno una colonna e' diversa (IS DISTINCT FROM, con i
+    valori gia' convertiti al tipo della colonna, quindi arrotondati alla sua precisione).
+    Le righe scritte tornano con RETURNING: (xmax = 0) vero = creata, falso = aggiornata; le righe
+    con chiave esistente che non tornano sono invariate.
+    Se il database rifiuta un blocco, quel blocco viene ripreso riga per riga per indicare le
+    righe con errore. Restituisce ({numero riga: "c"/"u"/"="/"d"}, errori)."""
     from psycopg2.extras import execute_values
     from db import SCHEMA
     cfg = crud.TABLES[table]
     pk = cfg["pk"]
-    errori, falliti = [], []
+    errori, esito = [], {}
     # righe con chiave: l'ultima occorrenza di una chiave ripetuta vince (come gli aggiornamenti in sequenza)
     con_chiave, senza_chiave = {}, []
     for i, data in validi:
         if any(data.get(k) is None for k in pk):
             senza_chiave.append((i, data))
         else:
-            con_chiave[tuple(str(data[k]) for k in pk)] = (i, data)
+            k = tuple(str(data[c]) for c in pk)
+            if k in con_chiave:
+                esito[con_chiave[k][0]] = "d"
+            con_chiave[k] = (i, data)
 
-    gruppi = []
     altre = [c for c in cfg["columns"] if c not in pk]
-    set_sql = ", ".join(f"{c}=EXCLUDED.{c}" for c in altre)
-    gruppi.append((list(con_chiave.values()), cfg["columns"],
-                   f" ON CONFLICT ({','.join(pk)}) DO " + (f"UPDATE SET {set_sql}" if altre else "NOTHING")))
-    gruppi.append((senza_chiave, [c for c in cfg["columns"] if c not in pk], ""))
+    if altre:
+        set_sql = ", ".join(f"{c}=EXCLUDED.{c}" for c in altre)
+        diverso = (f"({', '.join('t.' + c for c in altre)}) IS DISTINCT FROM "
+                   f"({', '.join('EXCLUDED.' + c for c in altre)})")
+        coda_upsert = f" ON CONFLICT ({','.join(pk)}) DO UPDATE SET {set_sql} WHERE {diverso}"
+    else:
+        coda_upsert = f" ON CONFLICT ({','.join(pk)}) DO NOTHING"
+    ritorno = f" RETURNING (xmax = 0), {','.join(pk)}"
+    gruppi = [(list(con_chiave.values()), cfg["columns"], coda_upsert + ritorno, True),
+              (senza_chiave, altre, ritorno, False)]
 
-    for righe, colonne, coda in gruppi:
-        sql = f"INSERT INTO {SCHEMA}.{table} ({','.join(colonne)}) VALUES %s{coda}"
+    def segna(parte, risultato, con_k):
+        if not con_k:
+            for i, _ in parte:
+                esito[i] = "c"
+            return
+        scritti = {tuple(str(v) for v in r[1:]): ("c" if r[0] else "u") for r in risultato}
+        for i, d in parte:
+            esito[i] = scritti.get(tuple(str(d[c]) for c in pk), "=")
+
+    for righe, colonne, coda, con_k in gruppi:
+        sql = f"INSERT INTO {SCHEMA}.{table} AS t ({','.join(colonne)}) VALUES %s{coda}"
         for s in range(0, len(righe), blocco):
             parte = righe[s:s + blocco]
             valori = [tuple(d.get(c) for c in colonne) for _, d in parte]
             cur.execute("SAVEPOINT blocco")
             try:
-                execute_values(cur, sql, valori, page_size=blocco)
+                risultato = execute_values(cur, sql, valori, page_size=blocco, fetch=True)
                 cur.execute("RELEASE SAVEPOINT blocco")
+                segna(parte, risultato, con_k)
                 continue
             except Exception:  # noqa: BLE001
                 cur.execute("ROLLBACK TO SAVEPOINT blocco")
-            for (i, _), v in zip(parte, valori):
+            for riga, v in zip(parte, valori):
                 cur.execute("SAVEPOINT riga")
                 try:
-                    execute_values(cur, sql, [v])
+                    risultato = execute_values(cur, sql, [v], fetch=True)
                     cur.execute("RELEASE SAVEPOINT riga")
+                    segna([riga], risultato, con_k)
                 except Exception as e:  # noqa: BLE001
                     cur.execute("ROLLBACK TO SAVEPOINT riga")
-                    falliti.append(i)
-                    errori.append(f"riga {i}: " + " ".join(str(e).strip().splitlines()[:2]))
-    return falliti, errori
+                    errori.append(f"riga {riga[0]}: " + " ".join(str(e).strip().splitlines()[:2]))
+    return esito, errori
 
 
 def _riallinea_sequenze(cur):
