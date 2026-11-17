@@ -484,12 +484,14 @@ const RECUPERO_COLS = [
 // dati del processo nel suo insieme (v10: una riga per processo, le trasformazioni a parte)
 const TESTATA_COLS = [
   {key:'tecnica',label:'Tecnica',type:'text'},
-  {key:'capex_eur_ton',label:'Capex € per t/anno di capacità',type:'number',step:10},
+  {key:'capex_eur_ton',label:'Capex € per t/anno di capacità (intensità di investimento)',type:'number',step:10},
   {key:'opex_eur_ton',label:'Opex €/t trattata',type:'number',step:10},
   {key:'descrizione_fasi',label:'Fasi',type:'text',nullable:true},
-  {key:'taglia_riferimento_t_anno',label:'Taglia di riferimento t/anno (vuota = capex lineare)',type:'number',step:100,nullable:true},
+  {key:'taglia_riferimento_t_anno',label:'Taglia di riferimento t/anno (taglia proposta; vuota = capex lineare)',type:'number',step:100,nullable:true},
   {key:'esponente_scala',label:'Esponente di scala capex',type:'number',step:0.05},
   {key:'vita_utile_anni',label:'Vita utile impianto (anni)',type:'number',step:1},
+  {key:'tasso_sconto',label:'Tasso di sconto del CRF',type:'percent',step:0.5},
+  {key:'taglia_minima_t_anno',label:'Soglia economica della taglia t/anno (vuota = nessun avviso)',type:'number',step:100,nullable:true},
 ];
 const USCITA_DEFAULTS = {tipo_output:'prodotto',prodotto:'Fe',intermedio_output:null,scarto:null,
   recupero_pct_min:0.9,recupero_pct:0.9,recupero_pct_max:0.9,reagente:null};
@@ -592,7 +594,7 @@ const TABLES = {
       {key:'macro_componente',label:'Macrocomponente',type:'text'},
       ...TESTATA_COLS,
     ],
-    defaults:()=>({id_processo:'',tipologia:'EOLICO',sotto_tecnologia:null,macro_componente:'',tecnica:'',capex_eur_ton:100,opex_eur_ton:200,descrizione_fasi:'',taglia_riferimento_t_anno:null,esponente_scala:0.6,vita_utile_anni:15}),
+    defaults:()=>({id_processo:'',tipologia:'EOLICO',sotto_tecnologia:null,macro_componente:'',tecnica:'',capex_eur_ton:100,opex_eur_ton:200,descrizione_fasi:'',taglia_riferimento_t_anno:null,esponente_scala:0.6,vita_utile_anni:15,tasso_sconto:0.08,taglia_minima_t_anno:null}),
   },
   processiTrasf: { url:'processi-trasformazioni', dbTable:'db_processi_trasformazioni', label:'Trasformazioni dei processi (materiale → uscita)', pk:['id'],
     fk:'id_processo', master:'processi',
@@ -623,7 +625,7 @@ const TABLES = {
       {key:'intermedio',label:'Input (intermedio)',type:'intermedio-select'},
       ...TESTATA_COLS,
     ],
-    defaults:()=>({id_sottoprocesso:'',intermedio:intermediAllCache[0]?.intermedio||'',tecnica:'',capex_eur_ton:1000,opex_eur_ton:1000,descrizione_fasi:'',taglia_riferimento_t_anno:null,esponente_scala:0.6,vita_utile_anni:15}),
+    defaults:()=>({id_sottoprocesso:'',intermedio:intermediAllCache[0]?.intermedio||'',tecnica:'',capex_eur_ton:1000,opex_eur_ton:1000,descrizione_fasi:'',taglia_riferimento_t_anno:null,esponente_scala:0.6,vita_utile_anni:15,tasso_sconto:0.08,taglia_minima_t_anno:null}),
   },
   sottoprocessiTrasf: { url:'sottoprocessi-trasformazioni', dbTable:'db_sottoprocessi_trasformazioni', label:'Trasformazioni dei sottoprocessi (intermedio → uscita)', pk:['id'],
     fk:'id_sottoprocesso', master:'sottoprocessi',
@@ -1131,7 +1133,8 @@ async function renderCalcoloMain(){
   if(myId!==calcRequestId) return;
   lastCalc = data;
   lastCalcBody = body;   // riusato dall'export del bilancio di massa
-  // taglia non scritta: la prima proposta (tratta la massa in 1 anno) resta fissa per la corsia,
+  // taglia non scritta: la prima proposta (taglia di riferimento, o senza riferimento la massa
+  // trattata in 1 anno) resta fissa per la corsia,
   // cosi' aggiungendo o togliendo impianti cambia il tempo di trattamento, non l'impianto
   (data.componenti||[]).forEach(cd=>{
     const c = s.componenti[cdKey(cd)];
@@ -1231,16 +1234,30 @@ function renderLane(cd){
   </div>${bilancioHtml(cd.bilancio)}</div>`;
 }
 
-// ---- taglia dell'impianto e capex (v9.1) ----
+// ---- taglia dell'impianto e capex (v9.1, CRF dalla v10.3) ----
 // capex impianto = capex specifico (EUR per t/anno) x taglia; tempo = massa / taglia;
-// al materiale va la quota d'uso = capex impianto x tempo / vita utile
+// al materiale va la quota d'uso = capex impianto x tempo x CRF (tasso di sconto, vita utile)
 const anniStr = a => a>=1 ? `${fmt(a, a<10?2:1)} anni` : `${fmt(a*12, 1)} mesi`;
+const tagliaPropostaTxt = p => p.taglia_riferimento_t_anno
+  ? `taglia di riferimento ${fmt(p.taglia_riferimento_t_anno,0)} t/anno`
+  : `tratta la massa in 1 anno: ${fmt(p.taglia_proposta_t_anno,0)} t/anno`;
+// CRF e avvisi sulla taglia (sotto la soglia economica, tempo oltre la vita utile)
+function crfTxt(p){
+  return p.crf==null ? `su ${fmt(p.vita_utile_anni,0)} anni di vita`
+    : `tempo × CRF ${fmt(p.crf,4)} (${fmt((p.tasso_sconto||0)*100,1)} %, ${fmt(p.vita_utile_anni,0)} anni)`;
+}
+function tagliaAvvisiHtml(p){
+  const a = [];
+  if(p.sotto_soglia) a.push(`taglia sotto la soglia economica (${fmt(p.taglia_minima_t_anno,0)} t/anno)`);
+  if(p.oltre_vita_utile) a.push(`tempo di trattamento oltre la vita utile (${fmt(p.vita_utile_anni,0)} anni)`);
+  return a.length ? `<div class="taglia-nota" style="color:var(--danger,#b42318)">⚠ ${a.join(' · ')}</div>` : '';
+}
 function tagliaHtml(lane, p, modificabile){
   if(p.taglia_t_anno==null) return '';
   return `<div class="taglia-box">
     <div class="taglia-row">Taglia impianto
       ${modificabile ? `<input type="number" class="inp-taglia" data-lane="${escAttr(lane)}" min="1" step="100"
-         value="${Math.round(p.taglia_t_anno)}" title="t/anno trattabili. Vuoto = proposta (tratta la massa in 1 anno): ${fmt(p.taglia_proposta_t_anno,0)} t/anno">`
+         value="${Math.round(p.taglia_t_anno)}" title="t/anno trattabili. Vuoto = proposta (${tagliaPropostaTxt(p)})">`
         : `<b>${fmt(p.taglia_t_anno,0)}</b>`} t/anno</div>
     ${modificabile ? `<div class="taglia-row" style="margin-top:5px">Anno di costruzione
       <input type="number" class="inp-anno-costr" data-lane="${escAttr(lane)}" min="${ANNO_CORRENTE}" max="2100" step="1"
@@ -1248,9 +1265,11 @@ function tagliaHtml(lane, p, modificabile){
     <div class="taglia-kv">
       <span>tempo di trattamento</span><b>${anniStr(p.tempo_anni)}</b>
       <span>capex impianto${p.anno_costruzione ? ` (prezzi ${p.anno_costruzione})` : ''}</span><b>${eur(p.capex_impianto_eur).join(' ')}</b>
-      <span>quota d'uso (su ${fmt(p.vita_utile_anni,0)} anni di vita)</span><b>${fmt(p.quota_uso*100, p.quota_uso<0.1?2:1)} %</b>
+      <span>quota d'uso (${crfTxt(p)})</span><b>${fmt(p.quota_uso*100, p.quota_uso<0.1?2:1)} %</b>
+      ${p.capex_eur_t_trattata!=null ? `<span>capex per t trattata</span><b>${fmt(p.capex_eur_t_trattata,0)} €/t</b>` : ''}
     </div>
-    <div class="taglia-nota">${fmt(p.capex_eur_ton,0)} €/(t/anno) × taglia${p.regola_scala==='0,6' ? ` · regola dello ${fmt(p.esponente_scala,1)} rispetto a ${fmt(p.taglia_riferimento_t_anno,0)} t/anno` : ' (lineare)'}${modificabile && calcState.componenti[lane]?.tagliaProposta ? ' · taglia proposta alla scelta del processo (tratta in 1 anno la massa di quel momento)' : ''}</div>
+    <div class="taglia-nota">${fmt(p.capex_eur_ton,0)} €/(t/anno) × taglia${p.regola_scala==='0,6' ? ` · regola dello ${fmt(p.esponente_scala,1)} rispetto a ${fmt(p.taglia_riferimento_t_anno,0)} t/anno` : ' (lineare)'}${modificabile && calcState.componenti[lane]?.tagliaProposta ? ` · taglia proposta alla scelta del processo (${p.taglia_riferimento_t_anno ? 'taglia di riferimento' : 'tratta in 1 anno la massa di quel momento'})` : ''}</div>
+    ${tagliaAvvisiHtml(p)}
   </div>`;
 }
 
@@ -1759,7 +1778,8 @@ function renderSchemaDiretto(data, d){
           <input type="number" id="inpTagliaDiretto" min="0.1" step="1" value="${Math.round(sp.taglia_t_anno*10)/10}"> t/anno</div>
           <div class="taglia-kv"><span>tempo di trattamento</span><b>${anniStr(sp.tempo_anni)}</b>
           <span>capex impianto</span><b>${eur(sp.capex_impianto_eur).join(' ')}</b>
-          <span>quota d'uso (su ${fmt(sp.vita_utile_anni,0)} anni)</span><b>${fmt(sp.quota_uso*100, sp.quota_uso<0.1?2:1)} %</b></div></div>
+          <span>quota d'uso (${crfTxt(sp)})</span><b>${fmt(sp.quota_uso*100, sp.quota_uso<0.1?2:1)} %</b>
+          <span>capex per t trattata</span><b>${fmt(sp.capex_eur_t_trattata,0)} €/t</b></div>${tagliaAvvisiHtml(sp)}</div>
         <div class="lane-node-cost">Capex attribuito ${eur(sp.capex_eur).join(' ')} · Opex ${eur(sp.opex_eur).join(' ')}</div>
         <div class="lane-node-costo-tot">Costo: ${eur(sp.costo_eur).join(' ')}</div>
         ${reagentiNodeHtml(data.reagenti)}

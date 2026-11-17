@@ -214,17 +214,21 @@ class _Testata(BaseModel):
     taglia_riferimento_t_anno: float | None = Field(default=None, gt=0)   # vuota = capex lineare con la taglia
     esponente_scala: float = Field(default=0.6, gt=0, le=1)
     vita_utile_anni: float = Field(default=15, gt=0)
+    # v10.3: tasso di sconto del fattore di recupero del capitale (frazione) e soglia economica della taglia
+    tasso_sconto: float = Field(default=0.08, ge=0, lt=1)
+    taglia_minima_t_anno: float | None = Field(default=None, gt=0)   # vuota = nessun avviso
 
-    @field_validator("taglia_riferimento_t_anno", "descrizione_fasi", mode="before")
+    @field_validator("taglia_riferimento_t_anno", "taglia_minima_t_anno", "descrizione_fasi", mode="before")
     @classmethod
     def _tr(cls, v):
         return _vuoto_a_none(v)
 
-    @field_validator("esponente_scala", "vita_utile_anni", mode="before")
+    @field_validator("esponente_scala", "vita_utile_anni", "tasso_sconto", mode="before")
     @classmethod
     def _def(cls, v, info):
         v = _vuoto_a_none(v)
-        return v if v is not None else {"esponente_scala": 0.6, "vita_utile_anni": 15}[info.field_name]
+        return v if v is not None else {"esponente_scala": 0.6, "vita_utile_anni": 15,
+                                        "tasso_sconto": 0.08}[info.field_name]
 
 
 class Processo(_Testata):

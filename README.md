@@ -64,6 +64,28 @@ opex = (massa trattata − massa dei materiali con opex_spec) × opex_eur_ton + 
 Il capex non cambia. Se un materiale ha più righe basta compilarne una; con valori diversi vale la prima riga.
 I sottoprocessi non hanno questa colonna.
 
+Migrazione v10.3 (capex annualizzato con il fattore di recupero del capitale):
+`db/migrazione_v10_3_capex_crf.sql` aggiunge a `db_processi` e `db_sottoprocessi` le colonne
+`tasso_sconto` (predefinito 0,08) e `taglia_minima_t_anno` (soglia economica, vuota = nessun avviso);
+`db/dati_v10_3_capex.sql` (solo in locale, come gli altri dati) carica i valori nuovi. Il calcolo (`_capex_taglia` in `backend/calc.py`):
+
+```
+capex impianto   = capex_eur_ton × taglia_rif × (taglia / taglia_rif)^esponente × rivalutazione
+                   (senza taglia di riferimento: capex_eur_ton × taglia)
+quota d'uso      = (massa trattata / taglia) × CRF,   CRF = i (1 + i)^n / [(1 + i)^n − 1]
+capex attribuito = capex impianto × quota d'uso
+```
+
+`capex_eur_ton` è un'intensità di investimento (€ per t/anno di capacità). Se la taglia non è indicata
+si usa la taglia di riferimento (impianto unico che riceve il flusso di più impianti); senza taglia di
+riferimento, l'impianto che tratta la massa in un anno. Il calcolo segnala le taglie sotto la soglia
+economica e i tempi di trattamento oltre la vita utile.
+
+Valori caricati: BESS_LFP_IDROMET P1-P6 dalla nota sul capex dei processi LFP del 17/11/2026
+(Tabella 1, base "celle", 20 000 t/anno, soglia 6 500 t/anno); eolico, fotovoltaico e sottoprocessi
+riportati dai valori precedenti (costi per t trattata) dividendo per il CRF (8 %, 15 anni = 0,1168),
+con taglie di riferimento di eolico e fotovoltaico da verificare.
+
 ## Cruscotto territoriale
 
 Nella sezione Calcolo economico il pulsante "Cruscotto" (tra "Da impianto" e "Intermedio acquistato")

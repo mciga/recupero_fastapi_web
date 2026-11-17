@@ -783,32 +783,55 @@ def _opex_spec_ingressi(righe: list[dict], avvisi: list) -> dict:
     return out
 
 
-def _capex_taglia(riga: dict, taglia_t_anno, massa_t: float, fattore: float, anno_costruzione=None) -> dict:
-    """Capex dipendente dalla taglia dell'impianto (v9.1).
-    capex_eur_ton = capex specifico in EUR per t/anno di capacita'.
+def _crf(tasso: float, vita: float) -> float:
+    """Fattore di recupero del capitale: i (1+i)^n / [(1+i)^n - 1]; con i = 0 vale 1/n."""
+    if tasso <= EPS:
+        return 1.0 / vita
+    a = (1 + tasso) ** vita
+    return tasso * a / (a - 1)
+
+
+def _capex_taglia(riga: dict, taglia_t_anno, massa_t: float, fattore: float, anno_costruzione=None,
+                  taglia_senza_rif=None) -> dict:
+    """Capex dipendente dalla taglia dell'impianto (v9.1, annualizzazione con CRF dalla v10.3).
+    capex_eur_ton = intensita' di investimento in EUR per t/anno di capacita'.
       capex impianto = capex_eur_ton x taglia                              (lineare)
                      = capex_eur_ton x taglia_rif x (taglia/taglia_rif)^esp (regola dello 0,6, se c'e' taglia_rif)
       tempo          = massa trattata / taglia (anni)
-      capex attribuito al materiale = capex impianto x tempo / vita utile (quota d'uso)
-    Senza taglia indicata si propone l'impianto che tratta la massa in 1 anno.
+      CRF            = i (1+i)^n / [(1+i)^n - 1]   (i = tasso_sconto, n = vita utile)
+      capex attribuito al materiale = capex impianto x tempo x CRF (quota d'uso)
+    Taglia non indicata: la taglia di riferimento (impianto unico che riceve il flusso di piu'
+    impianti); senza taglia di riferimento, taglia_senza_rif o l'impianto che tratta la massa in 1 anno.
     fattore: rivalutazione all'anno di costruzione dell'impianto (uguale per tutto il gruppo:
     il costo dell'impianto non dipende da quali impianti lo alimentano)."""
     spec = float(riga.get("capex_eur_ton") or 0)
     rif = float(riga["taglia_riferimento_t_anno"]) if riga.get("taglia_riferimento_t_anno") else None
     esp = float(riga.get("esponente_scala") or 0.6)
     vita = float(riga.get("vita_utile_anni") or 15)
-    proposta = massa_t if massa_t > EPS else 1.0
+    tasso = float(riga["tasso_sconto"]) if riga.get("tasso_sconto") is not None else 0.08
+    minima = float(riga["taglia_minima_t_anno"]) if riga.get("taglia_minima_t_anno") else None
+    crf = _crf(tasso, vita)
+    if rif:
+        proposta = rif
+    elif taglia_senza_rif and float(taglia_senza_rif) > EPS:
+        proposta = float(taglia_senza_rif)
+    else:
+        proposta = massa_t if massa_t > EPS else 1.0
     impostata = bool(taglia_t_anno and float(taglia_t_anno) > 0)
     taglia = float(taglia_t_anno) if impostata else proposta
     base = spec * rif * (taglia / rif) ** esp if rif else spec * taglia
     impianto = base * fattore
     tempo = massa_t / taglia if taglia > EPS else 0.0
-    quota = tempo / vita
+    quota = tempo * crf
+    capex = impianto * quota
     return {"taglia_t_anno": taglia, "taglia_proposta_t_anno": proposta, "taglia_impostata": impostata,
             "taglia_riferimento_t_anno": rif, "esponente_scala": esp, "regola_scala": "0,6" if rif else "lineare",
-            "tempo_anni": tempo, "vita_utile_anni": vita, "quota_uso": quota,
+            "tempo_anni": tempo, "vita_utile_anni": vita, "tasso_sconto": tasso, "crf": crf, "quota_uso": quota,
+            "taglia_minima_t_anno": minima, "sotto_soglia": bool(minima and taglia < minima - EPS),
+            "oltre_vita_utile": tempo > vita + EPS,
             "anno_costruzione": anno_costruzione, "fattore_capex": fattore,
-            "capex_impianto_eur": impianto, "capex_eur": impianto * quota}
+            "capex_impianto_eur": impianto, "capex_eur": capex,
+            "capex_eur_t_trattata": capex / massa_t if massa_t > EPS else 0.0}
 
 
 def _valorizza_uscite(cache, uscite, prezzi_prodotti_override, prezzi_intermedi_override,
@@ -893,9 +916,11 @@ def calcola_ramo_sottoprocesso(cache: _Cache, intermedio: str, massa_in: list, c
                                id_sottoprocesso: str | None, fattore_rivalutazione: float,
                                prezzi_prodotti_override: dict | None, prezzi_intermedi_override: dict | None,
                                figli_scelte: dict | None, tempo_anni: float = 1.0,
-                               capex_anno: tuple | None = None) -> dict:
-    """tempo_anni: tempo in cui arriva l'intermedio (quello dell'impianto a monte): il
-    sottoprocesso e' dimensionato per trattarlo nello stesso tempo.
+                               capex_anno: tuple | None = None, taglia_t_anno: float | None = None) -> dict:
+    """tempo_anni: tempo in cui arriva l'intermedio (quello dell'impianto a monte): senza
+    taglia di riferimento il sottoprocesso e' dimensionato per trattarlo nello stesso tempo;
+    con la taglia di riferimento si usa quella (impianto unico, v10.3).
+    taglia_t_anno: taglia scelta a mano (intermedio acquistato).
     capex_anno: (anno di costruzione, fattore) dell'impianto a monte, usato anche qui;
     senza, il capex e' rivalutato come gli opex."""
     testa, righe = _testata_e_righe(cache.conn, "db_sottoprocessi", "id_sottoprocesso", id_sottoprocesso)
@@ -914,12 +939,13 @@ def calcola_ramo_sottoprocesso(cache: _Cache, intermedio: str, massa_in: list, c
     ton = massa_in[1] / 1000
     tempo = tempo_anni if tempo_anni and tempo_anni > EPS else 1.0
     anno_c, f_capex = capex_anno if capex_anno else (None, fattore_rivalutazione)
-    cx = _capex_taglia(righe[0], ton / tempo if ton > EPS else None, ton, f_capex, anno_c)
+    cx = _capex_taglia(righe[0], taglia_t_anno, ton, f_capex, anno_c,
+                       taglia_senza_rif=ton / tempo if ton > EPS else None)
     capex = cx["capex_eur"]
     opex = float(righe[0]["opex_eur_ton"]) * ton * fattore_rivalutazione
     lista, ricavo, costo_extra, ha_override = _valorizza_uscite(
         cache, uscite, prezzi_prodotti_override, prezzi_intermedi_override, figli_scelte, fattore_rivalutazione,
-        tempo_anni=tempo, capex_anno=capex_anno)
+        tempo_anni=cx["tempo_anni"] or tempo, capex_anno=capex_anno)
     scarti_l, costo_sm = _scarti_lista(cache, scarti, fattore_rivalutazione)
     return {
         "input": intermedio, **_tdict("massa_input_kg", massa_in), "composizione_input": _comp_lista(comp_in),
@@ -1152,7 +1178,7 @@ def calcola_da_intermedio(intermedio: str, massa_ton: float, id_sottoprocesso: s
         costo_acquisto = massa_kg * prezzo
         ramo = calcola_ramo_sottoprocesso(cache, intermedio, T(massa_kg), {ND: 1.0}, id_sottoprocesso, fattore,
                                           prezzi_prodotti_override, prezzi_intermedi_override, figli_sottoprocesso,
-                                          tempo)
+                                          tempo, taglia_t_anno=taglia_t_anno)
     if "error" in ramo:
         return ramo
     costo = costo_acquisto + ramo["costo_eur"]
