@@ -737,6 +737,7 @@ let calcState = { mode:'impianto', tipologia:'', sotto:'', impianti:[], macroSel
   annoOverride:null,      // null = anno di dismissione di ogni impianto; numero = stesso anno per tutti
   annoDismissione:2035,   // anno di riferimento della modalita' "intermedio acquistato"
   indiceCosti:'ISTAT',
+  indiceImpianti:'EDILIZIA',   // v10.9: costo degli impianti di trattamento all'anno di costruzione
   macroDisponibili:[],   // [{macro_componente, massa_kg, n_materiali, processi:[...], assiemi:[...], impianti:[...]}]
   separati:{},           // macro -> [assiemi trattati in una corsia separata]
   componenti:{},         // macro -> {processoOptions, idProcesso, figli}
@@ -873,6 +874,12 @@ async function renderCalcoloAside(){
       </select>
       <div class="chip">● Anno corrente ${ANNO_CORRENTE}</div>
     </div>
+    <div class="fgroup">
+      <div class="h">Indice costo impianti</div>
+      <select id="selIndiceImp" title="Rivaluta il costo dell'impianto di trattamento all'anno di costruzione; la quota d'uso si riporta poi all'anno di trattamento con l'indice dei costi">
+        ${indiciCache.map(i=>`<option value="${i.id_indice}" ${s.indiceImpianti===i.id_indice?'selected':''}>${i.nome} (${(i.tasso_annuo*100).toFixed(1)}%/anno)</option>`).join('')}
+      </select>
+    </div>
   `;
 
   bindModeToggle(s);
@@ -956,6 +963,8 @@ async function renderCalcoloAside(){
     renderCalcoloAside(); renderCalcoloMain();
   };
   document.getElementById('selIndice').onchange=e=>{s.indiceCosti=e.target.value;renderCalcoloMain();};
+  const selIndImp = document.getElementById('selIndiceImp');
+  if(selIndImp) selIndImp.onchange=e=>{s.indiceImpianti=e.target.value;renderCalcoloMain();};
 }
 
 // ---- menu a tendina della barra laterale (impianti, macrocomponenti) ----
@@ -1156,7 +1165,7 @@ async function renderCalcoloMain(){
   main.innerHTML = pathHtml + `<div class="empty-state">Calcolo in corso…</div>`;
   const body = {
     id_imps: s.impianti, anno_dismissione: s.annoOverride,
-    anno_corrente: ANNO_CORRENTE, id_indice_costi: s.indiceCosti,
+    anno_corrente: ANNO_CORRENTE, id_indice_costi: s.indiceCosti, id_indice_impianti: s.indiceImpianti,
     componenti: macros.map(k=>{
       const c = s.componenti[k];
       return {
@@ -1298,6 +1307,7 @@ function tagliaAvvisiHtml(p){
   const a = [];
   if(p.sotto_soglia) a.push(`taglia sotto la soglia economica (${fmt(p.taglia_minima_t_anno,0)} t/anno)`);
   if(p.oltre_vita_utile) a.push(`tempo di trattamento oltre la vita utile (${fmt(p.vita_utile_anni,0)} anni)`);
+  (p.avvisi_anni||[]).forEach(x=>a.push(x));
   return a.length ? `<div class="taglia-nota" style="color:var(--danger,#b42318)">⚠ ${a.join(' · ')}</div>` : '';
 }
 function tagliaHtml(lane, p, modificabile){
@@ -1314,6 +1324,7 @@ function tagliaHtml(lane, p, modificabile){
       <span>tempo di trattamento</span><b>${anniStr(p.tempo_anni)}</b>
       <span>capex impianto${p.anno_costruzione ? ` (prezzi ${p.anno_costruzione})` : ''}</span><b>${eur(p.capex_impianto_eur).join(' ')}</b>
       <span>quota d'uso (${crfTxt(p)})</span><b>${fmt(p.quota_uso*100, p.quota_uso<0.1?2:1)} %</b>
+      ${p.fattore_uso!=null && Math.abs(p.fattore_uso-1)>1e-6 ? `<span title="La quota d'uso si riporta dall'anno di costruzione dell'impianto all'anno di trattamento con l'indice dei costi, come opex, gate fee e ricavi">quota all'anno di trattamento</span><b>× ${fmt(p.fattore_uso,3)}</b>` : ''}
       ${p.capex_eur_t_trattata!=null ? `<span>capex per t in ingresso</span><b>${fmt(p.capex_eur_t_trattata,0)} €/t</b>` : ''}
     </div>
     <div class="taglia-nota">${fmt(p.capex_eur_ton,0)} €/(t/anno) × taglia${p.regola_scala==='0,6' ? ` · regola dello ${fmt(p.esponente_scala,1)} rispetto a ${fmt(p.taglia_riferimento_t_anno,0)} t/anno` : ' (lineare)'}${modificabile && calcState.componenti[lane]?.tagliaProposta ? ` · taglia proposta alla scelta del processo (${p.taglia_riferimento_t_anno ? 'taglia di riferimento' : 'tratta in 1 anno la massa di quel momento'})` : ''}</div>

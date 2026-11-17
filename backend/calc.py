@@ -792,7 +792,7 @@ def _crf(tasso: float, vita: float) -> float:
 
 
 def _capex_taglia(riga: dict, taglia_t_anno, massa_t: float, fattore: float, anno_costruzione=None,
-                  taglia_senza_rif=None) -> dict:
+                  taglia_senza_rif=None, fattore_uso: float = 1.0, avvisi_anni: list | None = None) -> dict:
     """Capex dipendente dalla taglia dell'impianto (v9.1, annualizzazione con CRF dalla v10.3).
     capex_eur_ton = intensita' di investimento in EUR per t/anno di capacita'.
       capex impianto = capex_eur_ton x taglia                              (lineare)
@@ -802,8 +802,11 @@ def _capex_taglia(riga: dict, taglia_t_anno, massa_t: float, fattore: float, ann
       capex attribuito al materiale = capex impianto x tempo x CRF (quota d'uso)
     Taglia non indicata: la taglia di riferimento (impianto unico che riceve il flusso di piu'
     impianti); senza taglia di riferimento, taglia_senza_rif o l'impianto che tratta la massa in 1 anno.
-    fattore: rivalutazione all'anno di costruzione dell'impianto (uguale per tutto il gruppo:
-    il costo dell'impianto non dipende da quali impianti lo alimentano)."""
+    fattore: rivalutazione del costo dell'impianto all'anno di costruzione con l'indice degli impianti
+    (uguale per tutto il gruppo: il costo dell'impianto non dipende da quali impianti lo alimentano).
+    fattore_uso (v10.9): riporta la quota d'uso dall'anno di costruzione all'anno di trattamento con
+    l'indice dei costi, cosi' il capex attribuito e' in euro dello stesso anno di opex, gate fee e ricavi:
+      capex attribuito = capex impianto (anno di costruzione) x tempo x CRF x fattore_uso"""
     spec = float(riga.get("capex_eur_ton") or 0)
     rif = float(riga["taglia_riferimento_t_anno"]) if riga.get("taglia_riferimento_t_anno") else None
     esp = float(riga.get("esponente_scala") or 0.6)
@@ -823,15 +826,35 @@ def _capex_taglia(riga: dict, taglia_t_anno, massa_t: float, fattore: float, ann
     impianto = base * fattore
     tempo = massa_t / taglia if taglia > EPS else 0.0
     quota = tempo * crf
-    capex = impianto * quota
+    capex = impianto * quota * fattore_uso
     return {"taglia_t_anno": taglia, "taglia_proposta_t_anno": proposta, "taglia_impostata": impostata,
             "taglia_riferimento_t_anno": rif, "esponente_scala": esp, "regola_scala": "0,6" if rif else "lineare",
             "tempo_anni": tempo, "vita_utile_anni": vita, "tasso_sconto": tasso, "crf": crf, "quota_uso": quota,
             "taglia_minima_t_anno": minima, "sotto_soglia": bool(minima and taglia < minima - EPS),
             "oltre_vita_utile": tempo > vita + EPS,
-            "anno_costruzione": anno_costruzione, "fattore_capex": fattore,
+            "anno_costruzione": anno_costruzione, "fattore_capex": fattore, "fattore_uso": fattore_uso,
+            "avvisi_anni": avvisi_anni or [],
             "capex_impianto_eur": impianto, "capex_eur": capex,
             "capex_eur_t_trattata": capex / massa_t if massa_t > EPS else 0.0}
+
+
+def _capex_anni(capex_anno, fattore_trattamento: float, anni_tratt: list | None = None, vita: float = 15):
+    """v10.9: capex_anno = {anno, f_impianto, f_costi_costruzione}: anno di costruzione dell'impianto di
+    trattamento, rivalutazione del suo costo (indice degli impianti) e valore dell'indice dei costi in
+    quell'anno. fattore_trattamento = indice dei costi all'anno di trattamento (pesato sulle masse).
+    Restituisce (anno, fattore impianto, fattore d'uso, avvisi)."""
+    if not capex_anno:
+        return None, 1.0, fattore_trattamento, []
+    anno = capex_anno["anno"]
+    f_uso = fattore_trattamento / capex_anno["f_costi_costruzione"]
+    avvisi = []
+    if anni_tratt:
+        if min(anni_tratt) < anno:
+            avvisi.append(f"impianto costruito nel {anno}, dopo l'anno di trattamento ({min(anni_tratt)})")
+        if max(anni_tratt) > anno + vita:
+            avvisi.append(f"anno di trattamento {max(anni_tratt)} oltre la vita utile dell'impianto "
+                          f"(costruito nel {anno}, {vita:g} anni)")
+    return anno, capex_anno["f_impianto"], f_uso, avvisi
 
 
 def _valorizza_uscite(cache, uscite, prezzi_prodotti_override, prezzi_intermedi_override,
@@ -928,8 +951,8 @@ def calcola_ramo_sottoprocesso(cache: _Cache, intermedio: str, massa_in: list, c
     taglia di riferimento il sottoprocesso e' dimensionato per trattarlo nello stesso tempo;
     con la taglia di riferimento si usa quella (impianto unico, v10.3).
     taglia_t_anno: taglia scelta a mano (intermedio acquistato).
-    capex_anno: (anno di costruzione, fattore) dell'impianto a monte, usato anche qui;
-    senza, il capex e' rivalutato come gli opex."""
+    capex_anno: anno di costruzione e fattori dell'impianto a monte (vedi _capex_anni), usati anche qui;
+    senza, l'impianto e' costruito nell'anno corrente e la quota rivalutata come gli opex."""
     testa, righe = _testata_e_righe(cache.conn, "db_sottoprocessi", "id_sottoprocesso", id_sottoprocesso)
     if not testa:
         return {"error": f"sottoprocesso_non_trovato: {id_sottoprocesso}"}
@@ -945,9 +968,11 @@ def calcola_ramo_sottoprocesso(cache: _Cache, intermedio: str, massa_in: list, c
     bil = _bilancio_massa(massa_in, uscite, scarti, reag_info)
     ton = massa_in[1] / 1000
     tempo = tempo_anni if tempo_anni and tempo_anni > EPS else 1.0
-    anno_c, f_capex = capex_anno if capex_anno else (None, fattore_rivalutazione)
+    anno_c, f_capex, f_uso, avv = _capex_anni(capex_anno, fattore_rivalutazione,
+                                              (capex_anno or {}).get("anni_tratt"),
+                                              float(righe[0].get("vita_utile_anni") or 15))
     cx = _capex_taglia(righe[0], taglia_t_anno, ton, f_capex, anno_c,
-                       taglia_senza_rif=ton / tempo if ton > EPS else None)
+                       taglia_senza_rif=ton / tempo if ton > EPS else None, fattore_uso=f_uso, avvisi_anni=avv)
     capex = cx["capex_eur"]
     opex = float(righe[0]["opex_eur_ton"]) * ton * fattore_rivalutazione
     lista, ricavo, costo_extra, ha_override = _valorizza_uscite(
@@ -1048,8 +1073,12 @@ def calcola_componente(cache: _Cache, imps, macro: str, id_processo: str,
     # v10.4: la base e' la massa totale del macrocomponente in ingresso, non la sola massa trattata.
     fattore_ingresso = (sum(ing["massa"][1] * fattori[k] for k, ing in ingressi.items()) / massa_comp
                         if massa_comp > EPS else fattore_medio)
-    anno_c, f_capex = capex_anno if capex_anno else (None, fattore_ingresso)
-    cx = _capex_taglia(righe[0], taglia_t_anno, massa_comp / 1000, f_capex, anno_c)
+    anno_c, f_capex, f_uso, avv = _capex_anni(capex_anno, fattore_ingresso,
+                                              [a for i, a in (capex_anno or {}).get("anni_tratt", {}).items()
+                                               if i in {x["id_imp"] for x in imps}],
+                                              float(righe[0].get("vita_utile_anni") or 15))
+    cx = _capex_taglia(righe[0], taglia_t_anno, massa_comp / 1000, f_capex, anno_c,
+                       fattore_uso=f_uso, avvisi_anni=avv)
     capex = cx["capex_eur"]
     # opex (v10.2): la massa dei materiali con opex_spec paga opex_spec, il resto l'opex del processo
     #   opex = (massa in ingresso - massa con opex_spec) x opex_eur_ton + somma(massa x opex_spec)
@@ -1133,11 +1162,15 @@ def calcola_impianto(id_imp: str, componenti: list[dict], anno_dismissione: int 
 
 
 def calcola_gruppo(id_imps, componenti: list[dict], anno_dismissione: int | None = None,
-                   anno_corrente: int = 2026, id_indice_costi: str = "ISTAT") -> dict:
+                   anno_corrente: int = 2026, id_indice_costi: str = "ISTAT",
+                   id_indice_impianti: str | None = None) -> dict:
     """Calcolo su un GRUPPO di impianti della stessa tipologia: per ogni macrocomponente le
     masse dei materiali sono sommate sugli impianti e il processo e' applicato al totale.
     anno_dismissione: None = ogni impianto rivalutato al proprio anno di dismissione;
     valorizzato = stesso anno per tutti.
+    id_indice_impianti (v10.9): indice con cui il costo dell'impianto di trattamento si rivaluta
+    all'anno di costruzione (None = lo stesso indice dei costi); la quota d'uso si riporta poi
+    all'anno di trattamento con l'indice dei costi.
     componenti: [{macro_componente, id_processo, assieme|None, escludi_assiemi|None,
     prezzi_prodotti_override|None, prezzi_intermedi_override|None, figli_processo|None}, ...]"""
     ids = _ids(id_imps)
@@ -1150,16 +1183,21 @@ def calcola_gruppo(id_imps, componenti: list[dict], anno_dismissione: int | None
             return {"error": "gli impianti di un gruppo devono essere della stessa tipologia"}
         anni_dism = {i["id_imp"]: int(anno_dismissione or i["anno_dismissione"]) for i in imps}
         tasso, _ = _fattore_rivalutazione(conn, id_indice_costi, 0)
+        tasso_imp, _ = _fattore_rivalutazione(conn, id_indice_impianti or id_indice_costi, 0)
         fattori = {i: (1 + tasso) ** max(a - anno_corrente, 0) for i, a in anni_dism.items()}
         cache = _Cache(conn)
+
+        def capex_anno(c):
+            anno = max(int(c.get("anno_costruzione") or anno_corrente), anno_corrente)
+            return {"anno": anno, "f_impianto": (1 + tasso_imp) ** (anno - anno_corrente),
+                    "f_costi_costruzione": (1 + tasso) ** (anno - anno_corrente), "anni_tratt": anni_dism}
         risultati = [
             calcola_componente(cache, imps, c["macro_componente"], c["id_processo"], fattori,
                                c.get("prezzi_prodotti_override"), c.get("prezzi_intermedi_override"),
                                c.get("figli_processo"), c.get("assieme"), c.get("escludi_assiemi"),
                                c.get("taglia_t_anno"),
-                               # anno di costruzione dell'impianto (vuoto = anno corrente, nessuna rivalutazione)
-                               (int(c.get("anno_costruzione") or anno_corrente),
-                                (1 + tasso) ** max(int(c.get("anno_costruzione") or anno_corrente) - anno_corrente, 0)),
+                               # anno di costruzione dell'impianto di trattamento (vuoto = anno corrente)
+                               capex_anno(c),
                                c.get("gate_fee_eur_ton"), c.get("gate_fee_eur_ton_min"), c.get("gate_fee_eur_ton_max"))
             for c in componenti
         ]
@@ -1188,6 +1226,7 @@ def calcola_gruppo(id_imps, componenti: list[dict], anno_dismissione: int | None
             "chiude": all(r["bilancio"]["chiude"] for r in ok),
             "solo_reagenti_indicati": all(r["bilancio"]["solo_reagenti_indicati"] for r in ok)},
         "fattore_rivalutazione_costi": fattore, "tasso_costi_annuo": tasso,
+        "id_indice_impianti": id_indice_impianti or id_indice_costi, "tasso_impianti_annuo": tasso_imp,
         "costo_totale_eur": costo, **_tdict("ricavo_eur", ric), **_tdict("gate_fee_eur", gf),
         # v10.7: scenario minimo = ricavi minimi + gate fee minimo, massimo = ricavi massimi + gate fee massimo
         "margine_eur_min": ric[0] + gf[0] - costo, "margine_eur": ric[1] + gf[1] - costo,

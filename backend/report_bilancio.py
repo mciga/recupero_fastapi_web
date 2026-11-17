@@ -109,6 +109,10 @@ def workbook(result: dict, richiesta: dict | None = None) -> bytes:
     r("Tipologia", result.get("tipologia"))
     r("Indice di rivalutazione dei costi", (richiesta or {}).get("id_indice_costi"),
       f"tasso annuo {result.get('tasso_costi_annuo', 0):.2%}")
+    r("Indice del costo degli impianti", result.get("id_indice_impianti"),
+      f"tasso annuo {result.get('tasso_impianti_annuo', 0):.2%}")
+    r("Capex", "costo dell'impianto rivalutato all'anno di costruzione con l'indice degli impianti; quota d'uso "
+               "(tempo x CRF) riportata all'anno di trattamento con l'indice dei costi")
     r("Ricavi", "massa PURA del prodotto x prezzo; le impurita' non sono valorizzate. Il prezzo e' quello di oggi "
                 "rivalutato all'anno di trattamento (anno di dismissione) con l'indice dei costi, come opex e gate fee")
     r("Gate fee", "EUR/t x massa del macrocomponente consegnato; > 0 il proprietario paga l'impianto (ricavo), "

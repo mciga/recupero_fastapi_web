@@ -44,6 +44,7 @@ class CalcoloImpiantoInput(BaseModel):
     anno_dismissione: int | None = None  # None = ogni impianto con il proprio anno (db_impianti)
     anno_corrente: int = ANNO_CORRENTE
     id_indice_costi: str = "ISTAT"
+    id_indice_impianti: str | None = None   # v10.9: indice del costo degli impianti (vuoto = indice dei costi)
     componenti: list[ComponenteInput]
 
     def impianti(self) -> list[str]:
@@ -178,7 +179,8 @@ def r_calcolo_impianto(body: CalcoloImpiantoInput):
         raise HTTPException(400, "Nessun impianto fornito (id_imps)")
     try:
         result = calc.calcola_gruppo(body.impianti(), [c.model_dump() for c in body.componenti],
-                                     body.anno_dismissione, body.anno_corrente, body.id_indice_costi)
+                                     body.anno_dismissione, body.anno_corrente, body.id_indice_costi,
+                                     body.id_indice_impianti)
     except ValueError as e:
         raise HTTPException(404, str(e))
     if "error" in result:

@@ -112,6 +112,20 @@ successivo; righe ripetute nel foglio: vale l'ultima. Per cambiare un campo chia
 si cancella la riga vecchia e se ne crea una nuova. La migrazione v10.5 (`db/migrazione_v10_5_trasformazioni_uniche.sql`)
 impedisce nel database due trasformazioni con gli stessi campi chiave.
 
+Capex e anno di costruzione (v10.9): il costo dell'impianto di trattamento si rivaluta all'anno di costruzione
+con l'"Indice costo impianti" scelto nel menu (EDILIZIA di default); la quota d'uso attribuita al macrocomponente
+(tempo × CRF) si riporta poi all'anno di trattamento con l'indice dei costi (ISTAT di default), così il capex
+attribuito è in euro dello stesso anno di opex, gate fee e ricavi:
+
+```
+capex attribuito = capex impianto (anno di costruzione) × tempo × CRF × indice costi(trattamento) / indice costi(costruzione)
+```
+
+Con lo stesso indice per impianti e costi l'anno di costruzione cambia solo il costo dell'impianto mostrato;
+con un indice degli impianti più alto, costruire più tardi aumenta anche la quota. Il tasso del CRF va inteso come
+tasso reale. La card segnala un impianto costruito dopo l'anno di trattamento o un anno di trattamento oltre la
+vita utile dell'impianto.
+
 Migrazione v10.8: `db/migrazione_v10_8_prodotti_senza_crescita.sql` toglie da `db_prodotti` le colonne di
 crescita del prezzo P1/P2, non usate nel calcolo (gli intermedi le conservano).
 
