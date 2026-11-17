@@ -43,7 +43,7 @@ TABLES: dict[str, dict[str, Any]] = {
         "columns": ["id_processo", "tipologia", "sotto_tecnologia", "macro_componente", "tecnica",
                     "capex_eur_ton", "opex_eur_ton", "descrizione_fasi",
                     "taglia_riferimento_t_anno", "esponente_scala", "vita_utile_anni",
-                    "tasso_sconto", "taglia_minima_t_anno"],
+                    "tasso_sconto", "taglia_minima_t_anno", "gate_fee_eur_ton"],
         "order": "tipologia, macro_componente, id_processo",
         "detail": "db_processi_trasformazioni",
     },

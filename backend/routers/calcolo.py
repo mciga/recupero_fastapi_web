@@ -31,6 +31,7 @@ class ComponenteInput(BaseModel):
     figli_processo: dict[str, FiglioScelta] | None = None
     taglia_t_anno: float | None = None         # taglia dell'impianto (t/anno); vuota = tratta la massa in 1 anno
     anno_costruzione: int | None = None        # anno a cui si rivaluta il capex dell'impianto; vuoto = anno corrente
+    gate_fee_eur_ton: float | None = None      # gate fee personalizzato (EUR/t, con segno); vuoto = valore del processo
 
 
 class CalcoloImpiantoInput(BaseModel):

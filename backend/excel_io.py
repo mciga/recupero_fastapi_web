@@ -129,6 +129,36 @@ def export_workbook(tables: list[str] | None = None) -> bytes:
     return buf.getvalue()
 
 
+_NUMERO_TESTO = re.compile(r"^[+-]?(\d{1,3}(\.\d{3})+|\d+)(,\d+)?$|^[+-]?\d+(\.\d+)?([eE][+-]?\d+)?$")
+
+
+def _campi_numerici(model) -> set:
+    """Campi del modello di tipo numerico (float/int, anche facoltativi)."""
+    out = set()
+    for nome, f in model.model_fields.items():
+        tipi = getattr(f.annotation, "__args__", None) or (f.annotation,)
+        if any(t in (float, int) for t in tipi):
+            out.add(nome)
+    return out
+
+
+def _pulisci(rec: dict, numerici: set) -> dict:
+    """Celle "vuote" che contengono testo vuoto o spazi (copia-incolla, LibreOffice) = cella vuota;
+    nei campi numerici un numero scritto come testo, anche all'italiana ("7,5", "1.234,5"), diventa numero.
+    Senza questa pulizia la riga era scartata come errore e non veniva aggiornata."""
+    out = {}
+    for k, v in rec.items():
+        if isinstance(v, str):
+            s = v.strip()
+            if s == "":
+                v = None
+            elif k in numerici and _NUMERO_TESTO.match(s.replace(" ", "")):
+                s = s.replace(" ", "")
+                v = s.replace(".", "").replace(",", ".") if "," in s else s
+        out[k] = v
+    return out
+
+
 def _row_from_sheet(ws, header: list[str], riparati: list) -> list[dict]:
     records = []
     for row in ws.iter_rows(min_row=2, values_only=True):
@@ -197,11 +227,12 @@ def import_workbook(file_bytes: bytes, dry_run: bool = False, replace: bool = Fa
             model = MODELS[table]
             errors = []
             validi = []   # (numero riga Excel, dati validati)
+            numerici = _campi_numerici(model)
             for i, raw in enumerate(sheets_by_table[table], start=2):
                 try:
                     raw = {crud.ALIAS_COLONNE.get(k, k) if crud.ALIAS_COLONNE.get(k, k) not in raw else k: v
                            for k, v in raw.items()}
-                    clean = {k: v for k, v in raw.items() if k in cfg["columns"]}
+                    clean = _pulisci({k: v for k, v in raw.items() if k in cfg["columns"]}, numerici)
                     validi.append((i, model(**clean).model_dump()))
                 except Exception as e:  # noqa: BLE001
                     errors.append(f"riga {i}: {e}")

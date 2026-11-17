@@ -63,7 +63,7 @@
   .mode-btn.active{border-color:var(--green);background:#F1F7F3;color:var(--green)}
   .comp-mini-label{display:block;font-size:9.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--mute);font-weight:700;margin-bottom:3px}
 
-  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px}
   .kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:15px 16px;box-shadow:var(--shadow)}
   .kpi .k{font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--mute);font-weight:600}
   .kpi .v{font-size:22px;font-weight:600;margin-top:5px;color:var(--green);line-height:1}
@@ -103,6 +103,10 @@
   .lane-node-title{font-size:11px;font-weight:700;color:var(--ink);margin-bottom:2px}
   .lane-node-cost{font-size:9.5px;color:var(--green2);font-weight:600}
   .lane-node-costo-tot{font-size:10.5px;color:var(--copper);font-weight:700;margin-top:1px}
+  .gate-fee{cursor:pointer;margin-top:4px;padding:3px 6px;border:1px dashed var(--line,#d6d3c8);border-radius:6px}
+  .gate-fee:hover{border-color:var(--green,#1f5a43)}
+  .gate-fee.custom{border:1.5px solid var(--gold,#c9a227)}
+  .gate-fee .gf-nota{display:block;font-size:10px;color:var(--mute)}
   .lane-node-fasi{font-size:9px;color:var(--mute);margin-top:2px;line-height:1.4}
   /* reagenti e bilancio di massa (v9) */
   .reag-box{margin:6px 0 4px;padding:6px 8px;border-radius:8px;background:#FBF2E7;border:1px solid #EBD7BE}
@@ -593,8 +597,9 @@ const TABLES = {
       {key:'sotto_tecnologia',label:'Sotto tecnologia (vuoto = tutte; più valori separati da ;)',type:'text',nullable:true},
       {key:'macro_componente',label:'Macrocomponente',type:'text'},
       ...TESTATA_COLS,
+      {key:'gate_fee_eur_ton',label:'Gate fee €/t consegnata (+ il proprietario paga l’impianto, − l’impianto paga)',type:'number',step:10},
     ],
-    defaults:()=>({id_processo:'',tipologia:'EOLICO',sotto_tecnologia:null,macro_componente:'',tecnica:'',capex_eur_ton:100,opex_eur_ton:200,descrizione_fasi:'',taglia_riferimento_t_anno:null,esponente_scala:0.6,vita_utile_anni:15,tasso_sconto:0.08,taglia_minima_t_anno:null}),
+    defaults:()=>({id_processo:'',tipologia:'EOLICO',sotto_tecnologia:null,macro_componente:'',tecnica:'',capex_eur_ton:100,opex_eur_ton:200,descrizione_fasi:'',taglia_riferimento_t_anno:null,esponente_scala:0.6,vita_utile_anni:15,tasso_sconto:0.08,taglia_minima_t_anno:null,gate_fee_eur_ton:0}),
   },
   processiTrasf: { url:'processi-trasformazioni', dbTable:'db_processi_trasformazioni', label:'Trasformazioni dei processi (materiale → uscita)', pk:['id'],
     fk:'id_processo', master:'processi',
@@ -1061,7 +1066,34 @@ const fmtInt=n=>Math.round(n).toLocaleString('it-IT');
 const pct=v=>fmt(v*100,v*100%1?1:0)+'%';
 function mass(kg){return kg>=1000?[fmt(kg/1000,2),'t']:[fmt(kg,kg<10?2:0),'kg'];}
 const massStr = kg => mass(kg).join(' ');
-function eur(v){const a=Math.abs(v);const sign=v<0?'−':'';if(a>=1e6)return[sign+fmt(a/1e6,1),'M €'];if(a>=1e3)return[sign+fmtInt(a/1e3),'k €'];return[sign+fmtInt(a),'€'];}
+function eur(v){const a=Math.abs(v);const sign=v<0?'−':'';if(a>=1e6)return[sign+fmt(a/1e6,2),'M €'];if(a>=1e3)return[sign+fmt(a/1e3,1),'k €'];return[sign+fmtInt(a),'€'];}
+// importi di una stessa riga di costi: stessa unita' (scelta sul totale), ogni voce arrotondata
+// e il totale scritto come somma delle voci arrotondate, cosi' la somma che si legge torna
+function eurVoci(voci){
+  const tot = voci.reduce((s,v)=>s+(v||0),0), a = Math.max(Math.abs(tot), ...voci.map(v=>Math.abs(v||0)));
+  const [div,dec,u] = a>=1e6 ? [1e6,2,'M €'] : a>=1e3 ? [1e3,1,'k €'] : [1,0,'€'];
+  const r = voci.map(v=>Math.round((v||0)/div*10**dec)/10**dec);
+  const somma = Math.round(r.reduce((s,x)=>s+x,0)*10**dec)/10**dec;
+  const f = x => (x<0?'−':'')+fmt(Math.abs(x),dec)+' '+u;
+  return {voci:r.map(f), totale:f(somma)};
+}
+// righe dei costi di un processo/sottoprocesso: capex + opex (+ smaltimento) = costo
+function costiNodoHtml(p, extra=''){
+  const sm = p.smaltimento_eur>0;
+  const e = eurVoci(sm ? [p.capex_eur, p.opex_eur, p.smaltimento_eur] : [p.capex_eur, p.opex_eur]);
+  return `<div class="lane-node-cost">Capex attribuito ${e.voci[0]} · Opex ${e.voci[1]}</div>${extra}
+    ${sm ? `<div class="lane-node-cost">Smaltimento scarti ${e.voci[2]}</div>` : ''}
+    <div class="lane-node-costo-tot">Costo: ${e.totale}${sm ? ' (capex + opex + smaltimento)' : ' (capex + opex)'}</div>`;
+}
+// gate fee (v10.4): EUR/t x massa consegnata, con segno; al clic si personalizza per la simulazione
+function gateFeeHtml(lane, p){
+  const gf = p.gate_fee_eur_ton||0, v = p.gate_fee_eur||0;
+  const segno = v>0 ? 'ricavo: il proprietario paga l’impianto' : v<0 ? 'costo: l’impianto paga il materiale' : 'nessun corrispettivo';
+  return `<div class="lane-node-cost gate-fee ${p.gate_fee_personalizzato?'custom':''}" data-gate-fee="${escAttr(lane)}"
+      title="Gate fee: €/t × massa del macrocomponente consegnato (${segno}). Clicca per modificarlo in questa simulazione.">
+    Gate fee ${fmt(gf,0)} €/t × ${massStr(p.massa_costi_kg)}${Math.abs((p.fattore_rivalutazione_ingresso||1)-1)>1e-6 ? ` × riv. ${fmt(p.fattore_rivalutazione_ingresso,3)}` : ''} = <b>${v>0?'+':''}${eur(v).join(' ')}</b>${p.gate_fee_personalizzato?' ✎':''}
+    <span class="gf-nota">${segno}</span></div>`;
+}
 function componentIcon(name){ return name.replace(/[_/]/g,' ').split(' ').filter(Boolean).map(w=>w[0]).slice(0,2).join('').toUpperCase(); }
 function fasiCompact(s){ return (s||'').replaceAll('_',' ').split(',').map(x=>x.trim().toLowerCase()).join(' · '); }
 function escAttr(s){ return String(s??'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
@@ -1120,6 +1152,7 @@ async function renderCalcoloMain(){
         figli_processo: buildFigliPayload(c.figli),
         taglia_t_anno: c.taglia || null,
         anno_costruzione: c.annoCostr || null,
+        gate_fee_eur_ton: c.gateFee ?? null,
       };
     }),
   };
@@ -1218,10 +1251,8 @@ function renderLane(cd){
       <div class="node-cols">
         <div>${tagliaHtml(lane, proc, true)}</div>
         <div>
-          <div class="lane-node-cost">Capex attribuito ${eur(proc.capex_eur).join(' ')} · Opex ${eur(proc.opex_eur).join(' ')}</div>
-          ${opexSpecHtml(proc, cd.avvisi)}
-          ${proc.smaltimento_eur>0 ? `<div class="lane-node-cost">Smaltimento scarti ${eur(proc.smaltimento_eur).join(' ')}</div>` : ''}
-          <div class="lane-node-costo-tot">Costo: ${eur(proc.costo_eur).join(' ')}</div>
+          ${costiNodoHtml(proc, opexSpecHtml(proc, cd.avvisi))}
+          ${gateFeeHtml(lane, proc)}
           ${proc.sotto_tecnologia ? `<div class="lane-node-fasi">sotto-tecnologia ${proc.sotto_tecnologia}</div>` : ''}
           ${reagentiNodeHtml(cd.reagenti)}
         </div>
@@ -1266,7 +1297,7 @@ function tagliaHtml(lane, p, modificabile){
       <span>tempo di trattamento</span><b>${anniStr(p.tempo_anni)}</b>
       <span>capex impianto${p.anno_costruzione ? ` (prezzi ${p.anno_costruzione})` : ''}</span><b>${eur(p.capex_impianto_eur).join(' ')}</b>
       <span>quota d'uso (${crfTxt(p)})</span><b>${fmt(p.quota_uso*100, p.quota_uso<0.1?2:1)} %</b>
-      ${p.capex_eur_t_trattata!=null ? `<span>capex per t trattata</span><b>${fmt(p.capex_eur_t_trattata,0)} €/t</b>` : ''}
+      ${p.capex_eur_t_trattata!=null ? `<span>capex per t in ingresso</span><b>${fmt(p.capex_eur_t_trattata,0)} €/t</b>` : ''}
     </div>
     <div class="taglia-nota">${fmt(p.capex_eur_ton,0)} €/(t/anno) × taglia${p.regola_scala==='0,6' ? ` · regola dello ${fmt(p.esponente_scala,1)} rispetto a ${fmt(p.taglia_riferimento_t_anno,0)} t/anno` : ' (lineare)'}${modificabile && calcState.componenti[lane]?.tagliaProposta ? ` · taglia proposta alla scelta del processo (${p.taglia_riferimento_t_anno ? 'taglia di riferimento' : 'tratta in 1 anno la massa di quel momento'})` : ''}</div>
     ${tagliaAvvisiHtml(p)}
@@ -1450,8 +1481,7 @@ function renderUscitaCard(macro, path, u){
       <div class="lane-node">
         ${renderSottoprocessoSelectHtml(macro, childPath)}
         ${tagliaHtml(null, sp, false)}
-        <div class="lane-node-cost">Capex attribuito ${eur(sp.capex_eur).join(' ')} · Opex ${eur(sp.opex_eur).join(' ')}</div>
-        <div class="lane-node-costo-tot">Costo: ${eur(sp.costo_eur).join(' ')}</div>
+        ${costiNodoHtml(sp)}
         ${reagentiNodeHtml(ramo.reagenti)}
         <div class="lane-node-fasi">${fasiCompact(sp.descrizione_fasi)}</div>
       </div>
@@ -1495,7 +1525,7 @@ function trovaNodo(macro, path){
 
 function wireSchemaProcesso(){
   document.querySelectorAll('.sel-processo').forEach(sel=>{
-    sel.onchange = ()=>{ const c=calcState.componenti[sel.dataset.macro]; c.idProcesso=sel.value; c.figli={}; c.taglia=null; renderCalcoloMain(); };
+    sel.onchange = ()=>{ const c=calcState.componenti[sel.dataset.macro]; c.idProcesso=sel.value; c.figli={}; c.taglia=null; delete c.gateFee; renderCalcoloMain(); };
   });
   document.querySelectorAll('.inp-taglia').forEach(inp=>{
     inp.onchange = ()=>{
@@ -1779,9 +1809,8 @@ function renderSchemaDiretto(data, d){
           <div class="taglia-kv"><span>tempo di trattamento</span><b>${anniStr(sp.tempo_anni)}</b>
           <span>capex impianto</span><b>${eur(sp.capex_impianto_eur).join(' ')}</b>
           <span>quota d'uso (${crfTxt(sp)})</span><b>${fmt(sp.quota_uso*100, sp.quota_uso<0.1?2:1)} %</b>
-          <span>capex per t trattata</span><b>${fmt(sp.capex_eur_t_trattata,0)} €/t</b></div>${tagliaAvvisiHtml(sp)}</div>
-        <div class="lane-node-cost">Capex attribuito ${eur(sp.capex_eur).join(' ')} · Opex ${eur(sp.opex_eur).join(' ')}</div>
-        <div class="lane-node-costo-tot">Costo: ${eur(sp.costo_eur).join(' ')}</div>
+          <span>capex per t in ingresso</span><b>${fmt(sp.capex_eur_t_trattata,0)} €/t</b></div>${tagliaAvvisiHtml(sp)}</div>
+        ${costiNodoHtml(sp)}
         ${reagentiNodeHtml(data.reagenti)}
         <div class="lane-node-fasi">${fasiCompact(sp.descrizione_fasi)}</div>
       </div>
@@ -1858,7 +1887,37 @@ function openPriceModalIntermedio(codice){
     if(!isNaN(v) && v>=0){ calcState.prezziManuali.intermedi[codice]=v; overlay.remove(); renderCalcoloMain(); }
   };
 }
+// gate fee della corsia (v10.4): valore per questa simulazione, con segno; non modifica il database
+function openGateFeeModal(lane){
+  const c = calcState.componenti[lane];
+  const cd = (lastCalc?.componenti||[]).find(x=>cdKey(x)===lane);
+  if(!c || !cd) return;
+  const p = cd.processo, def = p.gate_fee_default_eur_ton||0;
+  const overlay = showModal(`
+    <h3>Gate fee — ${nice(p.tecnica)}</h3>
+    <p class="sub">Corrispettivo per il ritiro, in € per t di macrocomponente consegnato (${massStr(p.massa_costi_kg)}).
+      Positivo: il proprietario (o il produttore) paga l’impianto di riciclo, ricavo per l’impianto.
+      Negativo: l’impianto paga il materiale. Valore del processo nel database: <b>${fmt(def,0)} €/t</b>.
+      La modifica vale solo per questa simulazione.</p>
+    <div class="field">
+      <label class="comp-mini-label">Gate fee (€/t)</label>
+      <input type="number" id="modalGateFee" value="${c.gateFee ?? def}" step="10"
+        style="width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:8px;font-family:Inter;font-size:14px">
+    </div>
+    <div class="modal-close">
+      <button class="btn primary" id="btnConfirmGf">Conferma</button>
+      <button class="btn" id="btnResetGf">Valore del processo</button>
+      <button class="btn" id="btnCloseModal">Annulla</button>
+    </div>`);
+  document.getElementById('btnCloseModal').onclick=()=>overlay.remove();
+  document.getElementById('btnResetGf').onclick=()=>{ delete c.gateFee; overlay.remove(); renderCalcoloMain(); };
+  document.getElementById('btnConfirmGf').onclick=()=>{
+    const v = parseFloat(document.getElementById('modalGateFee').value);
+    if(!isNaN(v)){ if(v===def) delete c.gateFee; else c.gateFee=v; overlay.remove(); renderCalcoloMain(); }
+  };
+}
 function wirePriceTiles(){
+  document.querySelectorAll('[data-gate-fee]').forEach(t=>{ t.onclick = ()=>openGateFeeModal(t.dataset.gateFee); });
   document.querySelectorAll('[data-price-prodotto]').forEach(t=>{ t.onclick = ()=>openPriceModalProdotto(t.dataset.priceProdotto); });
   document.querySelectorAll('[data-price-intermedio]').forEach(t=>{ t.onclick = ()=>openPriceModalIntermedio(t.dataset.priceIntermedio); });
 }
@@ -2113,6 +2172,7 @@ function renderEconomicSummary(data, massaLabel, massaKg, massaSub){
   const [mv,mu]=mass(massaKg);
   const [cv,cu]=eur(data.costo_totale_eur);
   const [rv,ru]=eur(data.ricavo_eur), [nv,nu]=eur(data.margine_eur);
+  const gf = data.gate_fee_eur||0, [gv,gu]=eur(gf);
   return `
   <div class="panel">
     <h3>Analisi economica</h3>
@@ -2121,10 +2181,12 @@ function renderEconomicSummary(data, massaLabel, massaKg, massaSub){
       <div class="kpi"><div class="k">${massaLabel}</div><div class="v">${mv} <small>${mu}</small></div><div class="s">${massaSub||''}</div></div>
       <div class="kpi copper"><div class="k">Costo totale rivalutato</div><div class="v">${cv} <small>${cu}</small></div><div class="s">fattore ×${fmt(data.fattore_rivalutazione_costi,3)}</div></div>
       <div class="kpi"><div class="k">Ricavo stimato (centrale)</div><div class="v">${rv} <small>${ru}</small></div><div class="s">range ${eur(data.ricavo_eur_min).join(' ')} – ${eur(data.ricavo_eur_max).join(' ')}</div></div>
+      ${gf ? `<div class="kpi"><div class="k">Gate fee</div><div class="v ${gf>=0?'pos':'neg'}">${gf>0?'+':''}${gv} <small>${gu}</small></div><div class="s">${gf>0?'pagato dal proprietario all’impianto':'pagato dall’impianto per il materiale'}</div></div>` : ''}
       <div class="kpi net"><div class="k">Margine (${data.anno_dismissione_min!=null
         ? (data.anno_dismissione_min===data.anno_dismissione_max ? data.anno_dismissione_min : `${data.anno_dismissione_min}–${data.anno_dismissione_max}`)
         : calcState.annoDismissione})</div><div class="v ${data.margine_eur>=0?'pos':'neg'}">${nv} <small>${nu}</small></div><div class="s">range ${eur(data.margine_eur_min).join(' ')} – ${eur(data.margine_eur_max).join(' ')}</div></div>
     </div>
+    <p class="sub" style="margin-top:8px">Margine = ricavi dai prodotti${gf ? ' + gate fee' : ''} − costi (capex, opex, smaltimento). Capex, opex e gate fee sono calcolati sulla massa totale dei macrocomponenti consegnati.</p>
   </div>`;
 }
 

@@ -236,6 +236,14 @@ class Processo(_Testata):
     tipologia: Tipologia
     sotto_tecnologia: str | None = None
     macro_componente: str
+    # v10.4: EUR per t di macrocomponente consegnato, con segno (> 0 il proprietario paga l'impianto)
+    gate_fee_eur_ton: float = 0.0
+
+    @field_validator("gate_fee_eur_ton", mode="before")
+    @classmethod
+    def _gf(cls, v):
+        v = _vuoto_a_none(v)
+        return 0.0 if v is None else v
 
     @field_validator("sotto_tecnologia", mode="before")
     @classmethod

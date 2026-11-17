@@ -966,13 +966,17 @@ def calcola_componente(cache: _Cache, imps, macro: str, id_processo: str,
                        fattori_impianto, prezzi_prodotti_override: dict | None = None,
                        prezzi_intermedi_override: dict | None = None, figli_processo: dict | None = None,
                        assieme: str | None = None, escludi_assiemi: list[str] | None = None,
-                       taglia_t_anno: float | None = None, capex_anno: tuple | None = None) -> dict:
+                       taglia_t_anno: float | None = None, capex_anno: tuple | None = None,
+                       gate_fee_eur_ton: float | None = None) -> dict:
     """Applica un processo al macrocomponente di uno o piu' impianti: le masse dello stesso
     materiale sono SOMMATE sugli impianti (e sugli assiemi) e il processo lavora sul totale.
     fattori_impianto: {id_imp: fattore di rivalutazione dei costi} (o un solo numero). Ogni
     materiale porta il fattore medio dei suoi impianti, pesato sulle masse: capex, opex e
     smaltimento risultano uguali alla somma dei costi dei singoli impianti, ciascuno
-    rivalutato al proprio anno di dismissione."""
+    rivalutato al proprio anno di dismissione.
+    v10.4: capex, opex e gate fee si calcolano sulla massa totale del macrocomponente in
+    ingresso (compresi i materiali che il processo non tratta).
+    gate_fee_eur_ton: gate fee personalizzato (None = valore del processo)."""
     conn = cache.conn
     if isinstance(imps, dict):
         imps = [imps]
@@ -1030,25 +1034,33 @@ def calcola_componente(cache: _Cache, imps, macro: str, id_processo: str,
         non_trattati.append({"material_id": ing["material_id"], "material": ing["nome"], "massa_kg": ing["massa"][1],
                              "elementi": _el_lista([el, el, el])})
 
-    # capex: impianto della taglia scelta, quota d'uso attribuita al materiale (v9.1); opex: EUR/t trattata
+    # capex: impianto della taglia scelta, quota d'uso attribuita al materiale (v9.1); opex: EUR/t in ingresso
     # il capex dell'impianto e' rivalutato all'anno di costruzione (uguale per tutto il gruppo);
-    # gli opex all'anno di dismissione di ogni impianto
-    anno_c, f_capex = capex_anno if capex_anno else (None, fattore_medio)
-    cx = _capex_taglia(righe[0], taglia_t_anno, massa_trattata / 1000, f_capex, anno_c)
+    # opex e gate fee all'anno di dismissione di ogni impianto.
+    # v10.4: la base e' la massa totale del macrocomponente in ingresso, non la sola massa trattata.
+    fattore_ingresso = (sum(ing["massa"][1] * fattori[k] for k, ing in ingressi.items()) / massa_comp
+                        if massa_comp > EPS else fattore_medio)
+    anno_c, f_capex = capex_anno if capex_anno else (None, fattore_ingresso)
+    cx = _capex_taglia(righe[0], taglia_t_anno, massa_comp / 1000, f_capex, anno_c)
     capex = cx["capex_eur"]
     # opex (v10.2): la massa dei materiali con opex_spec paga opex_spec, il resto l'opex del processo
-    #   opex = (massa trattata - massa con opex_spec) x opex_eur_ton + somma(massa x opex_spec)
+    #   opex = (massa in ingresso - massa con opex_spec) x opex_eur_ton + somma(massa x opex_spec)
     opex_proc = float(righe[0]["opex_eur_ton"])
     spec_ing, opex_specifici = _opex_spec_ingressi(righe, avvisi), []
     opex = 0.0
-    for k in trattati:
-        m, f = ingressi[k]["massa"][1], fattori[k]
-        o = spec_ing.get(k)
+    for k, ing in ingressi.items():
+        m, f = ing["massa"][1], fattori[k]
+        o = spec_ing.get(k) if k in trattati else None
         opex += (opex_proc if o is None else o) * m * f / 1000
         if o is not None:
-            opex_specifici.append({"ingresso": k, "material_id": ingressi[k]["material_id"], "nome": ingressi[k]["nome"],
+            opex_specifici.append({"ingresso": k, "material_id": ing["material_id"], "nome": ing["nome"],
                                    "massa_kg": m, "opex_spec_eur_ton": o, "opex_eur": o * m * f / 1000})
     massa_spec = sum(x["massa_kg"] for x in opex_specifici)
+    # gate fee (v10.4): EUR/t di macrocomponente consegnato, con segno (> 0 il proprietario paga
+    # l'impianto: ricavo), rivalutato come gli opex
+    gf_default = float(righe[0].get("gate_fee_eur_ton") or 0)
+    gf = float(gate_fee_eur_ton) if gate_fee_eur_ton is not None else gf_default
+    gate_fee = gf * massa_comp / 1000 * fattore_ingresso
     lista, ricavo, costo_extra, ha_override = _valorizza_uscite(
         cache, uscite, prezzi_prodotti_override, prezzi_intermedi_override, figli_processo, fattore_medio, fattori,
         tempo_anni=cx["tempo_anni"] or 1.0, capex_anno=capex_anno)
@@ -1075,7 +1087,10 @@ def calcola_componente(cache: _Cache, imps, macro: str, id_processo: str,
                      "capex_eur": capex, "opex_eur": opex, "smaltimento_eur": costo_sm,
                      "costo_eur": capex + opex + costo_sm,
                      "opex_specifici": opex_specifici, "massa_opex_spec_kg": massa_spec,
-                     "massa_opex_processo_kg": massa_trattata - massa_spec},
+                     "massa_opex_processo_kg": massa_comp - massa_spec, "massa_costi_kg": massa_comp,
+                     "gate_fee_eur_ton": gf, "gate_fee_default_eur_ton": gf_default,
+                     "gate_fee_personalizzato": gate_fee_eur_ton is not None, "gate_fee_eur": gate_fee,
+                     "fattore_rivalutazione_ingresso": fattore_ingresso},
         "uscite": lista, "scarti": scarti_l, "avvisi": avvisi,
         # materiali in ingresso al processo (masse centrali), usati dal report del bilancio di massa
         "ingressi": [{"ingresso": k, "material_id": ing["material_id"], "nome": ing["nome"],
@@ -1085,7 +1100,8 @@ def calcola_componente(cache: _Cache, imps, macro: str, id_processo: str,
         "bilancio_massa_centrale_kg": bilancio_c,
         "reagenti": _reagenti_lista(cache, reag_info), "bilancio": bil,
         "costo_totale_eur": capex + opex + costo_sm + costo_extra,
-        **_tdict("ricavo_eur", ricavo), "ha_override": ha_override,
+        **_tdict("ricavo_eur", ricavo), "gate_fee_eur": gate_fee,
+        "ha_override": ha_override or gate_fee_eur_ton is not None,
     }
 
 
@@ -1122,12 +1138,15 @@ def calcola_gruppo(id_imps, componenti: list[dict], anno_dismissione: int | None
                                c.get("taglia_t_anno"),
                                # anno di costruzione dell'impianto (vuoto = anno corrente, nessuna rivalutazione)
                                (int(c.get("anno_costruzione") or anno_corrente),
-                                (1 + tasso) ** max(int(c.get("anno_costruzione") or anno_corrente) - anno_corrente, 0)))
+                                (1 + tasso) ** max(int(c.get("anno_costruzione") or anno_corrente) - anno_corrente, 0)),
+                               c.get("gate_fee_eur_ton"))
             for c in componenti
         ]
     ok = [r for r in risultati if "error" not in r]
     costo = sum(r["costo_totale_eur"] for r in ok)
     ric = [sum(r["ricavo_eur_min"] for r in ok), sum(r["ricavo_eur"] for r in ok), sum(r["ricavo_eur_max"] for r in ok)]
+    gate_fee = sum(r["gate_fee_eur"] for r in ok)
+    # margine (v10.4) = ricavi dai prodotti + gate fee - costi
     m_tratt = sum(r["massa_trattata_kg"] for r in ok)
     fattore = (sum(r["massa_trattata_kg"] * r["fattore_rivalutazione_medio"] for r in ok) / m_tratt
                if m_tratt > EPS else sum(fattori.values()) / len(fattori))
@@ -1148,8 +1167,9 @@ def calcola_gruppo(id_imps, componenti: list[dict], anno_dismissione: int | None
             "chiude": all(r["bilancio"]["chiude"] for r in ok),
             "solo_reagenti_indicati": all(r["bilancio"]["solo_reagenti_indicati"] for r in ok)},
         "fattore_rivalutazione_costi": fattore, "tasso_costi_annuo": tasso,
-        "costo_totale_eur": costo, **_tdict("ricavo_eur", ric),
-        "margine_eur_min": ric[0] - costo, "margine_eur": ric[1] - costo, "margine_eur_max": ric[2] - costo,
+        "costo_totale_eur": costo, **_tdict("ricavo_eur", ric), "gate_fee_eur": gate_fee,
+        "margine_eur_min": ric[0] + gate_fee - costo, "margine_eur": ric[1] + gate_fee - costo,
+        "margine_eur_max": ric[2] + gate_fee - costo,
         "ha_prezzi_personalizzati": any(r["ha_override"] for r in ok),
         "componenti": risultati,
     }

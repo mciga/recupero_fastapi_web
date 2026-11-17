@@ -110,36 +110,45 @@ def workbook(result: dict, richiesta: dict | None = None) -> bytes:
     r("Indice di rivalutazione dei costi", (richiesta or {}).get("id_indice_costi"),
       f"tasso annuo {result.get('tasso_costi_annuo', 0):.2%}")
     r("Ricavi", "massa PURA del prodotto x prezzo; le impurita' non sono valorizzate")
+    r("Gate fee", "EUR/t x massa del macrocomponente consegnato; > 0 il proprietario paga l'impianto (ricavo), "
+                  "< 0 l'impianto paga il materiale (costo)")
+    r("Margine", "ricavi + gate fee - costi; capex, opex e gate fee sulla massa totale del macrocomponente")
     r()
     r("Impianto", "Sotto-tecnologia", "Anno dismissione (calcolo)", "Fattore rivalutazione costi", bold=True)
     for i in result.get("impianti", []):
         r(i["nome"], i.get("sotto_tecnologia"), i["anno_dismissione_calcolo"], round(i["fattore_rivalutazione"], 4))
     r()
     r("Macrocomponente", "Processo", "Massa componente (kg)", "Massa trattata (kg)", "Reagenti (kg)", "Uscite (kg)",
-      "Chiusura bilancio (kg)", "Costo totale (EUR)", "Ricavo (EUR)", "Margine (EUR)", bold=True)
+      "Chiusura bilancio (kg)", "Costo totale (EUR)", "Ricavo (EUR)", "Gate fee (EUR)", "Margine (EUR)", bold=True)
     for c in result["componenti"]:
         if "error" in c:
             continue
         b = c["bilancio"]["centrale"]
+        gf = c.get("gate_fee_eur") or 0.0
         r(c["macro_componente"] + (f" [{c['assieme']}]" if c.get("assieme") else ""), c["processo"]["id_processo"],
           c["massa_componente_kg"], c["massa_trattata_kg"], b["reagenti_kg"] + b["reagenti_non_specificati_kg"],
-          b["uscite_kg"], b["chiusura_kg"], c["costo_totale_eur"], c["ricavo_eur"], c["ricavo_eur"] - c["costo_totale_eur"])
-        for col, f in zip("CDEFGHIJ", [F_KG] * 5 + [F_EUR] * 3):
+          b["uscite_kg"], b["chiusura_kg"], c["costo_totale_eur"], c["ricavo_eur"], gf,
+          c["ricavo_eur"] + gf - c["costo_totale_eur"])
+        for col, f in zip("CDEFGHIJK", [F_KG] * 5 + [F_EUR] * 4):
             ws[f"{col}{ws.max_row}"].number_format = f
     r("TOTALE", None, result["massa_totale_kg"], result["massa_trattata_kg"], None, None, None,
-      result["costo_totale_eur"], result["ricavo_eur"], result["margine_eur"], bold=True)
-    for col, f in zip("CDHIJ", [F_KG] * 2 + [F_EUR] * 3):
+      result["costo_totale_eur"], result["ricavo_eur"], result.get("gate_fee_eur") or 0.0, result["margine_eur"],
+      bold=True)
+    for col, f in zip("CDHIJK", [F_KG] * 2 + [F_EUR] * 4):
         ws[f"{col}{ws.max_row}"].number_format = f
     r()
     r("Costi per fase", "Fase", "Capex attribuito (EUR)", "Opex (EUR)", "Smaltimento scarti (EUR)", "Costo fase (EUR)",
-      "Capex specifico (EUR/t)", "Opex specifico (EUR/t)", "Taglia (t/anno)", bold=True)
+      "Capex specifico (EUR per t/anno)", "Opex specifico (EUR/t)", "Taglia (t/anno)", "Massa base dei costi (kg)",
+      "Gate fee (EUR/t)", "Gate fee (EUR)", bold=True)
     for macro, fase, nodo, _ in _nodi(result):
         p = nodo.get("processo") or nodo["sottoprocesso"]
         r(macro, fase, p["capex_eur"], p["opex_eur"], p["smaltimento_eur"], p["costo_eur"],
-          p["capex_eur_ton"], p["opex_eur_ton"], p.get("taglia_t_anno"))
-        for col in "CDEF":
+          p["capex_eur_ton"], p["opex_eur_ton"], p.get("taglia_t_anno"), p.get("massa_costi_kg"),
+          p.get("gate_fee_eur_ton"), p.get("gate_fee_eur"))
+        for col in "CDEFL":
             ws[f"{col}{ws.max_row}"].number_format = F_EUR
-        ws[f"I{ws.max_row}"].number_format = F_KG
+        for col in "IJ":
+            ws[f"{col}{ws.max_row}"].number_format = F_KG
         # v10.2: materiali con opex specifico (compresi nell'opex della fase)
         for x in p.get("opex_specifici") or []:
             r(macro, f"  di cui opex specifico: {x['nome']} ({x['massa_kg']:,.0f} kg)", None, x["opex_eur"],

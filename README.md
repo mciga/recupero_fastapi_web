@@ -86,6 +86,17 @@ Valori caricati: BESS_LFP_IDROMET P1-P6 dalla nota sul capex dei processi LFP de
 riportati dai valori precedenti (costi per t trattata) dividendo per il CRF (8 %, 15 anni = 0,1168),
 con taglie di riferimento di eolico e fotovoltaico da verificare.
 
+Migrazione v10.4 (gate fee): `db/migrazione_v10_4_gate_fee.sql` aggiunge a `db_processi` la colonna
+`gate_fee_eur_ton` (€ per t di macrocomponente consegnato, con segno: positivo se il proprietario paga
+l'impianto di riciclo, negativo se l'impianto paga il materiale, predefinito 0). Dalla v10.4 capex, opex e gate
+fee si calcolano sulla massa totale del macrocomponente in ingresso, e il margine è
+ricavi dai prodotti + gate fee − costi. Nella pagina del calcolo il gate fee si modifica al clic per la singola
+simulazione. `db/dati_v10_4_bess_rack.sql` (solo in locale) porta i processi BESS P1-P6 alla Tabella 2 della
+nota sul capex (base "ingresso al rack", 24 240 t/anno).
+
+Import Excel: le celle con testo vuoto o spazi valgono come celle vuote e, nei campi numerici, i numeri scritti
+come testo (anche all'italiana, "7,5" o "1.234,5") diventano numeri.
+
 ## Cruscotto territoriale
 
 Nella sezione Calcolo economico il pulsante "Cruscotto" (tra "Da impianto" e "Intermedio acquistato")
